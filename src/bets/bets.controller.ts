@@ -91,6 +91,7 @@ export class BetsController implements OnModuleInit {
 
     async createBet(bet: any): Promise<any> {
 
+
         this.logger.info("received bet " + JSON.stringify(bet))
 
         //1. fields validations
