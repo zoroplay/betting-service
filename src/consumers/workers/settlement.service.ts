@@ -15,9 +15,10 @@ export class SettlementService {
         //private transactionRunner: DbTransactionFactory,
         @InjectRepository(BetSlip)
         private betslipRepository: Repository<BetSlip>,
+
         @InjectRepository(Settlement)
         private settlementRepository: Repository<Settlement>,
-        private readonly amqpConnection: AmqpConnection
+
     ) {
 
     }

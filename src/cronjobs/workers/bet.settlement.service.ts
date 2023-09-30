@@ -99,7 +99,7 @@ export class BetSettlementService {
         let rows = await this.entityManager.query("SELECT DISTINCT b.id,b.stake,b.total_bets,b.total_odd,b.bet_type,b.user_id " +
             "FROM bet b " +
             "INNER JOIN bet_slip bs on b.id = bs.bet_id " +
-            "WHERE b.status IN (0,1) AND bs.settlement_id = ?", [settlementID])
+            "WHERE b.status IN (0,1) AND b.won = -1 AND bs.settlement_id = ?", [settlementID])
 
         let bets = [];
         let betIds = []

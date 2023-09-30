@@ -17,6 +17,7 @@ import {SettlementRollback} from "../entity/settlementrollback.entity";
 import {BetStatus} from "../entity/betstatus.entity";
 import {MtsBetCancelledService} from "./workers/mts.bet.cancelled.service";
 import {MtsBetAcceptedService} from "./workers/mts.bet.accepted.service";
+import {Bet} from "../entity/bet.entity";
 
 let maxSettlementChannels = 5
 let exchanges = [];
@@ -43,7 +44,7 @@ for (let n = 0; n < maxSettlementChannels; n++) {
     }
 }
 
-let names = ['settle_bets', 'bet_cancel','rollback_bet_settlement','bet_rejected','bet_accepted']
+let names = ['settle_bets', 'bet_cancel','rollback_bet_settlement','bet_rejected','bet_accepted','bet_cancelled']
 
 for (const name of names) {
 
@@ -59,27 +60,10 @@ for (const name of names) {
 
 @Module({
     imports: [
-        TypeOrmModule.forFeature([BetSlip, Settlement,BetCancel,Setting,BetClosure,Winning,SettlementRollback,BetStatus]),
+        TypeOrmModule.forFeature([Bet,BetSlip, Settlement,BetCancel,Setting,BetClosure,Winning,SettlementRollback,BetStatus]),
         RabbitMQModule.forRoot(RabbitMQModule, {
             exchanges: exchanges,
             uri: "amqp://bs:betting@137.184.222.24:5672/sportsbook",//'amqp://rabbitmq:rabbitmq@localhost:5672',
-            /*
-            channels: {
-                'betting_service.settlement.1': {
-                    prefetchCount: 200,
-                    default: true,
-                },
-                'betting_service.settlement.2': {
-                    prefetchCount: 200,
-                },
-                'betting_service.settle_bets': {
-                    prefetchCount: 200,
-                },
-                'betting_service.bet_cancel': {
-                    prefetchCount: 200,
-                },
-            },
-            */
             channels: channels,
             defaultRpcTimeout: 15000,
             connectionInitOptions: {

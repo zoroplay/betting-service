@@ -22,7 +22,7 @@ import {join} from "path";
         options: {
           package: 'protobuf',
           protoPath: join(__dirname, 'odds.proto'),
-          url: "161.35.104.145:6011"
+          url: process.env.FEEDS_SERVICE_GRPC_URI
         },
       },
     ]),

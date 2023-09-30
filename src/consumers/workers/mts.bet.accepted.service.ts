@@ -1,11 +1,7 @@
 import {Injectable} from "@nestjs/common";
 import {JsonLogger, LoggerFactory} from "json-logger-service";
 import {InjectRepository} from "@nestjs/typeorm";
-import {EntityManager, Repository} from "typeorm";
-import {BetCancel} from "../../entity/betcancel.entity";
-import {BET_CANCELLED, BET_PENDING, TRANSACTION_TYPE_BET_CANCEL} from "../../constants";
-import {Bet} from "../../entity/bet.entity";
-import {BetSlip} from "../../entity/betslip.entity";
+import {Repository} from "typeorm";
 import {BetStatus} from "../../entity/betstatus.entity";
 
 @Injectable()

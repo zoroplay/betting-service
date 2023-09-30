@@ -3,9 +3,8 @@ import {AppController} from './app.controller';
 import {AppService} from './app.service';
 import {BetsModule} from './bets/bets.module';
 import {ConfigModule} from '@nestjs/config';
-import {ConsumerModule} from "./consumers/consumer.model";
+import {ConsumerModule} from "./consumers/consumer.module";
 import {CronJobModule} from "./cronjobs/cronjobs.model";
-import {DatabaseModule} from "./database.module";
 import {Bet} from "./entity/bet.entity";
 import {BetStatus} from "./entity/betstatus.entity";
 import {BetSlip} from "./entity/betslip.entity";
@@ -21,6 +20,7 @@ import {BetClosure} from "./entity/betclosure.entity";
 import {Winning} from "./entity/winning.entity";
 import {Cronjob} from "./entity/cronjob.entity";
 import {TypeOrmModule} from "@nestjs/typeorm";
+import {RabbitmqModule} from "./rabbitmq.module";
 
 @Module({
     imports: [
@@ -28,14 +28,14 @@ import {TypeOrmModule} from "@nestjs/typeorm";
         BetsModule,
         ConsumerModule,
         CronJobModule,
-        //DatabaseModule
+        RabbitmqModule,
         TypeOrmModule.forRoot({
           type: process.env.DB_TYPE as any,
-          host: 'localhost',
-          port: 3306,
-          username: 'root',
-          password: '',
-          database: 'betting_service_v1',
+          host: process.env.DB_HOST,
+          port: process.env.DB_PORT,
+          username: process.env.DB_USERNAME,
+          password: process.env.DB_PASSWORD,
+          database: process.env.DB_NAME,
           entities:[Bet,BetSlip,BetStatus,Mts,OddsLive,OddsPrematch,Producer,Setting,Settlement,BetCancel,SettlementRollback,BetClosure,Winning,Cronjob],
           //entities: [__dirname + '/entity/*.ts'],
           //entities: [__dirname + '/ ** / *.entity{.ts,.js}'],

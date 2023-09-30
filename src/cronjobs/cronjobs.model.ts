@@ -12,10 +12,11 @@ import {BetSettlementService} from "./workers/bet.settlement.service";
 import {CronjobController} from "./cronjob.controller";
 import {CronjobService} from "./cronjob.service";
 import {Cronjob} from "../entity/cronjob.entity";
+import {BetStatus} from "../entity/betstatus.entity";
 
 @Module({
     imports: [
-        TypeOrmModule.forFeature([Bet, BetSlip, Settlement, Setting, BetClosure, Winning, Cronjob]),
+        TypeOrmModule.forFeature([Bet, BetSlip, Settlement, Setting, BetClosure, Winning, Cronjob,BetStatus]),
         ScheduleModule.forRoot(),
         CronJobModule,
     ],
