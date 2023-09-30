@@ -1,0 +1,25 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="start:dev" type="js.build_tools.npm" nameIsGenerated="true">
+    <package-json value="$PROJECT_DIR$/package.json" />
+    <command value="run" />
+    <scripts>
+      <script value="start:dev" />
+    </scripts>
+    <node-interpreter value="$USER_HOME$/.nvm/versions/node/v18.11.0/bin/node" />
+    <package-manager value="npm" />
+    <envs>
+      <env name="DB_TYPE" value="mysql" />
+      <env name="DB_HOST" value="127.0.0.1" />
+      <env name="DB_PORT" value="3306" />
+      <env name="DB_PASSWORD" value="" />
+      <env name="DB_USERNAME" value="root" />
+      <env name="DB_NAME" value="betting_service_v1" />
+      <env name="SYSTEM_PORT" value="9000" />
+      <env name="SYSTEM_HOST" value="0.0.0.0" />
+      <env name="DEBUG" value="1" />
+      <env name="RABITTMQ_URI" value="amqp://bs:betting@137.184.222.24:5672/sportsbook" />
+      <env name="FEEDS_SERVICE_GRPC_URI" value="161.35.104.145:6011" />
+    </envs>
+    <method v="2" />
+  </configuration>
+</component>

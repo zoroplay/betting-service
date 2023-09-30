@@ -14,7 +14,7 @@ export class BetStatus {
     status: number;
 
     @Index()
-    @Column({ type: "varchar", length: 20, nullable: false })
+    @Column({ type: "varchar", length: 300, nullable: false })
     description: string;
 
     @Index()

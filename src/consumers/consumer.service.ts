@@ -159,17 +159,17 @@ export class ConsumerService {
     }
 
     @RabbitSubscribe({
-        exchange: 'betting_service.bet_cancelled',
-        routingKey: 'betting_service.bet_cancelled',
-        queue: 'betting_service.bet_cancelled',
+        exchange: 'betting_service.bet_rejected',
+        routingKey: 'betting_service.bet_rejected',
+        queue: 'betting_service.bet_rejected',
         queueOptions: {
-            channel: 'betting_service.bet_cancelled',
+            channel: 'betting_service.bet_rejected',
             durable: true,
         },
         createQueueIfNotExists: true,
     })
-    public async betCancelled(msg: {}) {
-        await  this.mtsBetCancelledService.processBetCancelledMessage(msg);
+    public async betRejected(msg: {}) {
+        await  this.mtsBetCancelledService.processBetRejectedMessage(msg);
         return
     }
 

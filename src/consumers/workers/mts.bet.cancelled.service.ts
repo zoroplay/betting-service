@@ -32,7 +32,7 @@ export class MtsBetCancelledService {
           "code": 0
         }
          */
-    async processBetCancelledMessage(data: any): Promise<number> {
+    async processBetRejectedMessage(data: any): Promise<number> {
 
         data = JSON.parse(JSON.stringify(data))
 
@@ -40,10 +40,15 @@ export class MtsBetCancelledService {
         let reason = data.reason;
         let code = data.code;
 
+        if(reason.length > 300 ) {
+
+            reason = reason.slice(0, 290) + '...'
+        }
+
         let betStatus = new BetStatus()
         betStatus.status = BET_CANCELLED
         betStatus.bet_id = betID
-        betStatus.description = "Bet cancelled by MTS with reason ("+code+") : "+reason
+        betStatus.description = reason
         await this.betStatusRepository.save(betStatus)
 
         await this.entityManager.query("UPDATE bet_slip SET status = "+BET_CANCELLED+", won = -1 WHERE bet_id = ? ",[betID])

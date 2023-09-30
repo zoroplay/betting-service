@@ -21,10 +21,16 @@ import {Winning} from "./entity/winning.entity";
 import {Cronjob} from "./entity/cronjob.entity";
 import {TypeOrmModule} from "@nestjs/typeorm";
 import {RabbitmqModule} from "./rabbitmq.module";
+import 'dotenv/config'
+
 
 @Module({
     imports: [
-        ConfigModule.forRoot(),
+        ConfigModule.forRoot({
+            // envFilePath: '.env',
+            // ignoreEnvFile: false,
+            isGlobal: true,
+        }),
         BetsModule,
         ConsumerModule,
         CronJobModule,
@@ -32,7 +38,7 @@ import {RabbitmqModule} from "./rabbitmq.module";
         TypeOrmModule.forRoot({
           type: process.env.DB_TYPE as any,
           host: process.env.DB_HOST,
-          port: process.env.DB_PORT,
+          port: parseInt(process.env.DB_PORT),
           username: process.env.DB_USERNAME,
           password: process.env.DB_PASSWORD,
           database: process.env.DB_NAME,

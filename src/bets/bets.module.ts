@@ -12,6 +12,7 @@ import {OddsPrematch} from '../entity/oddsprematch.entity';
 import {ClientsModule, Transport} from "@nestjs/microservices";
 import {join} from "path";
 
+console.log(' __dirname '+__dirname)
 
 @Module({
   imports: [TypeOrmModule.forFeature([Bet,BetSlip,Mts,Setting,Producer,OddsLive,OddsPrematch]),

@@ -19,6 +19,7 @@ import {JsonLogger, LoggerFactory} from "json-logger-service";
 import {Observable} from "rxjs";
 import {BET_PENDING, TRANSACTION_TYPE_PLACE_BET, TRANSACTION_TYPE_WINNING} from "../constants";
 import {AmqpConnection} from "@golevelup/nestjs-rabbitmq";
+import {ProducerstatusrequestInterface} from "./interfaces/producerstatusrequest.interface";
 
 @Controller('bets')
 export class BetsController implements OnModuleInit {
@@ -67,16 +68,21 @@ export class BetsController implements OnModuleInit {
 
     }
 
-    @Get(':id')
-    async getProducerStatus1(@Param('id') id: number) {
+    @Post(':id')
+    async getProducerStatus1(@Body() data: ProducerstatusrequestInterface) {
 
-        return this.getProducerStatus(id)
+        return this.getProducerStatusData(data)
     }
 
     @Put()
     async getOddsStatus1(@Body() data: GetOddsRequest ) {
 
         return this.getOddsStatus(data)
+    }
+
+    getProducerStatusData(data: ProducerstatusrequestInterface ): Observable<ProducerstatusreplyInterface> {
+
+        return this.oddsService.GetProducerStatus(data)
     }
 
     getProducerStatus(producerID: number): Observable<ProducerstatusreplyInterface> {
@@ -92,7 +98,9 @@ export class BetsController implements OnModuleInit {
     async createBet(bet: any): Promise<any> {
 
 
-        this.logger.info("received bet " + JSON.stringify(bet))
+        //this.logger.info("received bet " + JSON.stringify(bet))
+
+        bet = JSON.parse(JSON.stringify(bet))
 
         //1. fields validations
 
@@ -111,14 +119,11 @@ export class BetsController implements OnModuleInit {
         if (bet.source == undefined || bet.source.length === 0)
             return {status: 400, data: "missing bet source"};
 
-        if (bet.selections == undefined || !isArray(bet.selections))
+        if (bet.selections == undefined )
             return {status: 400, data: "missing selections"};
 
         let userSelection =  bet.selections
-
-        if (userSelection.length === 0)
-            return {status: 400, data: "missing selections"};
-
+        console.log("userSelection | "+JSON.stringify(userSelection))
 
         // get client settings
         var clientSettings = await this.settingRepository.findOne({
@@ -152,27 +157,37 @@ export class BetsController implements OnModuleInit {
         var selections = [];
         var totalOdds = 1;
 
-        for (const selection of bet.selections) {
+        for (const selection of userSelection) {
 
-            let proceed = false;
+            if (selection.event_name.length === 0 )
+                return {status: 400, data: "missing event name in your selection "};
 
-            if (selection.event_name.length > 0 &&
-                selection.event_type.length > 0 &&
-                parseInt(selection.event_id) > 0 &&
-                parseInt(selection.producer_id) > 0 &&
-                parseInt(selection.market_id) > 0 &&
-                selection.market_name.length > 0 &&
-                selection.outcome_name.length > 0 &&
-                selection.outcome_id.length > 0 &&
-                parseFloat(selection.odds) > 0) {
+            if (selection.event_type.length === 0 )
+                selection.event_type = "match";
 
-                proceed = true;
-            }
+            if (parseInt(selection.event_id) === 0 )
+                return {status: 400, data: "missing event ID in your selection "};
 
-            if (!proceed) {
+            if (parseInt(selection.producer_id) === 0 )
+                return {status: 400, data: "missing producer id in your selection "};
 
-                continue;
-            }
+            if (parseInt(selection.market_id) === 0 )
+                return {status: 400, data: "missing market id in your selection "};
+
+            if (selection.market_name.length === 0 )
+                return {status: 400, data: "missing market name in your selection "};
+
+            if (selection.outcome_name.length === 0 )
+                return {status: 400, data: "missing outcome name in your selection "};
+
+            if (selection.outcome_id.length === 0 )
+                return {status: 400, data: "missing outcome id in your selection "};
+
+            if (selection.specifier === undefined )
+                return {status: 400, data: "missing specifier in your selection "};
+
+            if (parseFloat(selection.odds) === 0 )
+                return {status: 400, data: "missing odds in your selection "};
 
             // get odds
             var odd = await this.getOdds(selection.producer_id, selection.event_id, selection.market_id, selection.specifier, selection.outcome_id)
@@ -270,6 +285,7 @@ export class BetsController implements OnModuleInit {
             betData.winning_after_tax = payout;
             betData.total_bets = selections.length;
             betData.source = bet.source;
+            betData.ip_address = bet.ip_address;
 
             //let betResult = await this.saveBetWithTransactions(betData, transactionManager)
             betResult = await this.betRepository.save(betData)
@@ -347,19 +363,24 @@ export class BetsController implements OnModuleInit {
 
         let queueName = "mts.bet_pending"
         await this.amqpConnection.publish(queueName, queueName, mtsBet);
+        this.logger.debug("published to "+queueName)
 
         return mtsBet
     }
 
     async getOdds(producerId: number, eventId: number, marketId: number, specifier: string, outcomeId: string): Promise<number> {
 
-        // check producer id
-        let producerStatus = await this.getProducerStatus(producerId).toPromise()
+        if(producerId !== 3 ) {
 
-        if (producerStatus.status === 0) {
+            // check producer id
+            let producerStatus = await this.getProducerStatus(producerId).toPromise()
 
-            this.logger.error("Producer " + producerId + " | status " + producerStatus.status)
-            return 0;
+            if (producerStatus.status === 0) {
+
+                this.logger.error("Producer " + producerId + " | status " + producerStatus.status)
+                return 0;
+            }
+
         }
 
         let odds  = {
@@ -376,7 +397,7 @@ export class BetsController implements OnModuleInit {
 
         this.logger.info(oddStatus)
 
-        return oddStatus.status === 0 ? oddStatus.odds : 0
+        return oddStatus.statusName == 'Active' && oddStatus.active == 1 ? oddStatus.odds * 1.5 : 0
 
     }
 

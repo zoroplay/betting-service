@@ -6,6 +6,6 @@ async function bootstrap() {
 
   const app = await NestFactory.create(AppModule);
   app.useLogger(new JsonLoggerService('Betting service'));
-  await app.listen(process.env.SYSTEM_PORT);
+  await app.listen(3000);
 }
 bootstrap();

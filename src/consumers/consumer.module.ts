@@ -48,12 +48,14 @@ let names = ['settle_bets', 'bet_cancel','rollback_bet_settlement','bet_rejected
 
 for (const name of names) {
 
+    let newName = 'betting_service.' + name
+
     exchanges.push({
-        name: 'betting_service.' + name,
+        name: newName,
         type: 'direct'
     })
 
-    channels['betting_service.' + name] = {
+    channels[newName] = {
         prefetchCount: 200,
     }
 }
@@ -63,7 +65,7 @@ for (const name of names) {
         TypeOrmModule.forFeature([Bet,BetSlip, Settlement,BetCancel,Setting,BetClosure,Winning,SettlementRollback,BetStatus]),
         RabbitMQModule.forRoot(RabbitMQModule, {
             exchanges: exchanges,
-            uri: "amqp://bs:betting@137.184.222.24:5672/sportsbook",//'amqp://rabbitmq:rabbitmq@localhost:5672',
+            uri: process.env.RABITTMQ_URI,
             channels: channels,
             defaultRpcTimeout: 15000,
             connectionInitOptions: {
