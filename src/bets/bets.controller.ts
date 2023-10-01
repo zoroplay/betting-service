@@ -397,7 +397,7 @@ export class BetsController implements OnModuleInit {
 
         this.logger.info(oddStatus)
 
-        return oddStatus.statusName == 'Active' && oddStatus.active == 1 ? oddStatus.odds * 1.5 : 0
+        return oddStatus.statusName == 'Active' && oddStatus.active == 1 ? oddStatus.odds  : 0
 
     }
 

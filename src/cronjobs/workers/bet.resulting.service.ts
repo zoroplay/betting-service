@@ -5,10 +5,11 @@ import {EntityManager, Repository} from "typeorm";
 import {Settlement} from "../../entity/settlement.entity";
 import {BetSlip} from "../../entity/betslip.entity";
 import {Setting} from "../../entity/setting.entity";
-import {BET_PENDING, BET_WON, TRANSACTION_TYPE_WINNING} from "../../constants";
+import {BET_PENDING, BET_WON, STATUS_WON, TRANSACTION_TYPE_WINNING} from "../../constants";
 import {Bet} from "../../entity/bet.entity";
 import {Cronjob} from "../../entity/cronjob.entity";
 import {Winning} from "../../entity/winning.entity";
+import any = jasmine.any;
 
 @Controller('cronjob/bet/resulting')
 export class BetResultingController {
@@ -47,16 +48,25 @@ export class BetResultingController {
 
         // check if similar job is running
         // get client settings
-        var cronJob = await this.cronJobRepository.findOne({
-            where: {
-                name: taskName,
-                status: 1,
+        try {
+
+            let cronJob = await this.cronJobRepository.findOne({
+                where: {
+                    name: taskName,
+                    status: 1,
+                }
+            });
+
+            if (cronJob !== null && cronJob.id > 0) {
+
+                this.logger.info('another ' + taskName + ' job is already running');
+                return
             }
-        });
 
-        if(cronJob !== null && cronJob.id > 0 ) {
+        }
+        catch (e) {
 
-            this.logger.debug('another '+taskName+' job is alread running');
+            this.logger.error("error checking if task is running "+e.toString())
             return
         }
 
@@ -65,47 +75,106 @@ export class BetResultingController {
         const task = new Cronjob();
         task.name = taskName;
         task.status = 1;
-        await this.cronJobRepository.upsert(task,['status'])
 
-        let rows = await this.entityManager.query("SELECT bet_id FROM bet_closure ")
+        try {
+
+            await this.cronJobRepository.upsert(task, ['status'])
+        }
+        catch (e) {
+
+            this.logger.error("error updating running task  "+e.toString())
+            return
+        }
+
+        let rows : any;
+
+        try {
+
+            rows = await this.entityManager.query("SELECT bet_id FROM bet_closure ")
+
+        }
+        catch (e) {
+
+            this.logger.error("error retrieving bet_closure "+e.toString())
+            return
+        }
+
         for (const row of rows) {
 
             let id = row.bet_id;
             await this.closeBet(id)
-            await this.entityManager.query("DELETE FROM bet_closure WHERE bet_id = "+id)
+
+            try {
+
+                await this.entityManager.query("DELETE FROM bet_closure WHERE bet_id = " + id)
+            }
+            catch (e) {
+
+                this.logger.error("error deleting bet closure "+e.toString())
+            }
         }
 
         task.name = taskName;
         task.status = 0;
-        await this.cronJobRepository.upsert(task,['status'])
+
+        try {
+
+            await this.cronJobRepository.upsert(task, ['status'])
+        }
+        catch (e) {
+
+            this.logger.error("error updating task as done "+e.toString())
+            return
+        }
 
     }
 
     async closeBet(betID: number): Promise<number> {
 
-        // G. retrieve possible win and profile ID
-        let row = await this.entityManager.query("SELECT possible_win,user_id,tax_on_winning,winning_after_tax,client_id,currency FROM bet WHERE id = "+betID+" AND won = 1 AND status = "+BET_PENDING+" AND id NOT (SELECT bet_id FROM winning) ")
-        if (row == undefined || row == false || row == null) {
+        let rows : any
+
+        try {
+
+            rows = await this.entityManager.query("SELECT possible_win,user_id,tax_on_winning,winning_after_tax,client_id,currency FROM bet WHERE id = " + betID + " AND won = " + STATUS_WON + " AND status = " + BET_PENDING + " AND id NOT IN (SELECT bet_id FROM winning) ")
+
+        }
+        catch (e) {
+
+            this.logger.error("error retrieving bets to settle "+e.toString())
+            return
+        }
+
+        if (rows == undefined || rows == false || rows == null) {
 
             return 0
 
         }
+
+        let row = rows[0]
 
         let possibleWin = row.possible_win;
         let profileID = row.user_id;
         let winningTaxAmount = row.tax_on_winning;
         let winning_after_tax = row.winning_after_tax;
 
-        //H. update bet to won and status = 2
-        //UPDATE bet SET status = 2  WHERE id = ?
-        await this.betRepository.update(
-            {
-                id: betID,
-            },
-            {
-                status: BET_WON,
-            }
-        );
+        try {
+            //H. update bet to won and status = 2
+            //UPDATE bet SET status = 2  WHERE id = ?
+            await this.betRepository.update(
+                {
+                    id: betID,
+                },
+                {
+                    status: BET_WON,
+                }
+            );
+
+        }
+        catch (e) {
+
+            this.logger.error("error updating bet to won "+e.toString())
+            return
+        }
 
         let winning = new Winning();
         winning.bet_id = betID
@@ -116,9 +185,20 @@ export class BetResultingController {
         winning.winning_before_tax = possibleWin
         winning.winning_after_tax = winning_after_tax
 
+        let winner : any
         // wrap in try catch
         // J. create winning
-        let winner = await this.winningRepository.save(winning)
+        try {
+
+            winner = await this.winningRepository.save(winning)
+
+        }
+        catch (e) {
+
+            this.logger.error("error saving winner "+e.toString())
+            return
+        }
+
         if (winner.id == 0 ) {
 
             return 0
@@ -133,6 +213,8 @@ export class BetResultingController {
             transaction_id: betID,
             transaction_type: TRANSACTION_TYPE_WINNING
         }
+
+        this.logger.info(creditPayload)
 
         // send credit payload to wallet service
 

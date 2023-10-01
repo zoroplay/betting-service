@@ -11,6 +11,15 @@ export const BET_TYPE_OUTRIGHT  = 3
 export const BET_TYPE_JACKPOT  = 4
 export const BET_TYPE_STAKE_BONUS  = 5
 
+export const BETSLIP_PROCESSING_PENDING = 0
+export const BETSLIP_PROCESSING_SETTLED = 1
+export const BETSLIP_PROCESSING_COMPLETED = 2
+export const BETSLIP_PROCESSING_CANCELLED = -1
+
+export const STATUS_NOT_LOST_OR_WON = -1
+export const STATUS_WON = 1
+export const STATUS_LOST = 0
+
 export const TRANSACTION_TYPE_WINNING  = 1
 export const TRANSACTION_TYPE_BET_CANCEL  = 2
 export const TRANSACTION_TYPE_BET_ROLLBACK  = 3

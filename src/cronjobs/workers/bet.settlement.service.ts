@@ -5,7 +5,14 @@ import {EntityManager, Repository} from "typeorm";
 import {Settlement} from "../../entity/settlement.entity";
 import {BetSlip} from "../../entity/betslip.entity";
 import {Setting} from "../../entity/setting.entity";
-import {BET_LOST, BET_PENDING, BET_VOIDED, BET_WON} from "../../constants";
+import {
+    BET_LOST,
+    BET_PENDING,
+    BET_VOIDED,
+    BET_WON, BETSLIP_PROCESSING_CANCELLED,
+    BETSLIP_PROCESSING_COMPLETED,
+    BETSLIP_PROCESSING_SETTLED, STATUS_LOST, STATUS_NOT_LOST_OR_WON, STATUS_WON
+} from "../../constants";
 import {Bet} from "../../entity/bet.entity";
 import {Cron, CronExpression} from "@nestjs/schedule";
 import {Cronjob} from "../../entity/cronjob.entity";
@@ -69,7 +76,7 @@ export class BetSettlementService {
 
         if(cronJob !== null && cronJob.id > 0 ) {
 
-            this.logger.debug('another '+taskName+' job is alread running');
+            this.logger.info('another '+taskName+' job is alread running');
             return
         }
 
@@ -84,8 +91,11 @@ export class BetSettlementService {
         for (const row of rows) {
 
             let id = row.id;
+            this.logger.info("start processing settlementID "+id)
             await this.createBetSettlement(id)
             await this.entityManager.query("UPDATE settlement SET processed = 1 WHERE id = "+id)
+            this.logger.info("done processing settlementID "+id)
+
         }
 
         task.name = taskName;
@@ -96,66 +106,49 @@ export class BetSettlementService {
 
     async createBetSettlement(settlementID: number): Promise<number> {
 
-        let rows = await this.entityManager.query("SELECT DISTINCT b.id,b.stake,b.total_bets,b.total_odd,b.bet_type,b.user_id " +
+        let rows = await this.entityManager.query("SELECT DISTINCT b.id,b.stake,b.stake_after_tax,b.total_bets,b.total_odd,b.bet_type,b.user_id,b.client_id " +
             "FROM bet b " +
             "INNER JOIN bet_slip bs on b.id = bs.bet_id " +
-            "WHERE b.status IN (0,1) AND b.won = -1 AND bs.settlement_id = ?", [settlementID])
+            "WHERE b.status IN (0,1) AND b.won = "+STATUS_NOT_LOST_OR_WON+" AND bs.settlement_id = ?", [settlementID])
 
-        let bets = [];
+        let bets = new Map()
+
         let betIds = []
 
-        for (const row of rows) {
+        for (let row of rows) {
 
             let key = "bet-" + row.id;
-
-            let bet = []
-
-            if (bets[key] !== undefined) {
-
-                bet = bets[key]
-            }
-
-            bet.push(row)
-            bets[key] = bet;
+            row.Won = 0
+            row.Lost = 0
+            row.Pending = 0
+            row.Cancelled = 0
+            row.Voided = 0
+            row.TotalGames = row.total_bets
+            bets.set(key, row)
             betIds.push(row.id)
-
         }
 
-        if (betIds.length == 0) {
+        this.logger.info("settlementID "+settlementID+" attached bets "+bets.size)
+
+        if (bets.size == 0) {
 
             return 1;
         }
 
         // pull all the bet_slip of the bets we have pulled
 
-        let queryString = "SELECT id,bet_id,status, won, void_factor, dead_heat_factor,odd FROM bet_slip " +
+        let queryString = "SELECT id,bet_id,status, won, void_factor, dead_heat_factor,odds FROM bet_slip " +
             "WHERE bet_id IN (" + betIds.join(',') + ")"
+
+        console.log(queryString)
 
         let betSlips = await this.entityManager.query(queryString);
 
-
         for (const betSlip of betSlips) {
 
-            let void_factor = -1
-
-            if (betSlip.void_factor !== undefined && !betSlip.void_factor == false && betSlip.void_factor !== null) {
-
-                void_factor = betSlip.void_factor
-            }
-
-            let dead_heat_factor = -1
-
-            if (betSlip.dead_heat_factor !== undefined && !betSlip.dead_heat_factor == false && betSlip.dead_heat_factor !== null) {
-
-                dead_heat_factor = betSlip.dead_heat_factor
-            }
-
-            let won = -1
-            if (betSlip.won !== undefined && betSlip.won == false && betSlip.won !== null) {
-
-                won = betSlip.won
-            }
-
+            let void_factor = parseFloat(betSlip.void_factor)
+            let dead_heat_factor = parseFloat(betSlip.dead_heat_factor)
+            let won = parseInt(betSlip.won)
 
             let lost = 0
             let pending = 0
@@ -163,7 +156,7 @@ export class BetSettlementService {
             let cancelled = 0
             let voided = 0
 
-            if (betSlip.status == -1) {
+            if (parseInt(betSlip.status) == -1) {
 
                 cancelled = 1
             }
@@ -173,11 +166,11 @@ export class BetSettlementService {
                 voided = 1
             }
 
-            if (won == -1) {
+            if (won == STATUS_NOT_LOST_OR_WON) {
 
                 pending = 1
 
-            } else if (won == 1) {
+            } else if (won == STATUS_WON) {
 
                 win = 1
 
@@ -193,17 +186,16 @@ export class BetSettlementService {
                 Won: won,
                 VoidFactor: void_factor,
                 DeadHeatFactor: dead_heat_factor,
-                Odd: betSlip.dd,
+                Odd: betSlip.odds,
             }
 
+            let keyName = "bet-" + currentBetSlip.BetID
+            let bs = bets.get(keyName)
+            if(bs == undefined ) {
 
-            // update bet details
-            let bs = bets["key-" + currentBetSlip.ID]
-            bs.Won = bs.Won + win
-            bs.Lost = bs.Lost + lost
-            bs.Pending = bs.Pending + pending
-            bs.Cancelled = bs.Cancelled + cancelled
-            bs.Voided = bs.Voided + voided
+                this.logger.error("could not find "+keyName+" from array ")
+                continue
+            }
 
             let slips = []
 
@@ -212,14 +204,21 @@ export class BetSettlementService {
                 slips = bs.BetSlips
             }
 
+            bs.Won = bs.Won + win
+            bs.Lost = bs.Lost + lost
+            bs.Pending = bs.Pending + pending
+            bs.Cancelled = bs.Cancelled + cancelled
+            bs.Voided = bs.Voided + voided
+
             slips.push(currentBetSlip)
 
             bs.BetSlips = slips
 
-            bets["key-" + currentBetSlip.ID] = bs
+            bets[keyName] = bs
+
         }
 
-        for (const bet of bets) {
+        for (const bet of bets.values()) {
 
             // get client settings
             var clientSettings = await this.settingRepository.findOne({
@@ -230,11 +229,14 @@ export class BetSettlementService {
 
             let result = await this.resultBet(bet, clientSettings)
 
+            console.log(bet.id+" | "+JSON.stringify(result,undefined,2))
+
             if (result.Won) {
 
                 const betClosure = new BetClosure();
                 betClosure.bet_id = result.BetID;
                 await this.betClosureRepository.upsert(betClosure,['bet_id'])
+                this.logger.info("bet ID "+result.BetID+" has won and bet closure created")
 
                 // publish to bonus queue
 
@@ -252,6 +254,8 @@ export class BetSettlementService {
 
     async resultBet(bet: any, setting: Setting): Promise<any> {
 
+       console.log(JSON.stringify(bet,undefined,2))
+
         let processing_status = BET_PENDING
         let hasVoidedSlip = false
 
@@ -266,24 +270,24 @@ export class BetSettlementService {
                 await this.betslipRepository.update(
                     {
                         id: b.ID,
-                        status: 1, // when did we get here
+                        status: BETSLIP_PROCESSING_SETTLED,
                     },
                     {
                         odds: b.VoidFactor,
                         won: 1,
-                        status: 2,
+                        status: BETSLIP_PROCESSING_COMPLETED,
                     });
 
                 // recalculate odds
-                let newOdds = (bet.TotalOdds / b.Odd) * b.VoidFactor
+                let newOdds = (bet.total_odd / b.Odd) * b.VoidFactor
 
-                bet.TotalOdds = newOdds
+                bet.total_odd = newOdds
 
                 // calculate new net win
-                let netWin = newOdds * bet.Stake
+                let netWin = newOdds * bet.stake_after_tax
 
                 // calculate profit
-                let profit = netWin - bet.Stake
+                let profit = netWin - bet.stake_after_tax
 
                 // calculate tax & possible win
                 let winningTaxPercentage = setting.tax_on_winning / 100
@@ -302,7 +306,7 @@ export class BetSettlementService {
                 // update bet with new odds and new winning amount
                 await this.betRepository.update(
                     {
-                        id: bet.ID, // confirm if ID is present
+                        id: bet.id, // confirm if ID is present
                     },
                     {
                         possible_win: possibleWin,
@@ -313,13 +317,15 @@ export class BetSettlementService {
 
             } else {
 
+                console.log('lets update bet slip ID '+b.ID)
+
                 await this.betslipRepository.update(
                     {
                         id: b.ID,
-                        status: 1, // when did we get here
+                        status: BETSLIP_PROCESSING_SETTLED,
                     },
                     {
-                        status: 2,
+                        status: BETSLIP_PROCESSING_COMPLETED,
                     });
             }
         }
@@ -327,9 +333,13 @@ export class BetSettlementService {
         // if bet has any voided slips, get new summary i.e won,lost,cancelled,voided slips
         if (hasVoidedSlip) {
 
-            let rows = await this.entityManager.query("SELECT status, won FROM bet_slip WHERE bet_id = " + bet.ID)
+            let rows = await this.entityManager.query("SELECT status, won FROM bet_slip WHERE bet_id = " + bet.id)
 
-            let Won, Lost, Pending, Cancelled, TotalGames = 0
+            let TotalWon = 0
+            let TotalLost = 0
+            let TotalPending = 0
+            let TotalCancelled = 0
+            let TotalGames = 0
 
             for (const row of rows) {
 
@@ -339,17 +349,17 @@ export class BetSettlementService {
 
                 let lost, pending, win, cancelled = 0
 
-                if (status == -1) {
+                if (status == BETSLIP_PROCESSING_CANCELLED) {
 
                     cancelled = 1
 
                 } else {
 
-                    if (won == -1) {
+                    if (won == STATUS_NOT_LOST_OR_WON) {
 
                         pending = 1
 
-                    } else if (won == 1) {
+                    } else if (won == STATUS_WON) {
 
                         win = 1
 
@@ -359,16 +369,16 @@ export class BetSettlementService {
                     }
                 }
 
-                Won = Won + win
-                Lost = Lost + lost
-                Pending = Pending + pending
-                Cancelled = Cancelled + cancelled
+                TotalWon = TotalWon + win
+                TotalLost = TotalLost + lost
+                TotalPending = TotalPending + pending
+                TotalCancelled = TotalCancelled + cancelled
             }
 
-            bet.Won = Won
-            bet.Lost = Lost
-            bet.Pending = Pending
-            bet.Cancelled = Cancelled
+            bet.Won = TotalWon
+            bet.Lost = TotalLost
+            bet.Pending = TotalPending
+            bet.Cancelled = TotalCancelled
             bet.TotalGames = TotalGames
         }
 
@@ -385,25 +395,26 @@ export class BetSettlementService {
 
             }
 
+            console.log('lets update bet ID '+bet.id)
+
             //UPDATE bet SET won = ?, status = ?, lost_games = ?, won_games = ?, resulted_bets = ?, processing_status = ?  WHERE id = ?
             await this.betRepository.update(
                 {
-                    id: bet.ID, // confirm if ID is present
+                    id: bet.id,
                 },
                 {
-                    won: 1,
-                    ///status: processing_status,
+                    won: STATUS_WON,
+                    //status: processing_status,
                 });
 
-            this.logger.info("Done Processing BET ID " + bet.ID)
+            this.logger.info("Done Processing BET ID " + bet.id+" as won ")
 
             return {
-                BetID: bet.ID,
+                BetID: bet.id,
                 Won: true,
                 Lost: false,
                 Pending: false,
             }
-
         }
 
         // bet lost
@@ -414,33 +425,33 @@ export class BetSettlementService {
             if (bet.Voided > 0 && bet.Voided == bet.TotalGames) {
 
                 processing_status = BET_VOIDED
-
             }
 
+            console.log('lets update bet ID '+bet.id)
             //UPDATE bet SET won = ?, status = ?, lost_games = ?, won_games = ?, resulted_bets = ?, processing_status = ?  WHERE id = ?
             await this.betRepository.update(
                 {
-                    id: bet.ID, // confirm if ID is present
+                    id: bet.id,
                 },
                 {
-                    won: 0,
+                    won: STATUS_LOST,
                     status: processing_status,
                 });
 
-            this.logger.info("Done Processing BET ID " + bet.ID)
+            this.logger.info("Done Processing BET ID " + bet.id+" as lost")
 
             return {
-                BetID: bet.ID,
+                BetID: bet.id,
                 Won: false,
                 Lost: true,
                 Pending: false,
             }
         }
 
-        this.logger.info("Done Processing BET ID " + bet.ID)
+        this.logger.info("Done Processing BET ID " + bet.id+" as pending ")
 
         return {
-            BetID: bet.ID,
+            BetID: bet.id,
             Won: false,
             Lost: false,
             Pending: true,

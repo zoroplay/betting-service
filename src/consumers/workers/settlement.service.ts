@@ -5,6 +5,7 @@ import {Repository} from "typeorm";
 import {Settlement} from "../../entity/settlement.entity";
 import {BetSlip} from "../../entity/betslip.entity";
 import {AmqpConnection} from "@golevelup/nestjs-rabbitmq";
+import {BETSLIP_PROCESSING_PENDING, BETSLIP_PROCESSING_SETTLED} from "../../constants";
 
 @Injectable()
 export class SettlementService {
@@ -94,7 +95,16 @@ export class SettlementService {
                 settlementData.producer_id = producer_id;
                 settlementData.void_factor = void_factor;
                 settlementData.dead_heat_factor = dead_heat_factor;
-                let settlementResult = await this.settlementRepository.upsert(settlementData, ['event_id', 'market_id', 'specifier', 'outcome_id'])
+                await this.settlementRepository.upsert(settlementData, ['event_id', 'market_id', 'specifier', 'outcome_id'])
+
+                const settlementResult = await this.settlementRepository.findOne({
+                    where: {
+                        event_id: matchID,
+                        market_id: marketID,
+                        specifier: specifier,
+                        outcome_id: outcomeID
+                    }
+                })
 
                 // update slips with this information
 
@@ -104,24 +114,24 @@ export class SettlementService {
                         market_id: marketID,
                         specifier: specifier,
                         outcome_id: outcomeID,
-                        status: 0,
+                        status: BETSLIP_PROCESSING_PENDING,
                     },
                     {
-                        settlement_id: settlementData.id,
+                        settlement_id: settlementResult.id,
                         won: result,
                         dead_heat_factor: dead_heat_factor,
                         void_factor: void_factor,
-                        status: 1,
+                        status: BETSLIP_PROCESSING_SETTLED,
                     });
 
                 // publish settlements to queue
                 //let queueName = "betting_service.settle_bets"
                 //await this.amqpConnection.publish(queueName, queueName, {settlement_id: settlementData.id});
-                this.logger.info("done processing settlement match | " + matchID + " | marketID " + marketID + " | specifier " + specifier + " | outcomeID " + outcomeID + " | settlementID " + settlementData.id)
+                this.logger.info("done processing settlement match | " + matchID + " | marketID " + marketID + " | specifier " + specifier + " | outcomeID " + outcomeID + " | settlementID " + settlementResult.id)
 
                 counts++
-
             }
+
         }
 
         return counts;
