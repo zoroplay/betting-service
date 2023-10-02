@@ -21,7 +21,6 @@ import {Winning} from "./entity/winning.entity";
 import {Cronjob} from "./entity/cronjob.entity";
 import {TypeOrmModule} from "@nestjs/typeorm";
 import {RabbitmqModule} from "./rabbitmq.module";
-import { SettingsModule } from './settings/settings.module';
 import 'dotenv/config'
 
 
@@ -49,7 +48,6 @@ import 'dotenv/config'
           //entities: [__dirname + '/ ** / *.entity{.ts,.js}'],
           synchronize: true,
         }),
-        SettingsModule,
     ],
     controllers: [AppController],
     providers: [AppService],
