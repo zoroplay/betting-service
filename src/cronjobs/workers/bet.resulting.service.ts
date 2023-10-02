@@ -5,7 +5,7 @@ import {EntityManager, Repository} from "typeorm";
 import {Settlement} from "../../entity/settlement.entity";
 import {BetSlip} from "../../entity/betslip.entity";
 import {Setting} from "../../entity/setting.entity";
-import {BET_PENDING, BET_WON, STATUS_WON, TRANSACTION_TYPE_WINNING} from "../../constants";
+import {BET_PENDING, BET_VOIDED, BET_WON, STATUS_WON, TRANSACTION_TYPE_WINNING} from "../../constants";
 import {Bet} from "../../entity/bet.entity";
 import {Cronjob} from "../../entity/cronjob.entity";
 import {Winning} from "../../entity/winning.entity";
@@ -135,7 +135,7 @@ export class BetResultingController {
 
         try {
 
-            rows = await this.entityManager.query("SELECT possible_win,user_id,tax_on_winning,winning_after_tax,client_id,currency FROM bet WHERE id = " + betID + " AND won = " + STATUS_WON + " AND status = " + BET_PENDING + " AND id NOT IN (SELECT bet_id FROM winning) ")
+            rows = await this.entityManager.query("SELECT possible_win,user_id,tax_on_winning,winning_after_tax,client_id,currency FROM bet WHERE id = " + betID + " AND won = " + STATUS_WON + " AND status IN (" + BET_PENDING + ","+BET_VOIDED+") AND id NOT IN (SELECT bet_id FROM winning) ")
 
         }
         catch (e) {

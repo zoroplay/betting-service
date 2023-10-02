@@ -1,11 +1,11 @@
-import {Body, Controller, Get, Inject, OnModuleInit, Param, Post, Put} from '@nestjs/common';
+import {Body, Controller, Get, Inject, OnModuleInit, Param, Post, Put, Query} from '@nestjs/common';
 import {BetsService} from './bets.service';
 import OddsService from "./odds.service.interface";
 import {GetOddsRequest} from "./interfaces/oddsrequest.interface";
 import {ClientGrpc} from "@nestjs/microservices";
 import {InjectRepository} from "@nestjs/typeorm";
 import {Bet} from "../entity/bet.entity";
-import {Repository} from "typeorm";
+import {EntityManager, Repository} from "typeorm";
 import {Mts} from "../entity/mts.entity";
 import {BetSlip} from "../entity/betslip.entity";
 import {Setting} from "../entity/setting.entity";
@@ -20,6 +20,7 @@ import {Observable} from "rxjs";
 import {BET_PENDING, TRANSACTION_TYPE_PLACE_BET, TRANSACTION_TYPE_WINNING} from "../constants";
 import {AmqpConnection} from "@golevelup/nestjs-rabbitmq";
 import {ProducerstatusrequestInterface} from "./interfaces/producerstatusrequest.interface";
+import {SettingsService} from "../settings/settings.service";
 
 @Controller('bets')
 export class BetsController implements OnModuleInit {
@@ -68,21 +69,10 @@ export class BetsController implements OnModuleInit {
 
     }
 
-    @Post(':id')
-    async getProducerStatus1(@Body() data: ProducerstatusrequestInterface) {
+    @Get(':user_id')
+    async getAllBets(@Param('user_id') userID: number,@Query() params: any) {
 
-        return this.getProducerStatusData(data)
-    }
-
-    @Put()
-    async getOddsStatus1(@Body() data: GetOddsRequest ) {
-
-        return this.getOddsStatus(data)
-    }
-
-    getProducerStatusData(data: ProducerstatusrequestInterface ): Observable<ProducerstatusreplyInterface> {
-
-        return this.oddsService.GetProducerStatus(data)
+        return this.betsService.findAll(userID,params.status,params.date)
     }
 
     getProducerStatus(producerID: number): Observable<ProducerstatusreplyInterface> {

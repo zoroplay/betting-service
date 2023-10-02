@@ -32,6 +32,38 @@
 $ npm install
 ```
 
+## setup environment variables
+```dotenv
+#Database type - this service requires mysql 
+DB_TYPE=mysql
+
+#database host name
+DB_HOST=127.0.0.1
+
+#database port
+DB_PORT=3306
+
+#database password
+DB_PASSWORD=
+
+#database username
+DB_USERNAME=root
+
+#database name
+DB_NAME=betting_service_v1
+
+#port to listen to
+SYSTEM_PORT=9000
+
+#network interface to bind to
+SYSTEM_HOST=0.0.0.0
+
+#rabbitMQ uri, in the format of amqp://$username:$password@$host:$port/$vhost
+RABITTMQ_URI=amqp://bs:betting@137.184.222.24:5672/sportsbook
+
+#feeds service GRPC endpoint in the format of $serviceIP:$servicePort
+FEEDS_SERVICE_GRPC_URI=161.35.104.145:6011
+```
 ## Running the app
 
 ```bash

@@ -11,7 +11,7 @@ import {
     BET_VOIDED,
     BET_WON, BETSLIP_PROCESSING_CANCELLED,
     BETSLIP_PROCESSING_COMPLETED,
-    BETSLIP_PROCESSING_SETTLED, STATUS_LOST, STATUS_NOT_LOST_OR_WON, STATUS_WON
+    BETSLIP_PROCESSING_SETTLED, BETSLIP_PROCESSING_VOIDED, STATUS_LOST, STATUS_NOT_LOST_OR_WON, STATUS_WON
 } from "../../constants";
 import {Bet} from "../../entity/bet.entity";
 import {Cron, CronExpression} from "@nestjs/schedule";
@@ -274,8 +274,8 @@ export class BetSettlementService {
                     },
                     {
                         odds: b.VoidFactor,
-                        won: 1,
-                        status: BETSLIP_PROCESSING_COMPLETED,
+                        won: STATUS_WON,
+                        status: BETSLIP_PROCESSING_VOIDED,
                     });
 
                 // recalculate odds
@@ -387,7 +387,7 @@ export class BetSettlementService {
         // bet won
         if (bet.Lost == 0 && bet.Pending == 0 && bet.TotalGames == bet.Won) {
 
-            processing_status = BET_WON
+            processing_status = BET_PENDING
 
             if (bet.Voided > 0 && bet.Voided == bet.TotalGames) {
 
@@ -404,7 +404,7 @@ export class BetSettlementService {
                 },
                 {
                     won: STATUS_WON,
-                    //status: processing_status,
+                    status: processing_status,
                 });
 
             this.logger.info("Done Processing BET ID " + bet.id+" as won ")
