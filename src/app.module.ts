@@ -23,7 +23,6 @@ import {TypeOrmModule} from "@nestjs/typeorm";
 import {RabbitmqModule} from "./rabbitmq.module";
 import 'dotenv/config'
 
-
 @Module({
     imports: [
         ConfigModule.forRoot({
