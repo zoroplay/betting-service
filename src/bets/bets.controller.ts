@@ -20,7 +20,7 @@ import {Observable} from "rxjs";
 import {BET_PENDING, TRANSACTION_TYPE_PLACE_BET, TRANSACTION_TYPE_WINNING} from "../constants";
 import {AmqpConnection} from "@golevelup/nestjs-rabbitmq";
 import {ProducerstatusrequestInterface} from "./interfaces/producerstatusrequest.interface";
-import {SettingsService} from "../settings/settings.service";
+import {SettingService} from "../settings/settingService";
 
 @Controller('bets')
 export class BetsController implements OnModuleInit {

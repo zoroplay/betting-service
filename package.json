@@ -9,7 +9,7 @@
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
-    "start:dev": "DB_TYPE=mysql  DB_HOST=127.0.0.1  DB_PORT=3306  DB_PASSWORD=  DB_USERNAME=root  DB_NAME=betting_service_v1  SYSTEM_PORT=9000  SYSTEM_HOST=0.0.0.0  DEBUG=1  RABITTMQ_URI=amqp://bs:betting@137.184.222.24:5672/sportsbook  FEEDS_SERVICE_GRPC_URI=161.35.104.145:6011 nest start --debug --watch",
+    "start:dev": "DB_TYPE=mysql  DB_HOST=127.0.0.1  DB_PORT=3306  DB_PASSWORD=  DB_USERNAME=root  DB_NAME=betting_service_v1  SYSTEM_PORT=9000  SYSTEM_HOST=0.0.0.0  DEBUG=1  RABITTMQ_URI=amqp://bs:betting@137.184.222.24:5672/sportsbook  FEEDS_SERVICE_GRPC_URI=161.35.104.145:6011 BETTING_SERVICE_GRPC_HOST=0.0.0.0 BETTING_SERVICE_GRPC_PORT=3001 nest start --debug --watch",
     "start:debug": "DB_TYPE=mysql  DB_HOST=127.0.0.1  DB_PORT=3306  DB_PASSWORD=  DB_USERNAME=root  DB_NAME=betting_service_v1  SYSTEM_PORT=9000  SYSTEM_HOST=0.0.0.0  DEBUG=1  RABITTMQ_URI=amqp://bs:betting@137.184.222.24:5672/sportsbook  FEEDS_SERVICE_GRPC_URI=161.35.104.145:6011 nest start --watch",
     "start:debug1": "nest start --debug --watch",
     "start:prod": "node dist/main",
@@ -22,7 +22,7 @@
   },
   "dependencies": {
     "@golevelup/nestjs-rabbitmq": "^4.0.0",
-    "@grpc/grpc-js": "^1.9.4",
+    "@grpc/grpc-js": "^1.9.5",
     "@grpc/proto-loader": "^0.7.10",
     "@nestjs/common": "^10.0.0",
     "@nestjs/config": "^3.1.1",

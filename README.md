@@ -63,6 +63,12 @@ RABITTMQ_URI=amqp://bs:betting@137.184.222.24:5672/sportsbook
 
 #feeds service GRPC endpoint in the format of $serviceIP:$servicePort
 FEEDS_SERVICE_GRPC_URI=161.35.104.145:6011
+
+# interface to bind for betting service GRPC microservice, this will be used to update settings
+BETTING_SERVICE_GRPC_HOST=0.0.0.0
+
+# port to bind for betting service GRPC microservice
+BETTING_SERVICE_GRPC_PORT=9001
 ```
 ## Running the app
 

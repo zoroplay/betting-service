@@ -1,0 +1,46 @@
+syntax = "proto3";
+
+package settings;
+
+service SettingsService {
+  rpc CreateSetting (Settings) returns (SettingsResponse) {}
+  rpc UpdateSetting (Settings) returns (SettingsResponse) {}
+  rpc FindOne (SettingsById) returns (SettingsResponse) {}
+  rpc FindAll (GetAll) returns (AllSettingsResponse) {}
+}
+
+message Settings {
+  int32 clientID = 1;
+  int32 taxOnStake = 2;
+  int32 taxOnWinning = 3;
+  int32 minimumStake = 4;
+  int32 maximumStake = 5;
+  int32 maximumWinning = 6;
+  int32 maximumSelections = 7;
+  int32 mtsLimitID = 8;
+}
+
+message SettingsResponse {
+  int32 clientID = 1;
+  int32 taxOnStake = 2;
+  int32 taxOnWinning = 3;
+  int32 minimumStake = 4;
+  int32 maximumStake = 5;
+  int32 maximumWinning = 6;
+  int32 maximumSelections = 7;
+  int32 mtsLimitID = 8;
+  string created = 9;
+  string updated = 10;
+}
+
+message SettingsById {
+  int32 clientID = 1;
+}
+
+message GetAll{
+
+}
+
+message AllSettingsResponse {
+  repeated SettingsResponse settings = 1;
+}
