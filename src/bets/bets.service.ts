@@ -10,6 +10,7 @@ import {OddsLive} from '../entity/oddslive.entity';
 import {OddsPrematch} from '../entity/oddsprematch.entity';
 import {JsonLogger, LoggerFactory} from 'json-logger-service';
 import {STATUS_LOST, STATUS_NOT_LOST_OR_WON, STATUS_WON} from "../constants";
+import {BetHistoryResponse} from "../grpc/interfaces/bet.history.response.interface";
 
 @Injectable()
 export class BetsService {
@@ -39,7 +40,7 @@ export class BetsService {
 
     }
 
-    async findAll(userID: number, status: any, date: any): Promise<any> {
+    async findAll(userID: number, status: number, date: string): Promise<BetHistoryResponse> {
 
         let bets : any
 
@@ -48,22 +49,26 @@ export class BetsService {
             let params = []
             let where = []
 
-            where.push("user_id = ? ")
-            params.push(userID)
+            if (userID > 0) {
 
-            if(status !== undefined && status != null) {
+                where.push("user_id = ? ")
+                params.push(userID)
 
-                where.push("status = ? ")
-                params.push(parseInt(status))
             }
 
-            if(date !== undefined && date != null) {
+            if(status > -2 ) {
+
+                where.push("status = ? ")
+                params.push(status)
+            }
+
+            if(date.length > 1 ) {
 
                 where.push("date(created) = ? ")
                 params.push(date)
             }
 
-            let queryString = "SELECT id,stake,currency,bet_type,total_odd,possible_win,stake_after_tax,tax_on_stake,tax_on_winning,winning_after_tax,total_bets,status,won,created FROM bet WHERE  " + where.join(' AND ')
+            let queryString = "SELECT id,stake,currency,bet_type,total_odd,possible_win,stake_after_tax,tax_on_stake,tax_on_winning,winning_after_tax,total_bets,status,won,created FROM bet WHERE  " + where.join(' AND ')+" ORDER BY id DESC"
 
             bets = await this.entityManager.query(queryString,params)
 
@@ -112,7 +117,7 @@ export class BetsService {
 
         }
 
-        return myBets;
+        return {data: myBets};
     }
 
 }

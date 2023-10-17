@@ -1,11 +1,11 @@
-import {Body, Controller, Get, Inject, OnModuleInit, Param, Post, Put, Query} from '@nestjs/common';
+import {Body, Controller, Get, Inject, OnModuleInit, Param, Post, Query} from '@nestjs/common';
 import {BetsService} from './bets.service';
 import OddsService from "./odds.service.interface";
 import {GetOddsRequest} from "./interfaces/oddsrequest.interface";
-import {ClientGrpc} from "@nestjs/microservices";
+import {ClientGrpc, GrpcMethod} from "@nestjs/microservices";
 import {InjectRepository} from "@nestjs/typeorm";
 import {Bet} from "../entity/bet.entity";
-import {EntityManager, Repository} from "typeorm";
+import {Repository} from "typeorm";
 import {Mts} from "../entity/mts.entity";
 import {BetSlip} from "../entity/betslip.entity";
 import {Setting} from "../entity/setting.entity";
@@ -14,13 +14,17 @@ import {OddsLive} from "../entity/oddslive.entity";
 import {OddsPrematch} from "../entity/oddsprematch.entity";
 import {ProducerstatusreplyInterface} from "./interfaces/producerstatusreply.interface";
 import {GetOddsReply} from "./interfaces/oddsreply.interface";
-import {isArray} from "util";
 import {JsonLogger, LoggerFactory} from "json-logger-service";
 import {Observable} from "rxjs";
-import {BET_PENDING, TRANSACTION_TYPE_PLACE_BET, TRANSACTION_TYPE_WINNING} from "../constants";
+import {BET_PENDING, TRANSACTION_TYPE_PLACE_BET} from "../constants";
 import {AmqpConnection} from "@golevelup/nestjs-rabbitmq";
-import {ProducerstatusrequestInterface} from "./interfaces/producerstatusrequest.interface";
-import {SettingService} from "../settings/settingService";
+import {EmptyInterface} from "../grpc/interfaces/empty.interface";
+import {AllSettingsResponse} from "../grpc/interfaces/all.settings.response.interface";
+import {PlaceBet} from "../grpc/interfaces/placebet.interface";
+import {PlaceBetResponse} from "../grpc/interfaces/placebet.response.interface";
+import {BetSlipSelection} from "../grpc/interfaces/betslip.interface";
+import {BetHistoryRequest} from "../grpc/interfaces/bet.history.request.interface";
+import {BetHistoryResponse} from "../grpc/interfaces/bet.history.response.interface";
 
 @Controller('bets')
 export class BetsController implements OnModuleInit {
@@ -57,7 +61,7 @@ export class BetsController implements OnModuleInit {
 
     //create bet
     @Post()
-    async create(@Body() data: any): Promise<any> {
+    async create(@Body() data: PlaceBet): Promise<PlaceBetResponse> {
 
         return this.createBet(data);
 
@@ -67,6 +71,18 @@ export class BetsController implements OnModuleInit {
 
         this.oddsService = this.client.getService<OddsService>('Odds');
 
+    }
+
+    @GrpcMethod()
+    PlaceBet(data: PlaceBet): Promise<PlaceBetResponse> {
+
+        return this.createBet(data)
+    }
+
+    @GrpcMethod()
+    BetHistory(data: BetHistoryRequest): Promise<BetHistoryResponse> {
+
+        return this.betsService.findAll(data.userId,data.status,data.date)
     }
 
     @Get(':user_id')
@@ -85,40 +101,35 @@ export class BetsController implements OnModuleInit {
         return this.oddsService.GetOdds(data)
     }
 
-    async createBet(bet: any): Promise<any> {
+    async createBet(bet: PlaceBet): Promise<PlaceBetResponse> {
 
 
         //this.logger.info("received bet " + JSON.stringify(bet))
 
-        bet = JSON.parse(JSON.stringify(bet))
-
         //1. fields validations
 
-        if (bet.client_id == undefined || parseInt(bet.client_id) === 0)
-            return {status: 400, data: "missing client id"};
+        if (bet.clientId == 0)
+            return {status: 400, statusDescription: "missing client id", betId: 0};
 
-        if (bet.user_id == undefined || parseInt(bet.user_id) === 0)
-            return {status: 400, data: "missing user id"};
+        if (bet.userId == 0)
+            return {status: 400, statusDescription: "missing user id", betId: 0};
 
-        if (bet.stake == undefined || parseFloat(bet.stake) === 0)
-            return {status: 400, data: "missing stake"};
-
-        if (bet.currency == undefined || bet.currency.length === 0)
-            return {status: 400, data: "missing currency"};
+        if (bet.stake  === 0)
+            return {status: 400, statusDescription: "missing stake", betId: 0};
 
         if (bet.source == undefined || bet.source.length === 0)
-            return {status: 400, data: "missing bet source"};
+            return {status: 400, statusDescription: "missing bet source", betId: 0};
 
-        if (bet.selections == undefined )
-            return {status: 400, data: "missing selections"};
+        if (bet.betslip == undefined )
+            return {status: 400, statusDescription: "missing selections", betId: 0};
 
-        let userSelection =  bet.selections
+        let userSelection =  bet.betslip
         console.log("userSelection | "+JSON.stringify(userSelection))
 
         // get client settings
         var clientSettings = await this.settingRepository.findOne({
             where: {
-                client_id: bet.client_id
+                client_id: bet.clientId
             }
         });
 
@@ -136,10 +147,10 @@ export class BetsController implements OnModuleInit {
 
 
         // settings validation
-        if (parseFloat(bet.stake) < clientSettings.minimum_stake)
-            return {status: 400, data: "Minimum stake is " + clientSettings.minimum_stake};
+        if (bet.stake < clientSettings.minimum_stake)
+            return {status: 400, statusDescription: "Minimum stake is " + clientSettings.minimum_stake, betId: 0};
 
-        if (parseFloat(bet.stake) > clientSettings.maximum_stake)
+        if (bet.stake > clientSettings.maximum_stake)
             bet.stake = clientSettings.maximum_stake;
 
 
@@ -147,75 +158,88 @@ export class BetsController implements OnModuleInit {
         var selections = [];
         var totalOdds = 1;
 
-        for (const selection of userSelection) {
+        for (const slips of userSelection) {
 
-            if (selection.event_name.length === 0 )
-                return {status: 400, data: "missing event name in your selection "};
+            const selection = slips as BetSlipSelection
 
-            if (selection.event_type.length === 0 )
-                selection.event_type = "match";
+            if (selection.eventName.length === 0 )
+                return {status: 400, statusDescription: "missing event name in your selection ", betId: 0};
 
-            if (parseInt(selection.event_id) === 0 )
-                return {status: 400, data: "missing event ID in your selection "};
+            if (selection.eventType.length === 0 )
+                selection.eventType = "match";
 
-            if (parseInt(selection.producer_id) === 0 )
-                return {status: 400, data: "missing producer id in your selection "};
+            if (selection.eventId === 0 )
+                return {status: 400, statusDescription: "missing event ID in your selection ", betId: 0};
 
-            if (parseInt(selection.market_id) === 0 )
-                return {status: 400, data: "missing market id in your selection "};
+            if (selection.producerId === 0 )
+                return {status: 400, statusDescription: "missing producer id in your selection ", betId: 0};
 
-            if (selection.market_name.length === 0 )
-                return {status: 400, data: "missing market name in your selection "};
+            if (selection.marketId === 0 )
+                return {status: 400, statusDescription: "missing market id in your selection ", betId: 0};
 
-            if (selection.outcome_name.length === 0 )
-                return {status: 400, data: "missing outcome name in your selection "};
+            if (selection.marketName.length === 0 )
+                return {status: 400, statusDescription: "missing market name in your selection ", betId: 0};
 
-            if (selection.outcome_id.length === 0 )
-                return {status: 400, data: "missing outcome id in your selection "};
+            if (selection.outcomeName.length === 0 )
+                return {status: 400, statusDescription: "missing outcome name in your selection ", betId: 0};
+
+            if (selection.outcomeId.length === 0 )
+                return {status: 400, statusDescription: "missing outcome id in your selection ", betId: 0};
 
             if (selection.specifier === undefined )
-                return {status: 400, data: "missing specifier in your selection "};
+                return {status: 400, statusDescription: "missing specifier in your selection ", betId: 0};
 
-            if (parseFloat(selection.odds) === 0 )
-                return {status: 400, data: "missing odds in your selection "};
+            if (selection.odds === 0 )
+                return {status: 400, statusDescription: "missing odds in your selection ", betId: 0};
 
             // get odds
-            var odd = await this.getOdds(selection.producer_id, selection.event_id, selection.market_id, selection.specifier, selection.outcome_id)
+            var odd = await this.getOdds(selection.producerId, selection.eventId, selection.marketId, selection.specifier, selection.outcomeId)
 
             if (odd === 0 ) { // || odd.active == 0 || odd.status !== 0 ) {
 
                 this.logger.info("selection suspended " + JSON.stringify(selection))
                 return {
-                    data: "Your selection " + selection.event_name + " - " + selection.market_name + " is suspended",
-                    status: 400
+                    statusDescription: "Your selection " + selection.eventName + " - " + selection.marketName + " is suspended",
+                    status: 400,
+                    betId: 0
                 };
 
             }
 
             selection.odds = odd
-            selection.event_prefix = "sr"
-            selections.push(selection)
+            selections.push({
+                event_name: selection.eventName,
+                event_type: selection.eventType,
+                event_prefix: "sr",
+                producer_id: selection.producerId,
+                sport_id: selection.sportId,
+                event_id: selection.eventId,
+                market_id: selection.marketId,
+                market_name: selection.marketName,
+                specifier: selection.specifier,
+                outcome_name: selection.outcomeName,
+                outcome_id: selection.outcomeId,
+                odds: selection.odds,
+            })
             totalOdds = totalOdds * odd
         }
 
         if (selections.length === 0)
-            return {status: 400, data: "missing selections"};
+            return {status: 400, statusDescription: "missing selections", betId: 0};
 
         if (selections.length > clientSettings.maximum_selections)
-            return {message: "maximum allowed selection is " + clientSettings.maximum_selections, status: 400};
-
+            return {statusDescription: "maximum allowed selection is " + clientSettings.maximum_selections, status: 400, betId: 0};
 
         //3. tax calculations
 
         let taxOnStake = 0;
         let taxOnWinning = 0;
-        let stake = parseFloat(bet.stake);
+        let stake = bet.stake;
         let stakeAfterTax = stake;
-
 
         if (clientSettings.tax_on_stake > 0) {
 
-            taxOnStake = clientSettings.tax_on_stake * parseFloat(bet.stake);
+            taxOnStake = clientSettings.tax_on_stake * bet.stake;
             stakeAfterTax = stake - taxOnStake;
         }
 
@@ -236,10 +260,10 @@ export class BetsController implements OnModuleInit {
         //@TODO debit user
         //4. debit user by calling wallet service
         let debitPayload = {
-            currency: bet.currency,
+            currency: clientSettings.currency,
             amount: stake,
-            user_id: bet.user_id,
-            client_id: bet.client_id,
+            user_id: bet.userId,
+            client_id: bet.clientId,
             description: "Place Bet Request ",
             transaction_id: 0,
             transaction_type: TRANSACTION_TYPE_PLACE_BET
@@ -262,11 +286,11 @@ export class BetsController implements OnModuleInit {
             //const transactionManager = transactionRunner.transactionManager;
 
             //5. create bet
-            betData.client_id = bet.client_id;
-            betData.user_id = bet.user_id;
+            betData.client_id = bet.clientId;
+            betData.user_id = bet.userId;
             betData.stake = bet.stake;
-            betData.currency = bet.currency;
-            betData.bet_type = bet.bet_type;
+            betData.currency = clientSettings.currency;
+            betData.bet_type = 1;
             betData.total_odd = totalOdds;
             betData.possible_win = possibleWin;
             betData.tax_on_stake = taxOnStake;
@@ -275,7 +299,7 @@ export class BetsController implements OnModuleInit {
             betData.winning_after_tax = payout;
             betData.total_bets = selections.length;
             betData.source = bet.source;
-            betData.ip_address = bet.ip_address;
+            betData.ip_address = bet.ipAddress;
 
             //let betResult = await this.saveBetWithTransactions(betData, transactionManager)
             betResult = await this.betRepository.save(betData)
@@ -290,8 +314,8 @@ export class BetsController implements OnModuleInit {
 
                 let betSlipData = new BetSlip()
                 betSlipData.bet_id = betResult.id;
-                betSlipData.client_id = bet.client_id;
-                betSlipData.user_id = bet.user_id;
+                betSlipData.client_id = bet.clientId;
+                betSlipData.user_id = bet.userId;
                 betSlipData.event_type = selection.event_type;
                 betSlipData.event_id = selection.event_id;
                 betSlipData.event_name = selection.event_name;
@@ -307,7 +331,7 @@ export class BetsController implements OnModuleInit {
                 await this.betslipRepository.save(betSlipData);
 
                 mtsSelection.push({
-                    sport_id: parseInt(bet.sport_id),
+                    sport_id: selection.sport_id,
                     producer_id: parseInt(selection.producer_id),
                     market_id: parseInt(selection.market_id),
                     outcome_id: selection.outcome_id,
@@ -343,19 +367,20 @@ export class BetsController implements OnModuleInit {
         let mtsBet = {
             bet_id: ""+betResult.id,
             limit_id: clientSettings.mts_limit_id,
-            profile_id: parseInt(bet.user_id),
-            ip_address: bet.ip_address,
+            profile_id: bet.userId,
+            ip_address: bet.ipAddress,
             stake: stakeAfterTax,
             source: 1,
             reply_prefix: 'betting_service',
-            bets: mtsSelection
+            bets: mtsSelection,
+            currency: clientSettings.currency,
         }
 
         let queueName = "mts.bet_pending"
         await this.amqpConnection.publish(queueName, queueName, mtsBet);
         this.logger.debug("published to "+queueName)
 
-        return mtsBet
+        return {status: 201, statusDescription: "Bet placed successfully", betId: betResult.id}
     }
 
     async getOdds(producerId: number, eventId: number, marketId: number, specifier: string, outcomeId: string): Promise<number> {

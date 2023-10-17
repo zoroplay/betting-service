@@ -22,7 +22,7 @@ import {Cronjob} from "./entity/cronjob.entity";
 import {TypeOrmModule} from "@nestjs/typeorm";
 import {RabbitmqModule} from "./rabbitmq.module";
 import 'dotenv/config'
-import {SettingsModule} from "./settings/settings.module";
+import {GrpcModule} from "./grpc/grpc.module";
 
 @Module({
     imports: [
@@ -35,7 +35,7 @@ import {SettingsModule} from "./settings/settings.module";
         ConsumerModule,
         CronJobModule,
         RabbitmqModule,
-        SettingsModule,
+        GrpcModule,
         TypeOrmModule.forRoot({
           type: process.env.DB_TYPE as any,
           host: process.env.DB_HOST,

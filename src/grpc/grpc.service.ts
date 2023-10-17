@@ -3,12 +3,12 @@ import {InjectRepository} from "@nestjs/typeorm";
 import {Repository} from "typeorm";
 import {Setting} from "../entity/setting.entity";
 import {CreateSetting} from "./interfaces/create.settings.interface";
-import {SettingsResponse} from "./interfaces/settings.response.interface";
 import {AllSettingsResponse} from "./interfaces/all.settings.response.interface";
+import {SettingsResponse} from "./interfaces/settings.response.interface";
 
-export class SettingService {
+export class GrpcService {
 
-    private readonly logger: JsonLogger = LoggerFactory.createLogger(SettingService.name);
+    private readonly logger: JsonLogger = LoggerFactory.createLogger(GrpcService.name);
 
     constructor(
         @InjectRepository(Setting)
@@ -30,6 +30,7 @@ export class SettingService {
             setting.maximum_winning = data.maximumWinning
             setting.maximum_selections = data.maximumSelections
             setting.mts_limit_id = data.mtsLimitID
+            setting.currency = data.currency
             let savedSettings = await this.settingRepository.save(setting)
 
             return this.getSettingsResponseFromSetting(savedSettings);
@@ -54,6 +55,7 @@ export class SettingService {
             setting.maximum_winning = data.maximumWinning
             setting.maximum_selections = data.maximumSelections
             setting.mts_limit_id = data.mtsLimitID
+            setting.currency = data.currency
             await this.settingRepository.upsert(setting, ['tax_on_stake', 'tax_on_winning', 'minimum_stake', 'maximum_stake', 'maximum_winning', 'maximum_selections', 'mts_limit_id'])
             return this.findOne(data.clientID)
 
@@ -95,7 +97,8 @@ export class SettingService {
             mtsLimitID: savedSettings.mts_limit_id,
             taxOnStake: savedSettings.tax_on_stake,
             taxOnWinning: savedSettings.tax_on_winning,
-            updated: savedSettings.updated
+            updated: savedSettings.updated,
+            currency: savedSettings.currency,
         }
     }
 

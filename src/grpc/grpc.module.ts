@@ -1,14 +1,14 @@
 import {Module} from "@nestjs/common";
 import {TypeOrmModule} from "@nestjs/typeorm";
 import {Setting} from "../entity/setting.entity";
-import {SettingsService} from "./settings.controller";
-import {SettingService} from "./settingService";
+import {GrpcController} from "./grpc.controller";
+import {GrpcService} from "./grpc.service";
 
 @Module({
     imports: [TypeOrmModule.forFeature([Setting]),
     ],
-    controllers: [SettingsService],
-    providers: [SettingService]
+    controllers: [GrpcController],
+    providers: [GrpcService]
 })
-export class SettingsModule {
+export class GrpcModule {
 }

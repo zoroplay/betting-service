@@ -1,4 +1,4 @@
-export interface SettingsResponse {
+export interface CreateSetting {
     clientID: number;
     taxOnStake: number;
     taxOnWinning: number;
@@ -7,6 +7,5 @@ export interface SettingsResponse {
     maximumWinning: number;
     maximumSelections: number;
     mtsLimitID: number;
-    created: string;
-    updated: string;
+    currency: string;
 }

@@ -37,6 +37,10 @@ export class Setting {
     mts_limit_id: number;
 
     @Index()
+    @Column({ type: "varchar", nullable: true, default: 'NGN' })
+    currency: string;
+
+    @Index()
     @CreateDateColumn()
     created: string;
 
