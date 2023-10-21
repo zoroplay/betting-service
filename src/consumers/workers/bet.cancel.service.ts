@@ -36,7 +36,7 @@ export class BetCancelService {
     async processBetCancelMessage(data: any): Promise<number> {
 
         data = JSON.parse(JSON.stringify(data))
-        this.logger.info("processBetCancelMessage "+JSON.stringify(data))
+        this.logger.info("processBetCancelMessage event_id "+data.event_id)
 
         let matchID = data.event_id;
         let eventType = "match"
