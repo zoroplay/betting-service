@@ -39,8 +39,8 @@ export class BetCancelService {
 
         let matchID = data.event_id;
         let eventType = "match"
-        let startTime = data.start_time
-        let endTime = data.end_time
+        let startTime = data.start_time || ""
+        let endTime = data.end_time || ""
 
         // create bet_cancel
         for (const market of data.markets) {
