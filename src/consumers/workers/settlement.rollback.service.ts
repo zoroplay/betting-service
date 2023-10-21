@@ -38,6 +38,7 @@ export class SettlementRollbackService {
     async createSettlementRollback(data: any): Promise<number> {
 
         data = JSON.parse(JSON.stringify(data))
+        this.logger.info("createSettlementRollback "+JSON.stringify(data))
 
         let matchID = data.match_id
         let markets = data.markets;

@@ -48,7 +48,7 @@ export class SettlementService {
 
     async createSettlement(data: any): Promise<number> {
 
-        //this.logger.info("createSettlement "+JSON.stringify(data))
+        this.logger.info("createSettlement "+JSON.stringify(data))
 
         data = JSON.parse(JSON.stringify(data))
 
