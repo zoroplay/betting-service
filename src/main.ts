@@ -14,7 +14,7 @@ async function bootstrap() {
   const microserviceGrpc = app.connectMicroservice<MicroserviceOptions>({
     transport: Transport.GRPC,
     options: {
-      url: `${process.env.BETTING_SERVICE_GRPC_HOST}:${process.env.BETTING_SERVICE_GRPC_PORT}`,
+      url: `${process.env.GRPC_HOST}:${process.env.GRPC_PORT}`,
       package: 'settings',
       protoPath: join(__dirname, './settings/proto/settings.proto'),
     }
