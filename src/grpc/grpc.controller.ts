@@ -15,28 +15,28 @@ export class GrpcController {
     ) {
     }
 
-    @GrpcMethod()
+    @GrpcMethod('BettingService', 'CreateSetting')
     CreateSetting(data: CreateSetting): Promise<SettingsResponse> {
 
         return this.settingsService.createSettings(data)
 
     }
 
-    @GrpcMethod()
+    @GrpcMethod('BettingService', 'UpdateSetting')
     UpdateSetting(data: CreateSetting): Promise<SettingsResponse> {
 
         return this.settingsService.updateSettings(data)
 
     }
 
-    @GrpcMethod()
+    @GrpcMethod('BettingService', 'GetSettingsByID')
     GetSettingsByID(data: SettingsById): Promise<SettingsResponse> {
 
         return this.settingsService.findOne(data.clientID)
 
     }
 
-    @GrpcMethod()
+    @GrpcMethod('BettingService', 'GetAllSettings')
     GetAllSettings(data: EmptyInterface): Promise<AllSettingsResponse> {
 
         return this.settingsService.findAll()
