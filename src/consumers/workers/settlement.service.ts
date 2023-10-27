@@ -49,7 +49,7 @@ export class SettlementService {
     async createSettlement(data: any): Promise<number> {
 
         data = JSON.parse(JSON.stringify(data))
-        this.logger.info("createSettlement match_id "+data.match_id)
+        //this.logger.info("createSettlement match_id "+data.match_id)
 
         let matchID = data.match_id
         let markets = data.markets;
