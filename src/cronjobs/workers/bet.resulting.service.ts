@@ -59,7 +59,7 @@ export class BetResultingController {
 
             if (cronJob !== null && cronJob.id > 0) {
 
-                this.logger.info('another ' + taskName + ' job is already running');
+                //this.logger.info('another ' + taskName + ' job is already running');
                 return
             }
 

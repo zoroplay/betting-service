@@ -76,7 +76,7 @@ export class BetSettlementService {
 
         if(cronJob !== null && cronJob.id > 0 ) {
 
-            this.logger.info('another '+taskName+' job is alread running');
+            //this.logger.info('another '+taskName+' job is alread running');
             return
         }
 
