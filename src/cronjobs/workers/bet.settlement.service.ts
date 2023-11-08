@@ -56,7 +56,7 @@ export class BetSettlementService {
 
         this.taskProcessBetSettlement().then(function () {
 
-            vm.logger.info("done running processBetSettlement ")
+           // vm.logger.info("done running processBetSettlement ")
 
         })
     }

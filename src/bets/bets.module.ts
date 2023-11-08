@@ -13,7 +13,8 @@ import {ClientsModule, Transport} from "@nestjs/microservices";
 import {join} from "path";
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Bet,BetSlip,Mts,Setting,Producer,OddsLive,OddsPrematch]),
+  imports: [
+      TypeOrmModule.forFeature([Bet,BetSlip,Mts,Setting,Producer,OddsLive,OddsPrematch]),
     ClientsModule.register([
       {
         name: 'ODDS_PACKAGE',
