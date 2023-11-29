@@ -10,6 +10,7 @@ service BettingService {
   rpc CancelBet (BetID) returns (StatusResponse) {}
   rpc PlaceBet (PlaceBetRequest) returns (PlaceBetResponse) {}
   rpc BetHistory (BetHistoryRequest) returns (BetHistoryResponse) {}
+  rpc GetCashout (BetID) returns (StatusResponse) {}
 
 }
 
