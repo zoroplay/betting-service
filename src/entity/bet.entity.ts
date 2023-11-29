@@ -1,5 +1,5 @@
 import {Entity, PrimaryGeneratedColumn, Column, Index, CreateDateColumn, UpdateDateColumn,} from "typeorm";
-import {BET_PENDING, BET_TYPE_NORMAL} from "../constants";
+import {BET_PENDING, BET_TYPE_NORMAL, CASH_OUT_STATUS_PENDING} from "../constants";
 
 @Entity()
 export class Bet {
@@ -56,6 +56,15 @@ export class Bet {
     @Index()
     @Column({type:"int", nullable: false, default: BET_PENDING })
     status: number;
+
+
+    @Index()
+    @Column({ type: "decimal", precision: 20, scale: 2, nullable: false })
+    cash_out_amount: number;
+    
+    @Index()
+    @Column({type:"int", nullable: false, default: CASH_OUT_STATUS_PENDING })
+    cash_out_status: number;
 
     @Index()
     @Column({type:"int", nullable: false, default: -1 })
