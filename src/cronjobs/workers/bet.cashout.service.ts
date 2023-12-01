@@ -9,7 +9,6 @@ import {
   BET_LOST,
   BET_PENDING,
   BET_VOIDED,
-  BET_WON,
   BETSLIP_PROCESSING_CANCELLED,
   BETSLIP_PROCESSING_COMPLETED,
   BETSLIP_PROCESSING_SETTLED,
@@ -17,6 +16,7 @@ import {
   STATUS_LOST,
   STATUS_NOT_LOST_OR_WON,
   STATUS_WON,
+  CASH_OUT_STATUS_PENDING,
 } from '../../constants';
 import { Bet } from '../../entity/bet.entity';
 import { Cron, CronExpression } from '@nestjs/schedule';
@@ -53,20 +53,20 @@ export class BetSettlementService {
   ) {}
 
   @Cron(CronExpression.EVERY_5_SECONDS) // run every 2 seconds
-  processBetSettlement() {
-    let vm = this;
+  processCashOutUpdate() {
+    // const vm = this;
 
-    this.taskProcessBetSettlement().then(function () {
+    this.taskProcessCashOutUpdate().then(function () {
       // vm.logger.info("done running processBetSettlement ")
     });
   }
 
-  async taskProcessBetSettlement() {
-    const taskName = 'bet.settlement';
+  async taskProcessCashOutUpdate() {
+    const taskName = 'bet.cashout';
 
     // check if similar job is running
     // get client settings
-    var cronJob = await this.cronJobRepository.findOne({
+    const cronJob = await this.cronJobRepository.findOne({
       where: {
         name: taskName,
         status: 1,
@@ -74,24 +74,26 @@ export class BetSettlementService {
     });
 
     if (cronJob !== null && cronJob.id > 0) {
-      //this.logger.info('another '+taskName+' job is alread running');
+      //this.logger.info('another '+taskName+' job is already running');
       return;
     }
 
     // update status to running
-    // create settlement
+    // create cashout
     const task = new Cronjob();
     task.name = taskName;
     task.status = 1;
     await this.cronJobRepository.upsert(task, ['status']);
 
-    let rows = await this.entityManager.query(
-      'SELECT id FROM settlement where processed = 0 ',
+    // Get Bet with Cashout pending status,
+    const rows = await this.entityManager.query(
+      'SELECT id FROM bet where cash_out_status = ' + CASH_OUT_STATUS_PENDING,
     );
     for (const row of rows) {
-      let id = row.id;
-      this.logger.info('start processing settlementID ' + id);
-      await this.createBetSettlement(id);
+      // loop through all and calculate cashout amount for each
+      const id = row.id;
+      this.logger.info('start updating betID ' + id);
+      await this.calculateBetCashOut(id);
       await this.entityManager.query(
         'UPDATE settlement SET processed = 1 WHERE id = ' + id,
       );
@@ -103,142 +105,78 @@ export class BetSettlementService {
     await this.cronJobRepository.upsert(task, ['status']);
   }
 
-  async createBetSettlement(settlementID: number): Promise<number> {
-    let rows = await this.entityManager.query(
-      'SELECT DISTINCT b.id,b.stake,b.stake_after_tax,b.total_bets,b.total_odd,b.bet_type,b.user_id,b.client_id ' +
-        'FROM bet b ' +
-        'INNER JOIN bet_slip bs on b.id = bs.bet_id ' +
-        'WHERE b.status IN (0,1) AND b.won = ' +
-        STATUS_NOT_LOST_OR_WON +
-        ' AND bs.settlement_id = ?',
-      [settlementID],
+  async calculateBetCashOut(betID: number): Promise<number> {
+    // get client settings
+    const bet = await this.betRepository.findOne({
+      where: {
+        id: betID,
+      },
+      relations: {
+        betSlips: true,
+      },
+    });
+    // get probability at ticket time
+    const probabilityAtTicketTime = 94 / 100;
+    // get current probability
+    const currentProbability = 94 / 100;
+    const wonEventOdds = bet.betSlips
+      .filter((slip) => slip.won > 0)
+      .map((slip) => slip.odds);
+
+    const bLostEventOdds = bet.betSlips.some(
+      (slip) => slip.status === STATUS_LOST,
     );
 
-    let bets = new Map();
-
-    let betIds = [];
-
-    for (let row of rows) {
-      let key = 'bet-' + row.id;
-      row.Won = 0;
-      row.Lost = 0;
-      row.Pending = 0;
-      row.Cancelled = 0;
-      row.Voided = 0;
-      row.TotalGames = row.total_bets;
-      bets.set(key, row);
-      betIds.push(row.id);
+    if (bLostEventOdds) {
+      // if one event is lost return cash out value to zero
+      return 0;
     }
-
-    this.logger.info(
-      'settlementID ' + settlementID + ' attached bets ' + bets.size,
-    );
-
-    if (bets.size == 0) {
-      return 1;
-    }
-
-    // pull all the bet_slip of the bets we have pulled
-
-    let queryString =
-      'SELECT id,bet_id,status, won, void_factor, dead_heat_factor,odds FROM bet_slip ' +
-      'WHERE bet_id IN (' +
-      betIds.join(',') +
-      ')';
-
-    console.log(queryString);
-
-    let betSlips = await this.entityManager.query(queryString);
-
-    for (const betSlip of betSlips) {
-      let void_factor = parseFloat(betSlip.void_factor);
-      let dead_heat_factor = parseFloat(betSlip.dead_heat_factor);
-      let won = parseInt(betSlip.won);
-
-      let lost = 0;
-      let pending = 0;
-      let win = 0;
-      let cancelled = 0;
-      let voided = 0;
-
-      if (parseInt(betSlip.status) == -1) {
-        cancelled = 1;
-      }
-
-      if (void_factor > 0) {
-        voided = 1;
-      }
-
-      if (won == STATUS_NOT_LOST_OR_WON) {
-        pending = 1;
-      } else if (won == STATUS_WON) {
-        win = 1;
-      } else {
-        lost = 1;
-      }
-
-      let currentBetSlip = {
-        ID: betSlip.id,
-        BetID: betSlip.bet_id,
-        Status: betSlip.status,
-        Won: won,
-        VoidFactor: void_factor,
-        DeadHeatFactor: dead_heat_factor,
-        Odd: betSlip.odds,
-      };
-
-      let keyName = 'bet-' + currentBetSlip.BetID;
-      let bs = bets.get(keyName);
-      if (bs == undefined) {
-        this.logger.error('could not find ' + keyName + ' from array ');
-        continue;
-      }
-
-      let slips = [];
-
-      if (bs.BetSlips !== undefined) {
-        slips = bs.BetSlips;
-      }
-
-      bs.Won = bs.Won + win;
-      bs.Lost = bs.Lost + lost;
-      bs.Pending = bs.Pending + pending;
-      bs.Cancelled = bs.Cancelled + cancelled;
-      bs.Voided = bs.Voided + voided;
-
-      slips.push(currentBetSlip);
-
-      bs.BetSlips = slips;
-
-      bets[keyName] = bs;
-    }
-
-    for (const bet of bets.values()) {
-      // get client settings
-      var clientSettings = await this.settingRepository.findOne({
-        where: {
-          client_id: bet.client_id, // add client id to bets
+    // get won event odds
+    if (wonEventOdds.length <= 0) {
+      // if no event is won yet use simple cashout
+      return bet.stake * bet.total_odd * currentProbability;
+    } else {
+      // else use advanced cashout
+      const productOfOdds = wonEventOdds.reduce((a, b) => a * b, 1);
+      // multiply won event selection odds
+      // get reduction factor
+      const ladder = {
+        lower: {
+          ticketValueFactor: 1.0,
+          desiredReductionFactor: 101 / 100,
         },
-      });
-
-      let result = await this.resultBet(bet, clientSettings);
-
-      console.log(bet.id + ' | ' + JSON.stringify(result, undefined, 2));
-
-      if (result.Won) {
-        const betClosure = new BetClosure();
-        betClosure.bet_id = result.BetID;
-        await this.betClosureRepository.upsert(betClosure, ['bet_id']);
-        this.logger.info(
-          'bet ID ' + result.BetID + ' has won and bet closure created',
-        );
-
-        // publish to bonus queue
-      } else if (result.Lost) {
-        // publish to bonus queue
-      }
+        higher: {
+          ticketValueFactor: 1.2,
+          desiredReductionFactor: 103 / 100,
+        },
+      };
+      const interpolationWeight = 100 / 100;
+      const ticketValueFactor = currentProbability / probabilityAtTicketTime;
+      const lowerFactor =
+        ladder.lower.ticketValueFactor / ladder.lower.desiredReductionFactor;
+      const higherFactor =
+        ladder.higher.ticketValueFactor / ladder.higher.desiredReductionFactor;
+      const subInterpolationWeight = 1 - interpolationWeight;
+      // get reduction factor
+      const reductionFactor =
+        ticketValueFactor /
+        (interpolationWeight * lowerFactor +
+          subInterpolationWeight * higherFactor);
+      // get cashout value
+      const cashoutValue =
+        (bet.stake * currentProbability * productOfOdds) / reductionFactor;
+      return cashoutValue;
     }
 
+    // if bet is pre
+    // ➔ Simple Cashout returns punters a purely probabilistic Cashout value.
+
+    // if bet is live
+    // ➔ Cashout With Additional Expected Profit is an option that gives the bookmaker lower cashout values
+    // to offer, than are calculated via Simple Cashout.
+
+    // ➔ Advanced Cashout Compensating For high Implied Margin describes a way to offer less aggressive
+    // cashout offers for losing tickets.
     return 1;
   }
 
@@ -267,20 +205,20 @@ export class BetSettlementService {
         );
 
         // recalculate odds
-        let newOdds = (bet.total_odd / b.Odd) * b.VoidFactor;
+        const newOdds = (bet.total_odd / b.Odd) * b.VoidFactor;
 
         bet.total_odd = newOdds;
 
         // calculate new net win
-        let netWin = newOdds * bet.stake_after_tax;
+        const netWin = newOdds * bet.stake_after_tax;
 
         // calculate profit
-        let profit = netWin - bet.stake_after_tax;
+        const profit = netWin - bet.stake_after_tax;
 
         // calculate tax & possible win
-        let winningTaxPercentage = setting.tax_on_winning / 100;
+        const winningTaxPercentage = setting.tax_on_winning / 100;
 
-        let withHoldingTax = profit * winningTaxPercentage;
+        const withHoldingTax = profit * winningTaxPercentage;
 
         let possibleWin = netWin - withHoldingTax;
 
@@ -319,7 +257,7 @@ export class BetSettlementService {
 
     // if bet has any voided slips, get new summary i.e won,lost,cancelled,voided slips
     if (hasVoidedSlip) {
-      let rows = await this.entityManager.query(
+      const rows = await this.entityManager.query(
         'SELECT status, won FROM bet_slip WHERE bet_id = ' + bet.id,
       );
 
@@ -330,8 +268,8 @@ export class BetSettlementService {
       let TotalGames = 0;
 
       for (const row of rows) {
-        let status = row.status;
-        let won = row.won;
+        const status = row.status;
+        const won = row.won;
         TotalGames = TotalGames + 1;
 
         let lost,
