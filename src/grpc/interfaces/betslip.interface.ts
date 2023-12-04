@@ -14,7 +14,7 @@ export interface BetSlipSelection {
 
 export interface Selections {
 
-    selections: BetSlipSelection;
+    selections: BetSlipSelection[];
 }
 
 export interface Probability {
