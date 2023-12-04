@@ -51,6 +51,10 @@ export class OddsLive {
     active: number;
 
     @Index()
+    @Column({type:"double", nullable: true })
+    probability: number;
+
+    @Index()
     @CreateDateColumn()
     created: string;
 

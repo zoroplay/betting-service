@@ -5,6 +5,10 @@ import {Setting} from "../entity/setting.entity";
 import {CreateSetting} from "./interfaces/create.settings.interface";
 import {AllSettingsResponse} from "./interfaces/all.settings.response.interface";
 import {SettingsResponse} from "./interfaces/settings.response.interface";
+import {OddsPrematch} from "../entity/oddsprematch.entity";
+import {OddsLive} from "../entity/oddslive.entity";
+import {BetSlip} from "../entity/betslip.entity";
+import {Probability, Selections} from "./interfaces/betslip.interface";
 
 export class GrpcService {
 
@@ -13,6 +17,16 @@ export class GrpcService {
     constructor(
         @InjectRepository(Setting)
         private settingRepository: Repository<Setting>,
+
+        @InjectRepository(OddsPrematch)
+        private oddsPrematchRepository: Repository<OddsPrematch>,
+
+        @InjectRepository(OddsLive)
+        private oddsLiveRepository: Repository<OddsLive>,
+
+        @InjectRepository(BetSlip)
+        private betslipRepository: Repository<BetSlip>,
+
     ) {
 
     }
@@ -124,6 +138,105 @@ export class GrpcService {
 
             this.logger.error(" error retrieving all settings " + e.toString())
             throw e
+        }
+    }
+
+    async getProbabilityFromBetID(betID: number): Promise<Probability> {
+
+        try {
+
+            const slips = await this.betslipRepository.find({
+                where: {
+                    bet_id: betID
+                }
+            });
+
+            let probability = 1
+
+            for (let slip of slips) {
+
+                let pro = await this.getOddsProbability(slip.event_id,slip.market_id,slip.specifier,slip.outcome_id)
+                probability = probability * pro
+            }
+
+            return {
+                probability: probability
+            }
+
+        } catch (e) {
+
+            this.logger.error(" error retrieving all settings " + e.toString())
+            throw e
+        }
+
+    }
+
+    async getProbabilityFromSelection(data: Selections): Promise<Probability> {
+
+        try {
+
+            let probability = 1
+
+            for (let slip of data.selections) {
+
+                let pro = await this.getOddsProbability(slip.event_id,slip.market_id,slip.specifier,slip.outcome_id)
+                probability = probability * pro
+            }
+
+            return {
+                probability: probability
+            }
+
+        } catch (e) {
+
+            this.logger.error(" error retrieving all settings " + e.toString())
+            throw e
+        }
+
+    }
+
+    async getOddsProbability(matchID: number, marketID: number, specifier: string, outcomeID: string): Promise<number> {
+
+        // check if match is live/prematch and active
+
+        try {
+
+            let oddsPrematch = await this.oddsPrematchRepository.findOne({
+                where: {
+                    event_id: matchID,
+                    market_id: marketID,
+                    specifier: specifier,
+                    outcome_id: outcomeID,
+                    status: 0
+                }
+            });
+
+            if(!oddsPrematch.probability) {
+
+                // check live odds
+                oddsPrematch = await this.oddsLiveRepository.findOne({
+                    where: {
+                        event_id: matchID,
+                        market_id: marketID,
+                        specifier: specifier,
+                        outcome_id: outcomeID,
+                        status: 0
+                    }
+                });
+
+                if(!oddsPrematch.probability) {
+
+                    // match doesnt exist
+                    return 1
+                }
+            }
+
+            return oddsPrematch.probability
+
+        } catch (e) {
+
+            this.logger.error(" error retrieving one settings " + e.toString())
+            return 1
         }
     }
 

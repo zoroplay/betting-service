@@ -6,6 +6,8 @@ import {AllSettingsResponse} from "./interfaces/all.settings.response.interface"
 import {GrpcService} from "./grpc.service";
 import {SettingsResponse} from "./interfaces/settings.response.interface";
 import {SettingsById} from "./interfaces/settings.byid.interface";
+import {BetID} from "./interfaces/betid.interface";
+import {Probability, Selections} from "./interfaces/betslip.interface";
 
 @Controller()
 export class GrpcController {
@@ -41,4 +43,17 @@ export class GrpcController {
 
         return this.settingsService.findAll()
     }
+
+    @GrpcMethod('BettingService', 'GetProbabilityFromBetID')
+    GetProbabilityFromBetID(data: BetID): Promise<Probability> {
+
+        return this.settingsService.getProbabilityFromBetID(data.betID)
+    }
+
+    @GrpcMethod('BettingService', 'GetProbabilityFromSelection')
+    GetProbabilityFromSelection(data: Selections): Promise<Probability> {
+
+        return this.settingsService.getProbabilityFromSelection(data)
+    }
+
 }

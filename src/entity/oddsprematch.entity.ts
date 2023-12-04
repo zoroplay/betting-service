@@ -51,6 +51,10 @@ export class OddsPrematch {
     active: number;
 
     @Index()
+    @Column({type:"double", nullable: true })
+    probability: number;
+
+    @Index()
     @CreateDateColumn()
     created: string;
 

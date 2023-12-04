@@ -11,3 +11,13 @@ export interface BetSlipSelection {
     odds: number;
     sportId: number;
 }
+
+export interface Selections {
+
+    selections: BetSlipSelection;
+}
+
+export interface Probability {
+
+    probability: number;
+}
