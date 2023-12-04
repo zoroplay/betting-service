@@ -179,7 +179,7 @@ export class GrpcService {
 
             for (let slip of data.selections) {
 
-                let pro = await this.getOddsProbability(slip.event_id,slip.market_id,slip.specifier,slip.outcome_id)
+                let pro = await this.getOddsProbability(slip.eventId,slip.marketId,slip.specifier,slip.outcomeId)
                 probability = probability * pro
             }
 
