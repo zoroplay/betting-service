@@ -16,7 +16,12 @@ import {ProducerstatusreplyInterface} from "./interfaces/producerstatusreply.int
 import {GetOddsReply} from "./interfaces/oddsreply.interface";
 import {JsonLogger, LoggerFactory} from "json-logger-service";
 import {Observable} from "rxjs";
-import {BET_PENDING, TRANSACTION_TYPE_PLACE_BET} from "../constants";
+import {
+    BET_PENDING,
+    BETSLIP_PROCESSING_PENDING,
+    BETSLIP_PROCESSING_SETTLED,
+    TRANSACTION_TYPE_PLACE_BET
+} from "../constants";
 import {AmqpConnection} from "@golevelup/nestjs-rabbitmq";
 import {EmptyInterface} from "../grpc/interfaces/empty.interface";
 import {AllSettingsResponse} from "../grpc/interfaces/all.settings.response.interface";
@@ -304,6 +309,8 @@ export class BetsController implements OnModuleInit {
             //let betResult = await this.saveBetWithTransactions(betData, transactionManager)
             betResult = await this.betRepository.save(betData)
 
+            let overallProbability = 1
+
             // create betslip
             for (const selection of selections) {
 
@@ -327,6 +334,14 @@ export class BetsController implements OnModuleInit {
                 betSlipData.specifier = selection.specifier;
                 betSlipData.odds = selection.odds
                 betSlipData.status = BET_PENDING
+
+                // get probability
+                let probability = await this.getOddsProbability(selection.event_id,selection.market_id,selection.specifier,selection.outcome_id)
+
+                betSlipData.probability = probability
+
+                overallProbability = overallProbability * probability
+
                 //await this.saveBetSlipWithTransactions(betSlipData,transactionManager);
                 await this.betslipRepository.save(betSlipData);
 
@@ -343,6 +358,14 @@ export class BetsController implements OnModuleInit {
                 })
 
             }
+
+            await this.betRepository.update(
+                {
+                    id: betResult.id,
+                },
+                {
+                    probability: overallProbability,
+                });
 
             // committing transaction
             // await transactionRunner.commitTransaction();
@@ -414,6 +437,51 @@ export class BetsController implements OnModuleInit {
 
         return oddStatus.statusName == 'Active' && oddStatus.active == 1 ? oddStatus.odds  : 0
 
+    }
+
+    async getOddsProbability(matchID: number, marketID: number, specifier: string, outcomeID: string): Promise<number> {
+
+        // check if match is live/prematch and active
+
+        try {
+
+            let oddsPrematch = await this.prematchRepository.findOne({
+                where: {
+                    event_id: matchID,
+                    market_id: marketID,
+                    specifier: specifier,
+                    outcome_id: outcomeID,
+                    status: 0
+                }
+            });
+
+            if(!oddsPrematch.probability) {
+
+                // check live odds
+                oddsPrematch = await this.liveRepository.findOne({
+                    where: {
+                        event_id: matchID,
+                        market_id: marketID,
+                        specifier: specifier,
+                        outcome_id: outcomeID,
+                        status: 0
+                    }
+                });
+
+                if(!oddsPrematch.probability) {
+
+                    // match doesnt exist
+                    return 1
+                }
+            }
+
+            return oddsPrematch.probability
+
+        } catch (e) {
+
+            this.logger.error(" error retrieving one settings " + e.toString())
+            return 1
+        }
     }
 
 }

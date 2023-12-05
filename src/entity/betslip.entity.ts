@@ -59,6 +59,10 @@ export class BetSlip {
     odds: number;
 
     @Index()
+    @Column({ type: "decimal", precision: 20, scale: 2, nullable: true, default: 1 })
+    probability: number;
+
+    @Index()
     @Column({type:"int", nullable: false, default: -1 })
     won: number;
 

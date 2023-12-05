@@ -8,7 +8,8 @@ import {SettingsResponse} from "./interfaces/settings.response.interface";
 import {OddsPrematch} from "../entity/oddsprematch.entity";
 import {OddsLive} from "../entity/oddslive.entity";
 import {BetSlip} from "../entity/betslip.entity";
-import {Probability, Selections} from "./interfaces/betslip.interface";
+import {Probability, ProbabilityBetSlipSelection} from "./interfaces/betslip.interface";
+import {Bet} from "../entity/bet.entity";
 
 export class GrpcService {
 
@@ -26,6 +27,9 @@ export class GrpcService {
 
         @InjectRepository(BetSlip)
         private betslipRepository: Repository<BetSlip>,
+
+        @InjectRepository(Bet)
+        private betRepository: Repository<Bet>,
 
     ) {
 
@@ -145,6 +149,12 @@ export class GrpcService {
 
         try {
 
+            const betData = await this.betRepository.findOne({
+                where: {
+                    id: betID
+                }
+            });
+
             const slips = await this.betslipRepository.find({
                 where: {
                     bet_id: betID
@@ -153,38 +163,30 @@ export class GrpcService {
 
             let probability = 1
 
+            let probabilityBetSlipSelection = []
+
             for (let slip of slips) {
 
+                let selectionProbability = {} as ProbabilityBetSlipSelection
+
                 let pro = await this.getOddsProbability(slip.event_id,slip.market_id,slip.specifier,slip.outcome_id)
+                selectionProbability.currentProbability = pro;
+                selectionProbability.eventId = slip.event_id;
+                selectionProbability.marketId = slip.market_id;
+                selectionProbability.marketName = slip.market_name;
+                selectionProbability.specifier = slip.specifier;
+                selectionProbability.outcomeId = slip.outcome_id;
+                selectionProbability.outcomeName = slip.outcome_name;
+                selectionProbability.initialProbability = slip.probability;
+                selectionProbability.currentProbability = pro;
+                probabilityBetSlipSelection.push(selectionProbability)
                 probability = probability * pro
             }
 
             return {
-                probability: probability
-            }
-
-        } catch (e) {
-
-            this.logger.error(" error retrieving all settings " + e.toString())
-            throw e
-        }
-
-    }
-
-    async getProbabilityFromSelection(data: Selections): Promise<Probability> {
-
-        try {
-
-            let probability = 1
-
-            for (let slip of data.selections) {
-
-                let pro = await this.getOddsProbability(slip.eventId,slip.marketId,slip.specifier,slip.outcomeId)
-                probability = probability * pro
-            }
-
-            return {
-                probability: probability
+                currentProbability: probability,
+                initialProbability: betData.probability,
+                selections: probabilityBetSlipSelection,
             }
 
         } catch (e) {

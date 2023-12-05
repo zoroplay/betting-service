@@ -12,12 +12,20 @@ export interface BetSlipSelection {
     sportId: number;
 }
 
-export interface Selections {
-
-    selections: BetSlipSelection[];
+export interface ProbabilityBetSlipSelection {
+    eventId: number;
+    marketId: number;
+    marketName: string;
+    specifier: string;
+    outcomeId: string;
+    outcomeName: string;
+    sportId: number;
+    currentProbability: number;
+    initialProbability: number;
 }
 
 export interface Probability {
-
-    probability: number;
+    currentProbability: number;
+    initialProbability: number;
+    selections: ProbabilityBetSlipSelection[];
 }
