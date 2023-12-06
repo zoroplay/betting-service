@@ -267,6 +267,7 @@ export class BetsService {
             selections.push({
                 event_name: selection.eventName,
                 selection_id: selection.selectionId,
+                event_type: selection.eventType,
                 event_prefix: "sr",
                 producer_id: selection.producerId,
                 sport_id: selection.sportId,
