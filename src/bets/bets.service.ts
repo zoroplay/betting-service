@@ -222,7 +222,7 @@ export class BetsService {
             if (selection.eventName.length === 0 )
                 return {status: 400, message: "missing event name in your selection ", success: false};
 
-            if (selection.eventType.length === 0 )
+            if (!selection.eventType)
                 selection.eventType = "match";
 
             if (selection.eventId === 0 )
