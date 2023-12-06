@@ -1,5 +1,6 @@
 export interface PlaceBetResponse {
-    betId: number;
+    data?: any;
     status: number;
-    statusDescription: string;
+    success: boolean;
+    message: string;
 }

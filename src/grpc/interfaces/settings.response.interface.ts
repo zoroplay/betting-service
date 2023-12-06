@@ -8,6 +8,7 @@ export interface SettingsResponse {
     maximumSelections: number;
     mtsLimitID: number;
     currency: string;
+    url?: string;
     created: string;
     updated: string;
 }

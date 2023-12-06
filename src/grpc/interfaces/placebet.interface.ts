@@ -3,6 +3,7 @@ export interface PlaceBet {
     clientId: number;
     userId: number;
     stake: number;
+    betType: string;
     source: string;
     ipAddress: string;
 }
