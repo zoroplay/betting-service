@@ -410,8 +410,8 @@ export class BetsService {
                 user_id: bet.userId,
                 client_id: bet.clientId,
                 description: "Place Bet Request ",
-                bet_id: betData.betslip_id,
-                source: betData.source,
+                bet_id: betResult.betslip_id,
+                source: betResult.source,
                 type: 'Sport'
                 // transaction_type: TRANSACTION_TYPE_PLACE_BET
             }
@@ -428,6 +428,7 @@ export class BetsService {
             //if (transactionRunner) await transactionRunner.rollbackTransaction();
 
             //@TODO credit user
+            return {status: 400, message: "error accepting bets ", success: false};
 
         } finally {
 
@@ -435,29 +436,34 @@ export class BetsService {
             //if (transactionRunner) await transactionRunner.releaseTransaction();
         }
 
-        this.logger.info("bet created with id "+betData.id)
+        this.logger.info("bet created with id "+betResult.id)
 
-        // send bets to MTS
-        let mtsBet = {
-            bet_id: ""+betResult.id,
-            limit_id: clientSettings.mts_limit_id,
-            profile_id: bet.userId,
-            ip_address: bet.ipAddress,
-            stake: stakeAfterTax,
-            source: 1,
-            reply_prefix: 'betting_service',
-            bets: mtsSelection,
-            currency: clientSettings.currency,
+        if (betData) {
+            // send bets to MTS
+            let mtsBet = {
+                bet_id: ""+betResult.id,
+                limit_id: clientSettings.mts_limit_id,
+                profile_id: bet.userId,
+                ip_address: bet.ipAddress,
+                stake: stakeAfterTax,
+                source: 1,
+                reply_prefix: 'betting_service',
+                bets: mtsSelection,
+                currency: clientSettings.currency,
+            }
+
+            
+
+            let queueName = "mts.bet_pending"
+            await this.amqpConnection.publish(queueName, queueName, mtsBet);
+            // do debit
+            this.logger.debug("published to "+queueName)
+
+            return {status: 201, message: "Bet placed successfully", data: betResult, success: true}
+        } else {
+            return {status: 400, message: "We are unable to accept this bet at the moment ", success: false};
+
         }
-
-        
-
-        let queueName = "mts.bet_pending"
-        await this.amqpConnection.publish(queueName, queueName, mtsBet);
-        // do debit
-        this.logger.debug("published to "+queueName)
-
-        return {status: 201, message: "Bet placed successfully", data: betResult, success: true}
     }
 
     async getOdds(producerId: number, eventId: number, marketId: number, specifier: string, outcomeId: string): Promise<number> {
