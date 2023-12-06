@@ -365,6 +365,8 @@ export class BetsService {
                     selection.event_type = "match"
                 }
 
+                console.log(JSON.stringify(selection));
+
                 let betSlipData = new BetSlip()
                 betSlipData.bet_id = betResult.id;
                 betSlipData.client_id = bet.clientId;
