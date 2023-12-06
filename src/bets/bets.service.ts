@@ -168,7 +168,7 @@ export class BetsService {
                 client_id: bet.clientId
             }
         });
-        const userRes: any = this.httpService.get(clientSettings.url + '/api/wallet/balance');
+        const userRes: any = await this.httpService.get(clientSettings.url + '/api/wallet/balance');
         let user;
         console.log(userRes);
 
