@@ -57,10 +57,13 @@ export class Bet {
     @Column({type:"int", nullable: false, default: BET_PENDING })
     status: number;
 
-
     @Index()
     @Column({ type: "decimal", precision: 20, scale: 2, nullable: false })
     cash_out_amount: number;
+
+    @Index()
+    @Column({ type: "decimal", precision: 20, scale: 2, nullable: false })
+    probability: number;
     
     @Index()
     @Column({type:"int", nullable: false, default: CASH_OUT_STATUS_PENDING })

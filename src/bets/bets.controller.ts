@@ -24,22 +24,6 @@ export class BetsController {
     constructor(
 
         private readonly betsService: BetsService,
-
-        //private transactionRunner: DbTransactionFactory,
-        @InjectRepository(Bet)
-        private betRepository: Repository<Bet>,
-        @InjectRepository(Mts)
-        private mstRepository: Repository<Mts>,
-        @InjectRepository(BetSlip)
-        private betslipRepository: Repository<BetSlip>,
-        @InjectRepository(Setting)
-        private settingRepository: Repository<Setting>,
-        @InjectRepository(Producer)
-        private producerRepository: Repository<Producer>,
-        @InjectRepository(OddsLive)
-        private liveRepository: Repository<OddsLive>,
-        @InjectRepository(OddsPrematch)
-        private prematchRepository: Repository<OddsPrematch>,
     ) {}
 
     @GrpcMethod('BettingService', 'PlaceBet')
