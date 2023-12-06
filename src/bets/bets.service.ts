@@ -175,7 +175,6 @@ export class BetsService {
                                     });
                                     
         let user;
-        console.log(userRes);
         if (userRes.status) {
             user = userRes;
         }
@@ -189,7 +188,7 @@ export class BetsService {
 
 
         let userSelection =  bet.betslip
-        console.log("userSelection | "+JSON.stringify(userSelection))
+        // console.log("userSelection | "+JSON.stringify(userSelection))
 
         if(clientSettings == undefined || clientSettings.id == undefined || clientSettings.id == 0 ) {
             // return {status: 400, data: "invalid client"};
@@ -267,17 +266,22 @@ export class BetsService {
             selection.odds = odd
             selections.push({
                 event_name: selection.eventName,
-                event_type: selection.eventType,
+                selection_id: selection.selectionId,
                 event_prefix: "sr",
                 producer_id: selection.producerId,
                 sport_id: selection.sportId,
                 event_id: selection.eventId,
+                match_id: selection.matchId,
                 market_id: selection.marketId,
                 market_name: selection.marketName,
                 specifier: selection.specifier,
                 outcome_name: selection.outcomeName,
                 outcome_id: selection.outcomeId,
+                tournament_name: selection.tournament,
+                category_name: selection.category,
+                sport_name: selection.sport,
                 odds: selection.odds,
+                is_live: selection.type === 'live' ? 1 : 0
             })
             totalOdds = totalOdds * odd
         }
@@ -315,17 +319,6 @@ export class BetsService {
             payout = clientSettings.maximum_winning;
         }
 
-        //@TODO debit user
-        //4. debit user by calling wallet service
-        let debitPayload = {
-            currency: clientSettings.currency,
-            amount: stake,
-            user_id: bet.userId,
-            client_id: bet.clientId,
-            description: "Place Bet Request ",
-            transaction_id: 0,
-            transaction_type: TRANSACTION_TYPE_PLACE_BET
-        }
 
         //let transactionRunner = null;
         const betData = new Bet();
@@ -343,12 +336,13 @@ export class BetsService {
 
             //const transactionManager = transactionRunner.transactionManager;
 
-            //5. create bet
+            //4. create bet
             betData.client_id = bet.clientId;
             betData.user_id = bet.userId;
+            betData.betslip_id = this.generateBetslipId()
             betData.stake = bet.stake;
             betData.currency = clientSettings.currency;
-            betData.bet_type = 1;
+            betData.bet_type = bet.bet_type;
             betData.total_odd = totalOdds;
             betData.possible_win = possibleWin;
             betData.tax_on_stake = taxOnStake;
@@ -376,13 +370,19 @@ export class BetsService {
                 betSlipData.user_id = bet.userId;
                 betSlipData.event_type = selection.event_type;
                 betSlipData.event_id = selection.event_id;
+                betSlipData.match_id = selection.match_id;
+                betSlipData.selection_id = selection.selection_id;
                 betSlipData.event_name = selection.event_name;
+                betSlipData.sport_name = selection.sport_name;
+                betSlipData.tournament_name = selection.tournament_name;
+                betSlipData.category_name = selection.category_name;
                 betSlipData.producer_id = selection.producer_id;
                 betSlipData.market_name = selection.market_name;
                 betSlipData.market_id = selection.market_id;
                 betSlipData.outcome_name = selection.outcome_name;
                 betSlipData.outcome_id = selection.outcome_id;
                 betSlipData.specifier = selection.specifier;
+                betSlipData.is_live = selection.is_live;
                 betSlipData.odds = selection.odds
                 betSlipData.status = BET_PENDING
                 //await this.saveBetSlipWithTransactions(betSlipData,transactionManager);
@@ -401,6 +401,21 @@ export class BetsService {
                 })
 
             }
+
+            //5. debit user by calling wallet service
+            let debitPayload = {
+                // currency: clientSettings.currency,
+                amount: stake,
+                user_id: bet.userId,
+                client_id: bet.clientId,
+                description: "Place Bet Request ",
+                bet_id: betData.betslip_id,
+                source: betData.source,
+                type: 'Sport'
+                // transaction_type: TRANSACTION_TYPE_PLACE_BET
+            }
+            
+            axios.post(clientSettings.url + '/api/wallet/debit', debitPayload);
 
             // committing transaction
             // await transactionRunner.commitTransaction();
@@ -434,8 +449,11 @@ export class BetsService {
             currency: clientSettings.currency,
         }
 
+        
+
         let queueName = "mts.bet_pending"
         await this.amqpConnection.publish(queueName, queueName, mtsBet);
+        // do debit
         this.logger.debug("published to "+queueName)
 
         return {status: 201, message: "Bet placed successfully", data: betResult, success: true}
@@ -482,6 +500,18 @@ export class BetsService {
     getOddsStatus(data: GetOddsRequest ): Observable<GetOddsReply>  {
 
         return this.oddsService.GetOdds(data)
+    }
+
+    generateBetslipId() {
+        const characters ='ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+        let result = ' ';
+        const charactersLength = characters.length;
+        for ( let i = 0; i < 7; i++ ) {
+            result += characters.charAt(Math.floor(Math.random() * charactersLength));
+        }
+
+        return result;
+
     }
 
 }

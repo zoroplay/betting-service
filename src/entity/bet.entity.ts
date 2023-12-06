@@ -15,6 +15,10 @@ export class Bet {
     user_id: number;
 
     @Index()
+    @Column({ type: "varchar", length: 20, nullable: false })
+    betslip_id: string;
+
+    @Index()
     @Column({ type: "decimal", precision: 20, scale: 2, nullable: false })
     stake: number;
 
