@@ -21,6 +21,7 @@ import OddsService from "./odds.service.interface";
 import { HttpService } from '@nestjs/axios';
 import {GetOddsReply} from "./interfaces/oddsreply.interface";
 import {GetOddsRequest} from "./interfaces/oddsrequest.interface";
+import axios from 'axios';
 
 @Injectable()
 export class BetsService {
@@ -168,14 +169,8 @@ export class BetsService {
                 client_id: bet.clientId
             }
         });
-        const userRes: any = this.httpService
-                                    .get(clientSettings.url + '/api/wallet/balance')
-                                    .pipe(map((res) => res.data?.data))
-                                    .pipe(
-                                        catchError(() => {
-                                            throw new ForbiddenException('API not available');
-                                        }),
-                                    );
+        const userRes: any = await axios.get(clientSettings.url + '/api/wallet/balance')
+                                    
         let user;
         console.log(userRes);
 
