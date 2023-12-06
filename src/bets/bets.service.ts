@@ -95,7 +95,7 @@ export class BetsService {
                 params.push(date)
             }
 
-            let queryString = "SELECT id,stake,currency,bet_type,total_odd,possible_win,stake_after_tax,tax_on_stake,tax_on_winning,winning_after_tax,total_bets,status,won,created FROM bet WHERE client_id = ? " + where.join(' AND ')+" ORDER BY id DESC"
+            let queryString = "SELECT id,stake,currency,bet_type,total_odd,possible_win,stake_after_tax,tax_on_stake,tax_on_winning,winning_after_tax,total_bets,status,won,created FROM bet WHERE client_id = ? AND " + where.join(' AND ')+" ORDER BY id DESC"
 
             bets = await this.entityManager.query(queryString,params)
 
