@@ -24,6 +24,7 @@ message Settings {
   int32 maximumSelections = 7;
   int32 mtsLimitID = 8;
   string currency = 9;
+  string url = 10;
 }
 
 message SettingsResponse {
@@ -36,8 +37,9 @@ message SettingsResponse {
   int32 maximumSelections = 7;
   int32 mtsLimitID = 8;
   string currency = 9;
-  string created = 10;
-  string updated = 11;
+  string url = 10;
+  string created = 11;
+  string updated = 12;
 }
 
 message SettingsById {
