@@ -27,8 +27,12 @@ export class Bet {
     currency: string;
 
     @Index()
+    @Column({ type: "varchar", length: 100, nullable: true })
+    bet_type: string;
+
+    @Index()
     @Column({type:"int", nullable: false, default: BET_TYPE_NORMAL })
-    bet_type: number;
+    bet_category: string;
 
     @Index()
     @Column({ type: "decimal", precision: 20, scale: 2, nullable: false })

@@ -39,6 +39,10 @@ export class BetSlip {
     event_name: string;
 
     @Index()
+    @Column({ type: "varchar", length: 100, nullable: false })
+    event_date: string;
+
+    @Index()
     @Column({ type: "varchar", length: 200, nullable: false })
     tournament_name: string;
 

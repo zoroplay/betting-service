@@ -1,5 +1,6 @@
 export interface BetSlipSelection {
     eventName: string;
+    eventDate: string;
     eventType: string;
     eventId: number;
     matchId: number;

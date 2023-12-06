@@ -66,13 +66,14 @@ export class BetsService {
 
     }
 
-    async findAll(userID: number, status: number, date: string): Promise<BetHistoryResponse> {
+    async findAll(userID: number, status: number, date: string, clientId: number): Promise<BetHistoryResponse> {
 
         let bets : any
 
         try {
 
-            let params = []
+            let params = [];
+            params.push(clientId);
             let where = []
 
             if (userID > 0) {
@@ -94,7 +95,7 @@ export class BetsService {
                 params.push(date)
             }
 
-            let queryString = "SELECT id,stake,currency,bet_type,total_odd,possible_win,stake_after_tax,tax_on_stake,tax_on_winning,winning_after_tax,total_bets,status,won,created FROM bet WHERE  " + where.join(' AND ')+" ORDER BY id DESC"
+            let queryString = "SELECT id,stake,currency,bet_type,total_odd,possible_win,stake_after_tax,tax_on_stake,tax_on_winning,winning_after_tax,total_bets,status,won,created FROM bet WHERE client_id = ? " + where.join(' AND ')+" ORDER BY id DESC"
 
             bets = await this.entityManager.query(queryString,params)
 
@@ -113,7 +114,7 @@ export class BetsService {
 
             try {
 
-                slips = await this.entityManager.query("SELECT id,event_id,event_type,event_name,producer_id,market_id,market_name,specifier,outcome_id,outcome_name,odds,won,status,void_factor FROM bet_slip WHERE bet_id =? ",[bet.id])
+                slips = await this.entityManager.query("SELECT id,event_id,event_type,event_name,event_date,producer_id,market_id,market_name,specifier,outcome_id,outcome_name,odds,won,status,void_factor FROM bet_slip WHERE bet_id =? ",[bet.id])
 
             }
             catch (e) {
@@ -266,6 +267,7 @@ export class BetsService {
             // selection.odds = odd
             selections.push({
                 event_name: selection.eventName,
+                event_date: selection.eventDate,
                 selection_id: selection.selectionId,
                 event_type: selection.eventType,
                 event_prefix: "sr",
@@ -365,13 +367,14 @@ export class BetsService {
                     selection.event_type = "match"
                 }
 
-                console.log(JSON.stringify(selection));
+                // console.log(JSON.stringify(selection));
 
                 let betSlipData = new BetSlip()
                 betSlipData.bet_id = betResult.id;
                 betSlipData.client_id = bet.clientId;
                 betSlipData.user_id = bet.userId;
                 betSlipData.event_type = selection.event_type;
+                betSlipData.event_date = selection.event_date;
                 betSlipData.event_id = selection.event_id;
                 betSlipData.match_id = selection.match_id;
                 betSlipData.selection_id = selection.selection_id;
@@ -418,8 +421,8 @@ export class BetsService {
                 // transaction_type: TRANSACTION_TYPE_PLACE_BET
             }
 
-            axios.post(clientSettings.url + '/api/wallet/debit', debitPayload);
-
+            const res = await axios.post(clientSettings.url + '/api/wallet/debit', debitPayload);
+            console.log(JSON.stringify(res.data));
             // committing transaction
             // await transactionRunner.commitTransaction();
 

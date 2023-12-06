@@ -1,15 +1,6 @@
 import {Controller} from '@nestjs/common';
 import {BetsService} from './bets.service';
 import {GrpcMethod} from "@nestjs/microservices";
-import {InjectRepository} from "@nestjs/typeorm";
-import {Bet} from "../entity/bet.entity";
-import {Repository} from "typeorm";
-import {Mts} from "../entity/mts.entity";
-import {BetSlip} from "../entity/betslip.entity";
-import {Setting} from "../entity/setting.entity";
-import {Producer} from "../entity/producer.entity";
-import {OddsLive} from "../entity/oddslive.entity";
-import {OddsPrematch} from "../entity/oddsprematch.entity";
 import {JsonLogger, LoggerFactory} from "json-logger-service";
 import {PlaceBet} from "../grpc/interfaces/placebet.interface";
 import {PlaceBetResponse} from "../grpc/interfaces/placebet.response.interface";
@@ -40,7 +31,7 @@ export class BetsController {
     @GrpcMethod('BettingService', 'BetHistory')
     BetHistory(data: BetHistoryRequest): Promise<BetHistoryResponse> {
 
-        return this.betsService.findAll(data.userId,data.status,data.date)
+        return this.betsService.findAll(data.userId,data.status,data.date, data.clientId)
     }
 
 }
