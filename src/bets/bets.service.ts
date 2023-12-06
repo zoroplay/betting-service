@@ -169,7 +169,10 @@ export class BetsService {
                 client_id: bet.clientId
             }
         });
-        const userRes: any = await axios.get(clientSettings.url + '/api/wallet/balance')
+        const userRes: any = await axios.get(clientSettings.url + '/api/wallet/balance/' +bet.userId)
+                                    .catch(() => {
+                                        throw new ForbiddenException('API not available');
+                                    });
                                     
         let user;
         console.log(userRes);
