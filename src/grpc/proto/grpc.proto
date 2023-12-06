@@ -86,7 +86,7 @@ message BetSlip {
   string sport = 12;
   string tournament = 13;
   string category = 14;
-  int32 matchID = 15;
+  int32 matchId = 15;
   string awayTeam = 16;
   string homeTeam = 17;
   string type = 18;
