@@ -1,4 +1,4 @@
-import {Inject, Injectable} from '@nestjs/common';
+import {ForbiddenException, Inject, Injectable} from '@nestjs/common';
 import {InjectRepository} from '@nestjs/typeorm';
 import {EntityManager, Repository} from 'typeorm';
 import {Bet} from '../entity/bet.entity';
@@ -13,7 +13,7 @@ import {BET_PENDING, STATUS_LOST, STATUS_NOT_LOST_OR_WON, STATUS_WON, TRANSACTIO
 import {BetHistoryResponse} from "../grpc/interfaces/bet.history.response.interface";
 import { PlaceBetResponse } from 'src/grpc/interfaces/placebet.response.interface';
 import { BetSlipSelection } from 'src/grpc/interfaces/betslip.interface';
-import { Observable } from 'rxjs';
+import { Observable, catchError, map } from 'rxjs';
 import { ProducerstatusreplyInterface } from './interfaces/producerstatusreply.interface';
 import { AmqpConnection } from '@golevelup/nestjs-rabbitmq';
 import { ClientGrpc } from '@nestjs/microservices';
@@ -168,7 +168,14 @@ export class BetsService {
                 client_id: bet.clientId
             }
         });
-        const userRes: any = await this.httpService.get(clientSettings.url + '/api/wallet/balance');
+        const userRes: any = this.httpService
+                                    .get(clientSettings.url + '/api/wallet/balance')
+                                    .pipe(map((res) => res.data?.data))
+                                    .pipe(
+                                        catchError(() => {
+                                            throw new ForbiddenException('API not available');
+                                        }),
+                                    );
         let user;
         console.log(userRes);
 
