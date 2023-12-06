@@ -159,7 +159,7 @@ export class BetsService {
         if (bet.source == undefined || bet.source.length === 0)
             return {status: 400, message: "missing bet source", success: false};
 
-        if (bet.betslip == undefined )
+        if (bet.selections == undefined )
             return {status: 400, message: "missing selections", success: false};
 
         
@@ -187,8 +187,8 @@ export class BetsService {
             return {status: 400, message: "Insufficient balance ", success: false};
 
 
-        let userSelection =  bet.betslip
-        // console.log("userSelection | "+JSON.stringify(userSelection))
+        let userSelection =  bet.selections
+        console.log("userSelection | "+JSON.stringify(userSelection))
 
         if(clientSettings == undefined || clientSettings.id == undefined || clientSettings.id == 0 ) {
             // return {status: 400, data: "invalid client"};
@@ -414,7 +414,7 @@ export class BetsService {
                 type: 'Sport'
                 // transaction_type: TRANSACTION_TYPE_PLACE_BET
             }
-            
+
             axios.post(clientSettings.url + '/api/wallet/debit', debitPayload);
 
             // committing transaction
