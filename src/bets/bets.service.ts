@@ -22,6 +22,7 @@ import { HttpService } from '@nestjs/axios';
 import {GetOddsReply} from "./interfaces/oddsreply.interface";
 import {GetOddsRequest} from "./interfaces/oddsrequest.interface";
 import axios from 'axios';
+import { BetHistoryRequest } from 'src/grpc/interfaces/bet.history.request.interface';
 
 @Injectable()
 export class BetsService {
@@ -66,7 +67,7 @@ export class BetsService {
 
     }
 
-    async findAll(userID: number, status: number, date: string, clientId: number): Promise<BetHistoryResponse> {
+    async findAll({userId, status, to, from, clientId}: BetHistoryRequest): Promise<BetHistoryResponse> {
 
         let bets : any
 
@@ -76,23 +77,26 @@ export class BetsService {
             params.push(clientId);
             let where = []
 
-            if (userID > 0) {
+            if (userId > 0) {
 
                 where.push("user_id = ? ")
-                params.push(userID)
+                params.push(userId)
 
             }
 
-            if(status > -2 ) {
-
+            if(status !== '') {
                 where.push("status = ? ")
                 params.push(status)
             }
 
-            if(date.length > 1 ) {
+            if(from && from !== '' ) {
+                where.push("date(created) >= ? ")
+                params.push(from)
+            }
 
-                where.push("date(created) = ? ")
-                params.push(date)
+            if(to && to !== '' ) {
+                where.push("date(created) <= ? ")
+                params.push(to)
             }
 
             let queryString = "SELECT id,betslip_id,stake,currency,bet_type,total_odd,possible_win,source,total_bets,status,won,created FROM bet WHERE client_id = ? AND " + where.join(' AND ')+" ORDER BY id DESC"

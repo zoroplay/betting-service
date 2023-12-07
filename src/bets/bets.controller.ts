@@ -31,7 +31,7 @@ export class BetsController {
     @GrpcMethod('BettingService', 'BetHistory')
     BetHistory(data: BetHistoryRequest): Promise<BetHistoryResponse> {
 
-        return this.betsService.findAll(data.userId,data.status,data.date, data.clientId)
+        return this.betsService.findAll(data)
     }
 
 }
