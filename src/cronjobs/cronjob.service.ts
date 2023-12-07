@@ -1,8 +1,9 @@
 import {Injectable} from "@nestjs/common";
-import {Cron, CronExpression} from "@nestjs/schedule";
+import {Cron, CronExpression, Timeout} from "@nestjs/schedule";
 import {JsonLogger, LoggerFactory} from "json-logger-service";
 import {BetSettlementService} from "./workers/bet.settlement.service";
 import {BetResultingController} from "./workers/bet.resulting.service";
+import { EntityManager } from "typeorm";
 
 @Injectable()
 export class CronjobService {
@@ -12,6 +13,7 @@ export class CronjobService {
     constructor(
         private readonly betResultingService: BetResultingController,
         private readonly betSettlementService: BetSettlementService,
+        private readonly entityManager: EntityManager
     ) {
     }
 
@@ -39,5 +41,18 @@ export class CronjobService {
 
         })
     }
+    
+    @Timeout(10000)
+    async updateOutcomeIds() {
+        console.log('updating outcome ids');
+        const selections = await this.entityManager.query(`SELECT outcome_id FROM odds_prematch WHERE status = ?`, [0]);
+        console.log('found ' + selections.length + ' selections')
+        for (const selection of selections) {
+            const outcome = await this.entityManager.query(`SELECT * from odds_prematch where id = ?`, [selection.outcome_id]);
+            console.log('updating outcome', selection.outcome_id);
+            await this.entityManager.query(`UPDATE bet_slip SET outcome_id = ? WHERE outcome_id = ?`, [outcome.outcome_id]);
 
+        }
+
+    }
 }
