@@ -297,26 +297,26 @@ export class BetsService {
                 return {status: 400, message: "missing odds in your selection ", success: false};
 
             // get odds
-            let odd = await this.getOdds(selection.producerId, selection.eventId, selection.marketId, selection.specifier, selection.outcomeId)
+            // let odd = await this.getOdds(selection.producerId, selection.eventId, selection.marketId, selection.specifier, selection.outcomeId)
 
-            if (odd === 0 ) { // || odd.active == 0 || odd.status !== 0 ) {
+            // if (odd === 0 ) { // || odd.active == 0 || odd.status !== 0 ) {
 
-                this.logger.info("selection suspended " + JSON.stringify(selection))
-                /*
-                return {
-                    message: "Your selection " + selection.eventName + " - " + selection.marketName + " is suspended",
-                    status: 400,
-                    success: false
-                };
-                */
+            //     this.logger.info("selection suspended " + JSON.stringify(selection))
+            //     /*
+            //     return {
+            //         message: "Your selection " + selection.eventName + " - " + selection.marketName + " is suspended",
+            //         status: 400,
+            //         success: false
+            //     };
+            //     */
 
-            } else {
+            // } else {
 
-                this.logger.info("Got Odds " + odd)
+            //     this.logger.info("Got Odds " + odd)
 
-            }
+            // }
 
-            selection.odds = odd
+            // selection.odds = odd
             selections.push({
                 event_name: selection.eventName,
                 event_date: selection.eventDate,
@@ -335,7 +335,7 @@ export class BetsService {
                 tournament_name: selection.tournament,
                 category_name: selection.category,
                 sport_name: selection.sport,
-                odds: odd,
+                odds: selection.odds,
                 is_live: selection.type === 'live' ? 1 : 0
             })
             totalOdds = totalOdds * parseFloat(selection.odds.toFixed(2))
