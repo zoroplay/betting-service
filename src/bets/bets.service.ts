@@ -194,8 +194,6 @@ export class BetsService {
 
     async placeBet(bet): Promise<PlaceBetResponse> {
 
-        console.log("userSelection | "+JSON.stringify(bet))
-
         if (bet.clientId == 0)
             return {status: 400, message: "missing client id", success: false};
 
@@ -236,7 +234,7 @@ export class BetsService {
             return {status: 400, message: "Insufficient balance ", success: false};
 
 
-        let userSelection =  bet.betslip
+        let userSelection =  bet.selections
         // console.log("userSelection | "+JSON.stringify(userSelection))
 
         if(clientSettings == undefined || clientSettings.id == undefined || clientSettings.id == 0 ) {
