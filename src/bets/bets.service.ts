@@ -421,8 +421,7 @@ export class BetsService {
                 // transaction_type: TRANSACTION_TYPE_PLACE_BET
             }
 
-            const res = await axios.post(clientSettings.url + '/api/wallet/debit', debitPayload);
-            console.log(JSON.stringify(res.data));
+            axios.post(clientSettings.url + '/api/wallet/debit', debitPayload);
             // committing transaction
             // await transactionRunner.commitTransaction();
 
