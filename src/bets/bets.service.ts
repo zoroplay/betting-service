@@ -95,7 +95,7 @@ export class BetsService {
                 params.push(date)
             }
 
-            let queryString = "SELECT id,stake,currency,bet_type,total_odd,possible_win,stake_after_tax,tax_on_stake,tax_on_winning,winning_after_tax,total_bets,status,won,created FROM bet WHERE client_id = ? AND " + where.join(' AND ')+" ORDER BY id DESC"
+            let queryString = "SELECT id,betslip_id,stake,currency,bet_type,total_odd,possible_win,source,total_bets,status,won,created FROM bet WHERE client_id = ? AND " + where.join(' AND ')+" ORDER BY id DESC"
 
             bets = await this.entityManager.query(queryString,params)
 
@@ -114,7 +114,7 @@ export class BetsService {
 
             try {
                 const slipQuery = `SELECT id,event_id,event_type,event_name,event_date,market_name,specifier,outcome_name,odds,won,
-                status,sport_name,category_name,tournament_name FROM bet_slip WHERE bet_id =? `
+                status,sport_name,category_name,tournament_name,match_id FROM bet_slip WHERE bet_id =? `
                 slips = await this.entityManager.query(slipQuery,[bet.id])
 
             }
@@ -126,17 +126,17 @@ export class BetsService {
 
             if(bet.won == STATUS_NOT_LOST_OR_WON) {
 
-                bet.status_description = "Pending"
+                bet.statusDescription = "Pending"
             }
 
             if(bet.won == STATUS_LOST) {
 
-                bet.status_description = "Lost"
+                bet.statusDescription = "Lost"
             }
 
             if(bet.won == STATUS_WON) {
 
-                bet.status_description = "Won"
+                bet.statusDescription = "Won"
             }
 
             bet.selections = [];
@@ -176,6 +176,11 @@ export class BetsService {
                 
             }
 
+            bet.betslipId = bet.betslip_id;
+            bet.totalOdd = bet.total_odd;
+            bet.possibleWin = bet.possible_win;
+            bet.betType = bet.bet_type;
+            
             myBets.push(bet)
 
         }
