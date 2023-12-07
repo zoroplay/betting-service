@@ -318,7 +318,7 @@ export class BetsService {
 
             }
 
-            // selection.odds = odd
+            selection.odds = odd
             selections.push({
                 event_name: selection.eventName,
                 event_date: selection.eventDate,
@@ -337,7 +337,7 @@ export class BetsService {
                 tournament_name: selection.tournament,
                 category_name: selection.category,
                 sport_name: selection.sport,
-                odds: selection.odds,
+                odds: odd,
                 is_live: selection.type === 'live' ? 1 : 0
             })
             totalOdds = totalOdds * parseFloat(selection.odds.toFixed(2))
