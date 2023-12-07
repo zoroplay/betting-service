@@ -185,7 +185,7 @@ export class BetsService {
 
         }
 
-        return {data: myBets};
+        return {bets: myBets};
     }
 
     async placeBet(bet): Promise<PlaceBetResponse> {
