@@ -208,7 +208,7 @@ export class BetsService {
         if (bet.source == undefined || bet.source.length === 0)
             return {status: 400, message: "missing bet source", success: false};
 
-        if (bet.betslip == undefined )
+        if (bet.selections == undefined )
             return {status: 400, message: "missing selections", success: false};
 
         
