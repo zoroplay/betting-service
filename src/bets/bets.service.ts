@@ -180,7 +180,7 @@ export class BetsService {
             bet.totalOdd = bet.total_odd;
             bet.possibleWin = bet.possible_win;
             bet.betType = bet.bet_type;
-            
+
             myBets.push(bet)
 
         }
@@ -556,7 +556,7 @@ export class BetsService {
 
     generateBetslipId() {
         const characters ='ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-        let result = ' ';
+        let result = '';
         const charactersLength = characters.length;
         for ( let i = 0; i < 7; i++ ) {
             result += characters.charAt(Math.floor(Math.random() * charactersLength));
