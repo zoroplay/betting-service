@@ -8,4 +8,5 @@ export interface CreateSetting {
     maximumSelections: number;
     mtsLimitID: number;
     currency: string;
+    url: string;
 }

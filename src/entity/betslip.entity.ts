@@ -23,12 +23,36 @@ export class BetSlip {
     event_id: number;
 
     @Index()
+    @Column({ type: "varchar", length: 200, nullable: false })
+    selection_id: string;
+
+    @Index()
+    @Column({ type: "bigint", nullable: false })
+    match_id: number;
+
+    @Index()
     @Column({ type: "varchar", length: 20, nullable: false, default: 'match' })
     event_type: string;
 
     @Index()
     @Column({ type: "varchar", length: 200, nullable: false })
     event_name: string;
+
+    @Index()
+    @Column({ type: "varchar", length: 100, nullable: false })
+    event_date: string;
+
+    @Index()
+    @Column({ type: "varchar", length: 200, nullable: false })
+    tournament_name: string;
+
+    @Index()
+    @Column({ type: "varchar", length: 200, nullable: false })
+    category_name: string;
+
+    @Index()
+    @Column({ type: "varchar", length: 200, nullable: false })
+    sport_name: string;
 
     @Index()
     @Column({type:"int", nullable: false })
@@ -69,6 +93,10 @@ export class BetSlip {
     @Index()
     @Column({type:"int", nullable: false, default: 0 })
     status: number;
+
+    @Index()
+    @Column({type:"int", nullable: false, default: 0 })
+    is_live: number;
 
     @Index()
     @Column({ type: "decimal", precision: 20, scale: 2, nullable: true })

@@ -41,6 +41,10 @@ export class Setting {
     currency: string;
 
     @Index()
+    @Column({ type: "varchar", nullable: true })
+    url: string;
+
+    @Index()
     @CreateDateColumn()
     created: string;
 

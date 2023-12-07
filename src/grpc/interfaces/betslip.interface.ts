@@ -1,7 +1,9 @@
 export interface BetSlipSelection {
     eventName: string;
+    eventDate: string;
     eventType: string;
     eventId: number;
+    matchId: number;
     producerId: number;
     marketId: number;
     marketName: string;
@@ -10,6 +12,12 @@ export interface BetSlipSelection {
     outcomeName: string;
     odds: number;
     sportId: number;
+    sport: string;
+    category: string;
+    tournament: string;
+    selectionId: string;
+    type: string;
+    won?: number;
 }
 
 export interface ProbabilityBetSlipSelection {

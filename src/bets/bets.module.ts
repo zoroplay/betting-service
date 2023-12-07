@@ -11,10 +11,12 @@ import {OddsLive} from '../entity/oddslive.entity';
 import {OddsPrematch} from '../entity/oddsprematch.entity';
 import {ClientsModule, Transport} from "@nestjs/microservices";
 import {join} from "path";
+import { HttpModule } from '@nestjs/axios';
 
 @Module({
   imports: [
-      TypeOrmModule.forFeature([Bet,BetSlip,Mts,Setting,Producer,OddsLive,OddsPrematch]),
+    HttpModule,
+    TypeOrmModule.forFeature([Bet,BetSlip,Mts,Setting,Producer,OddsLive,OddsPrematch]),
     ClientsModule.register([
       {
         name: 'ODDS_PACKAGE',

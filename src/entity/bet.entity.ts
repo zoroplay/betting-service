@@ -15,6 +15,10 @@ export class Bet {
     user_id: number;
 
     @Index()
+    @Column({ type: "varchar", length: 20, nullable: false })
+    betslip_id: string;
+
+    @Index()
     @Column({ type: "decimal", precision: 20, scale: 2, nullable: false })
     stake: number;
 
@@ -23,8 +27,12 @@ export class Bet {
     currency: string;
 
     @Index()
+    @Column({ type: "varchar", length: 100, nullable: true })
+    bet_type: string;
+
+    @Index()
     @Column({type:"int", nullable: false, default: BET_TYPE_NORMAL })
-    bet_type: number;
+    bet_category: string;
 
     @Index()
     @Column({ type: "decimal", precision: 20, scale: 2, nullable: false })
@@ -58,11 +66,11 @@ export class Bet {
     status: number;
 
     @Index()
-    @Column({ type: "decimal", precision: 20, scale: 2, nullable: false })
+    @Column({ type: "decimal", precision: 20, scale: 2, default: 0 })
     cash_out_amount: number;
 
     @Index()
-    @Column({ type: "decimal", precision: 20, scale: 2, nullable: false })
+    @Column({ type: "decimal", precision: 20, scale: 2, nullable: true, default: 0 })
     probability: number;
     
     @Index()
