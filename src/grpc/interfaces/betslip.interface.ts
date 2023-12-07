@@ -17,6 +17,7 @@ export interface BetSlipSelection {
     tournament: string;
     selectionId: string;
     type: string;
+    won?: number;
 }
 
 export interface ProbabilityBetSlipSelection {

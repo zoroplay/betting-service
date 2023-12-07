@@ -113,8 +113,9 @@ export class BetsService {
             let slips : any
 
             try {
-
-                slips = await this.entityManager.query("SELECT id,event_id,event_type,event_name,event_date,producer_id,market_id,market_name,specifier,outcome_id,outcome_name,odds,won,status,void_factor FROM bet_slip WHERE bet_id =? ",[bet.id])
+                const slipQuery = `SELECT id,event_id,event_type,event_name,event_date,market_name,specifier,outcome_name,odds,won,
+                status,sport_name,category_name,tournament_name FROM bet_slip WHERE bet_id =? `
+                slips = await this.entityManager.query(slipQuery,[bet.id])
 
             }
             catch (e) {
@@ -138,7 +139,42 @@ export class BetsService {
                 bet.status_description = "Won"
             }
 
-            bet.selections = slips
+            bet.selections = [];
+            if (slips.length > 0 ) {
+                for (const slip of slips) {
+                    let slipStatus;
+                    switch (slip.status) {
+                        case STATUS_NOT_LOST_OR_WON:
+                            slipStatus = 'Pending'
+                            break;
+                        case STATUS_LOST:
+                            slipStatus = 'Lost'
+                            break;
+                        case STATUS_WON:
+                            slipStatus = 'Won'
+                        default:
+                            break;
+                    }
+        
+                    bet.selections.push({
+                        eventName: slip.event_name,
+                        eventDate: slip.event_date,
+                        eventType: slip.event_type,
+                        eventId: slip.event_id,
+                        matchId: slip.match_id,
+                        marketName: slip.market_name,
+                        specifier: slip.specifier,
+                        outcomeName: slip.outcome_name,
+                        odds: slip.odds,
+                        sport: slip.sport_name,
+                        category: slip.category_name,
+                        tournament: slip.tournament_name,
+                        type: slip.is_live === 1 ? 'live' : 'pre',
+                        status: slipStatus,
+                    })
+                }
+                
+            }
 
             myBets.push(bet)
 
