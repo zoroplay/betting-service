@@ -208,7 +208,7 @@ export class BetsService {
         if (bet.source == undefined || bet.source.length === 0)
             return {status: 400, message: "missing bet source", success: false};
 
-        if (bet.selections == undefined )
+        if (bet.betslip == undefined )
             return {status: 400, message: "missing selections", success: false};
 
         
@@ -236,7 +236,7 @@ export class BetsService {
             return {status: 400, message: "Insufficient balance ", success: false};
 
 
-        let userSelection =  bet.selections
+        let userSelection =  bet.betslip
         // console.log("userSelection | "+JSON.stringify(userSelection))
 
         if(clientSettings == undefined || clientSettings.id == undefined || clientSettings.id == 0 ) {
