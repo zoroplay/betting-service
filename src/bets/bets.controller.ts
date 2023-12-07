@@ -109,7 +109,7 @@ export class BetsController implements OnModuleInit {
     async createBet(bet: PlaceBet): Promise<PlaceBetResponse> {
 
 
-        //this.logger.info("received bet " + JSON.stringify(bet))
+        this.logger.info("received bet " + JSON.stringify(bet))
 
         //1. fields validations
 
