@@ -193,6 +193,9 @@ export class BetsService {
     }
 
     async placeBet(bet): Promise<PlaceBetResponse> {
+
+        console.log("userSelection | "+JSON.stringify(bet))
+
         if (bet.clientId == 0)
             return {status: 400, message: "missing client id", success: false};
 
@@ -296,18 +299,24 @@ export class BetsService {
                 return {status: 400, message: "missing odds in your selection ", success: false};
 
             // get odds
-            // var odd = await this.getOdds(selection.producerId, selection.eventId, selection.marketId, selection.specifier, selection.outcomeId)
+            let odd = await this.getOdds(selection.producerId, selection.eventId, selection.marketId, selection.specifier, selection.outcomeId)
 
-            // if (odd === 0 ) { // || odd.active == 0 || odd.status !== 0 ) {
+            if (odd === 0 ) { // || odd.active == 0 || odd.status !== 0 ) {
 
-            //     this.logger.info("selection suspended " + JSON.stringify(selection))
-            //     return {
-            //         message: "Your selection " + selection.eventName + " - " + selection.marketName + " is suspended",
-            //         status: 400,
-            //         success: false
-            //     };
+                this.logger.info("selection suspended " + JSON.stringify(selection))
+                /*
+                return {
+                    message: "Your selection " + selection.eventName + " - " + selection.marketName + " is suspended",
+                    status: 400,
+                    success: false
+                };
+                */
 
-            // }
+            } else {
+
+                this.logger.info("Got Odds " + odd)
+
+            }
 
             // selection.odds = odd
             selections.push({
