@@ -15,7 +15,7 @@ export class Booking {
     user_id: number;
 
     @Index()
-    @Column({type:"varchar", length: 150, nullable: true })
+    @Column({type:"varchar", length: 50, nullable: true })
     betslip_id: string;
 
     @Index()

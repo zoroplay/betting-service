@@ -65,7 +65,7 @@ export class BookingSelection {
     specifier: string;
 
     @Index()
-    @Column({ type: "varchar", length: 200, nullable: false })
+    @Column({ type: "varchar", length: 20, nullable: false })
     outcome_id: string;
 
     @Index()
