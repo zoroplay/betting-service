@@ -16,12 +16,12 @@ async function bootstrap() {
     options: {
       url: `${process.env.GRPC_HOST}:${process.env.GRPC_PORT}`,
       package: 'betting',
-      protoPath: join(__dirname, './grpc/proto/grpc.proto'),
+      protoPath: join('proto/grpc.proto'),
     }
   });
 
   await app.startAllMicroservices();
 
-  await app.listen(3000);
+  await app.listen(5004);
 }
 bootstrap();

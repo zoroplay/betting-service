@@ -7,6 +7,8 @@ import {PlaceBetResponse} from "../grpc/interfaces/placebet.response.interface";
 import {BetHistoryRequest} from "../grpc/interfaces/bet.history.request.interface";
 import {BetHistoryResponse} from "../grpc/interfaces/bet.history.response.interface";
 import { BookingCode } from 'src/grpc/interfaces/booking.code.interface';
+import { UpdateBetRequest } from 'src/grpc/interfaces/update.bet.request.interface';
+import { UpdateBetResponse } from 'src/grpc/interfaces/update.bet.response.interface';
 
 @Controller('bets')
 export class BetsController {
@@ -22,6 +24,12 @@ export class BetsController {
     PlaceBet(data: PlaceBet): Promise<PlaceBetResponse> {
 
         return this.betsService.placeBet(data);
+    }
+
+    @GrpcMethod('BettingService', 'UpdateBet')
+    UpdateBet(data: UpdateBetRequest): Promise<UpdateBetResponse> {
+
+        return this.betsService.updateBet(data);
     }
 
     @GrpcMethod('BettingService', 'BookBet')

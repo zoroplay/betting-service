@@ -9,7 +9,7 @@ import {Producer} from '../entity/producer.entity';
 import {OddsLive} from '../entity/oddslive.entity';
 import {OddsPrematch} from '../entity/oddsprematch.entity';
 import {JsonLogger, LoggerFactory} from 'json-logger-service';
-import {BET_PENDING, STATUS_LOST, STATUS_NOT_LOST_OR_WON, STATUS_WON, TRANSACTION_TYPE_PLACE_BET} from "../constants";
+import {BET_LOST, BET_PENDING, BET_VOIDED, BET_WON, STATUS_LOST, STATUS_NOT_LOST_OR_WON, STATUS_WON, TRANSACTION_TYPE_PLACE_BET} from "../constants";
 import {BetHistoryResponse} from "../grpc/interfaces/bet.history.response.interface";
 import { PlaceBetResponse } from 'src/grpc/interfaces/placebet.response.interface';
 import { BetSlipSelection } from 'src/grpc/interfaces/betslip.interface';
@@ -26,6 +26,8 @@ import { BetHistoryRequest } from 'src/grpc/interfaces/bet.history.request.inter
 import { Booking } from 'src/entity/booking.entity';
 import { BookingSelection } from 'src/entity/booking.selection.entity';
 import { BookingCode } from 'src/grpc/interfaces/booking.code.interface';
+import { UpdateBetRequest } from 'src/grpc/interfaces/update.bet.request.interface';
+import { UpdateBetResponse } from 'src/grpc/interfaces/update.bet.response.interface';
 
 @Injectable()
 export class BetsService {
@@ -873,6 +875,73 @@ export class BetsService {
             return {status: 500, success: false, message: 'Unable to fetch booking code'};
         }
 
+    }
+
+    async updateBet({betId, status, entityType, clientId }: UpdateBetRequest): Promise<UpdateBetResponse> {
+        try {
+            let updateStatus;
+
+            if (entityType === 'bet') {
+
+                switch (status) {
+                    case 'won':
+                       updateStatus = BET_WON;
+                       // to-DO: credit user
+                        break;
+                    case 'lost':
+                        updateStatus = BET_LOST;
+                        // TO-DO: check if ticket was won
+                        break;
+                    case 'void': 
+                        updateStatus = BET_VOIDED;
+                        // TO-DO: return stake and credit user
+                        break;
+                    default:
+                        updateStatus = BET_PENDING;
+                        break;
+                }
+                // update bet status
+                await this.betRepository.update(
+                    {
+                        id: betId,
+                    },
+                    {
+                        status: updateStatus,
+                    }
+                );
+            } else {
+
+                switch (status) {
+                    case 'won':
+                       updateStatus = BET_WON;
+                        break;
+                    case 'lost':
+                        updateStatus = BET_LOST;
+                        break;
+                    case 'void': 
+                        updateStatus = BET_VOIDED;
+                        // TO-DO: recalculate odds
+                        break;
+                    default:
+                        updateStatus = BET_PENDING;
+                        break;
+                }
+                // update selection status
+                await this.betslipRepository.update(
+                    {
+                        id: betId,
+                    },
+                    {
+                        status: updateStatus,
+                    }
+                );
+            }
+
+            return {status: 200, success: true, message: `${entityType} updated successfully` };
+
+        } catch(e) {
+            return {status: 500, success: false, message: 'Unable to carry out operations'};
+        }
     }
 
     async getOdds(producerId: number, eventId: number, marketId: number, specifier: string, outcomeId: string): Promise<number> {
