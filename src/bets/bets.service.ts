@@ -806,14 +806,10 @@ export class BetsService {
                 where: {betslip_id: code, client_id: clientId},
                 relations: {selections: true}
             });
+            console.log(JSON.stringify(booking));
+
             if (booking) {
-                const data = {
-                    stake: booking.stake,
-                    betslipId: booking.betslip_id,
-                    totalOdd: booking.total_odd,
-                    possibleWin: booking.possible_win,
-                    selections: []
-                }
+                
                 const selections = [];
 
                 for (const selection of booking.selections) {
@@ -836,10 +832,13 @@ export class BetsService {
                         selectionId: selection.selection_id,
                     })
                 }
-
-                data.selections = selections;
-
-                console.log(JSON.stringify(data));
+                const data = {
+                    stake: booking.stake,
+                    betslipId: booking.betslip_id,
+                    totalOdd: booking.total_odd,
+                    possibleWin: booking.possible_win,
+                    selections
+                }
 
                 return {status: 200, success: true, message: 'Booking code found', data };
             } else {
