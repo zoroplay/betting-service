@@ -25,7 +25,7 @@ export class BetsController {
 
     @GrpcMethod('BettingService', 'BookBet')
     bookBet(data: PlaceBet): Promise<PlaceBetResponse> {
-        return this.betsService.placeBet(data);
+        return this.betsService.bookBet(data);
     }
 
     @GrpcMethod('BettingService', 'BetHistory')
