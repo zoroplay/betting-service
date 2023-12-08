@@ -6,13 +6,10 @@ import { Booking } from "./booking.entity";
 export class BookingSelection {
     @PrimaryGeneratedColumn({ type: "bigint"})
     id: number;
-
-    @Index()
-    @Column({ type: "bigint"})
-    booking_id: number;
     
     @Index()
     @ManyToOne(() => Booking, (booking) => booking.selections)
+    @JoinColumn({name: "booking_id"})
     booking: Booking;
 
     @Index()

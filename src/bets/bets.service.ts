@@ -738,7 +738,7 @@ export class BetsService {
                 // console.log(JSON.stringify(selection));
 
                 let betSlipData = new BookingSelection()
-                betSlipData.booking_id = betResult.id;
+                betSlipData.booking = betResult;
                 betSlipData.event_type = selection.event_type;
                 betSlipData.event_date = selection.event_date;
                 betSlipData.event_id = selection.event_id;
