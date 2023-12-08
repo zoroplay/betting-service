@@ -25,6 +25,7 @@ import axios from 'axios';
 import { BetHistoryRequest } from 'src/grpc/interfaces/bet.history.request.interface';
 import { Booking } from 'src/entity/booking.entity';
 import { BookingSelection } from 'src/entity/booking.selection.entity';
+import { BookingCode } from 'src/grpc/interfaces/booking.code.interface';
 
 @Injectable()
 export class BetsService {
@@ -797,6 +798,55 @@ export class BetsService {
             return {status: 400, message: "We are unable to accept this bet at the moment ", success: false};
 
         }
+    }
+
+    async getBooking({code, clientId}: BookingCode): Promise<PlaceBetResponse> {
+        try {
+            const booking = await this.bookingRepository.findOne({
+                where: {betslip_id: code, client_id: clientId},
+                relations: {selections: true}
+            });
+            if (booking) {
+                const data = {
+                    stake: booking.stake,
+                    BetSlip: booking.betslip_id,
+                    totalOdds: booking.total_odd,
+                    possibleWin: booking.possible_win,
+                    selections: []
+                }
+                const selections = [];
+
+                for (const selection of booking.selections) {
+                    selections.push({
+                        eventName: selection.event_name,
+                        eventDate: selection.event_date,
+                        eventType: selection.event_type,
+                        eventId: selection.event_id,
+                        matchId: selection.match_id,
+                        producerId: selection.producer_id,
+                        marketId: selection.market_id,
+                        marketName: selection.market_name,
+                        specifier: selection.specifier,
+                        outcomeId: selection.outcome_id,
+                        outcomeName: selection.outcome_name,
+                        odds: selection.odds,
+                        sport: selection.sport_name,
+                        category: selection.category_name,
+                        tournament: selection.tournament_name,
+                        selectionId: selection.selection_id,
+                    })
+                }
+
+                data.selections = selections;
+
+                return {status: 200, success: true, message: 'Booking code found', data };
+            } else {
+                return {status: 404, success: false, message: 'Booking code not found'};
+            }
+        } catch (e) {
+            return {status: 500, success: false, message: 'Unable to fetch booking code'};
+        }
+
     }
 
     async getOdds(producerId: number, eventId: number, marketId: number, specifier: string, outcomeId: string): Promise<number> {

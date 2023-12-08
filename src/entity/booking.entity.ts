@@ -1,4 +1,5 @@
-import {Entity, PrimaryGeneratedColumn, Column, Index, CreateDateColumn, UpdateDateColumn,} from "typeorm";
+import {Entity, PrimaryGeneratedColumn, Column, Index, CreateDateColumn, UpdateDateColumn, OneToMany,} from "typeorm";
+import { BookingSelection } from "./booking.selection.entity";
 
 @Entity()
 export class Booking {
@@ -35,6 +36,9 @@ export class Booking {
     @Index()
     @Column({ type: "varchar", length: 50, nullable: true })
     ip_address: string;
+
+    @OneToMany(() => BookingSelection, (selection) => selection.booking)
+    selections: BookingSelection[]
 
     @Index()
     @CreateDateColumn()

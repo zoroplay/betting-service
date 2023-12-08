@@ -1,4 +1,5 @@
-import {Entity, PrimaryGeneratedColumn, Column, Index, CreateDateColumn, UpdateDateColumn,} from "typeorm";
+import {Entity, PrimaryGeneratedColumn, Column, Index, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn,} from "typeorm";
+import { Booking } from "./booking.entity";
 
 @Entity()
 @Index(['booking_id', 'event_id', 'market_id', 'specifier', 'outcome_id'], { unique: true })
@@ -9,6 +10,10 @@ export class BookingSelection {
     @Index()
     @Column({ type: "bigint"})
     booking_id: number;
+    
+    @Index()
+    @ManyToOne(() => Booking, (booking) => booking.selections)
+    booking: Booking;
 
     @Index()
     @Column({ type: "bigint", nullable: false })
