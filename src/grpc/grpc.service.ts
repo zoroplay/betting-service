@@ -10,10 +10,17 @@ import {OddsLive} from "../entity/oddslive.entity";
 import {BetSlip} from "../entity/betslip.entity";
 import {Probability, ProbabilityBetSlipSelection} from "./interfaces/betslip.interface";
 import {Bet} from "../entity/bet.entity";
+import {Inject} from "@nestjs/common";
+import {ClientGrpc} from "@nestjs/microservices";
+import OddsService from "../bets/odds.service.interface";
+import {GetOddsRequest} from "../bets/interfaces/oddsrequest.interface";
+import {Observable} from "rxjs";
+import {OddsProbability} from "../bets/interfaces/oddsreply.interface";
 
 export class GrpcService {
 
     private readonly logger: JsonLogger = LoggerFactory.createLogger(GrpcService.name);
+    private oddsService: OddsService;
 
     constructor(
         @InjectRepository(Setting)
@@ -31,7 +38,16 @@ export class GrpcService {
         @InjectRepository(Bet)
         private betRepository: Repository<Bet>,
 
+        @Inject('ODDS_PACKAGE')
+        private readonly client: ClientGrpc
+
     ) {
+
+    }
+
+    onModuleInit(): any {
+
+        this.oddsService = this.client.getService<OddsService>('Odds');
 
     }
 
@@ -172,7 +188,7 @@ export class GrpcService {
 
                 let selectionProbability = {} as ProbabilityBetSlipSelection
 
-                let pro = await this.getOddsProbability(slip.event_id,slip.market_id,slip.specifier,slip.outcome_id)
+                let pro = await this.getOddsProbability(slip.producer_id,slip.event_id,slip.market_id,slip.specifier,slip.outcome_id)
                 selectionProbability.currentProbability = pro;
                 selectionProbability.eventId = slip.event_id;
                 selectionProbability.marketId = slip.market_id;
@@ -200,49 +216,26 @@ export class GrpcService {
 
     }
 
-    async getOddsProbability(matchID: number, marketID: number, specifier: string, outcomeID: string): Promise<number> {
+    async getOddsProbability(producerId: number, matchID: number, marketID: number, specifier: string, outcomeID: string): Promise<number> {
 
-        // check if match is live/prematch and active
-
-        try {
-
-            let oddsPrematch = await this.oddsPrematchRepository.findOne({
-                where: {
-                    event_id: matchID,
-                    market_id: marketID,
-                    specifier: specifier,
-                    outcome_id: outcomeID,
-                    status: 0
-                }
-            });
-
-            if(!oddsPrematch.probability) {
-
-                // check live odds
-                oddsPrematch = await this.oddsLiveRepository.findOne({
-                    where: {
-                        event_id: matchID,
-                        market_id: marketID,
-                        specifier: specifier,
-                        outcome_id: outcomeID,
-                        status: 0
-                    }
-                });
-
-                if(!oddsPrematch.probability) {
-
-                    // match doesnt exist
-                    return 1
-                }
-            }
-
-            return oddsPrematch.probability
-
-        } catch (e) {
-
-            this.logger.error(" error retrieving one settings " + e.toString())
-            return 1
+        let odds  = {
+            producerID:producerId,
+            eventID:matchID,
+            marketID:marketID,
+            outcomeID:outcomeID,
+            specifier:specifier,
         }
+
+        let oddStatus =  await this.getOddsProbability(odds).toPromise()
+
+        this.logger.info(oddStatus)
+
+        return oddStatus.probability
+    }
+
+    getOddsProbability(data: GetOddsRequest ): Observable<OddsProbability>  {
+
+        return this.oddsService.GetProbability(data)
     }
 
 }

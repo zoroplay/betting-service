@@ -26,6 +26,7 @@ service Odds {
   // Sends GetOdds status request
   rpc GetOdds (GetOddsRequest) returns (GetOddsReply) {}
   rpc GetProducerStatus (ProducerStatusRequest) returns (ProducerStatusReply) {}
+  rpc GetProbability (GetOddsRequest) returns (Probability) {}
 
 }
 
@@ -54,4 +55,8 @@ message ProducerStatusRequest {
 // The response message containing the producer status
 message ProducerStatusReply {
   int32 status = 1;
+}
+
+message Probability {
+  float probability = 1;
 }

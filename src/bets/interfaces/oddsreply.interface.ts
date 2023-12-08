@@ -4,3 +4,7 @@ export interface GetOddsReply {
     statusName: string;
     active: number;
 }
+
+export interface OddsProbability {
+    probability: number;
+}

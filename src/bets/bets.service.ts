@@ -19,7 +19,7 @@ import { AmqpConnection } from '@golevelup/nestjs-rabbitmq';
 import { ClientGrpc } from '@nestjs/microservices';
 import OddsService from "./odds.service.interface";
 import { HttpService } from '@nestjs/axios';
-import {GetOddsReply} from "./interfaces/oddsreply.interface";
+import {GetOddsReply, OddsProbability} from "./interfaces/oddsreply.interface";
 import {GetOddsRequest} from "./interfaces/oddsrequest.interface";
 import axios from 'axios';
 import { BetHistoryRequest } from 'src/grpc/interfaces/bet.history.request.interface';
@@ -262,6 +262,8 @@ export class BetsService {
         var selections = [];
         var totalOdds = 1;
 
+        let overallProbability = 1
+
         for (const slips of userSelection) {
 
             const selection = slips as BetSlipSelection
@@ -297,24 +299,28 @@ export class BetsService {
                 return {status: 400, message: "missing odds in your selection ", success: false};
 
             // get odds
-            // let odd = await this.getOdds(selection.producerId, selection.eventId, selection.marketId, selection.specifier, selection.outcomeId)
+            let odd = await this.getOdds(selection.producerId, selection.eventId, selection.marketId, selection.specifier, selection.outcomeId)
 
-            // if (odd === 0 ) { // || odd.active == 0 || odd.status !== 0 ) {
+            if (odd === 0 ) { // || odd.active == 0 || odd.status !== 0 ) {
 
-            //     this.logger.info("selection suspended " + JSON.stringify(selection))
-            //     /*
-            //     return {
-            //         message: "Your selection " + selection.eventName + " - " + selection.marketName + " is suspended",
-            //         status: 400,
-            //         success: false
-            //     };
-            //     */
+                this.logger.info("selection suspended " + JSON.stringify(selection))
 
-            // } else {
+                return {
+                    message: "Your selection " + selection.eventName + " - " + selection.marketName + " is suspended",
+                    status: 400,
+                    success: false
+                };
 
-            //     this.logger.info("Got Odds " + odd)
+            } else {
 
-            // }
+                this.logger.info("Got Odds " + odd)
+
+            }
+
+
+            // get probability overallProbability
+            let selectionProbability = await this.getProbability(selection.producerId, selection.eventId, selection.marketId, selection.specifier, selection.outcomeId)
+            overallProbability = overallProbability * selectionProbability
 
             // selection.odds = odd
             selections.push({
@@ -335,9 +341,11 @@ export class BetsService {
                 tournament_name: selection.tournament,
                 category_name: selection.category,
                 sport_name: selection.sport,
-                odds: selection.odds,
+                odds: odd,
+                probability:selectionProbability,
                 is_live: selection.type === 'live' ? 1 : 0
             })
+
             totalOdds = totalOdds * parseFloat(selection.odds.toFixed(2))
         }
 
@@ -407,6 +415,7 @@ export class BetsService {
             betData.total_bets = selections.length;
             betData.source = bet.source;
             betData.ip_address = bet.ipAddress;
+            betData.probability = overallProbability
 
             //let betResult = await this.saveBetWithTransactions(betData, transactionManager)
             betResult = await this.betRepository.save(betData)
@@ -443,6 +452,7 @@ export class BetsService {
                 betSlipData.is_live = selection.is_live;
                 betSlipData.odds = selection.odds
                 betSlipData.status = BET_PENDING
+                betSlipData.probability = selection.probability
                 //await this.saveBetSlipWithTransactions(betSlipData,transactionManager);
                 await this.betslipRepository.save(betSlipData);
 
@@ -565,6 +575,11 @@ export class BetsService {
         return this.oddsService.GetOdds(data)
     }
 
+    getOddsProbability(data: GetOddsRequest ): Observable<OddsProbability>  {
+
+        return this.oddsService.GetProbability(data)
+    }
+
     generateBetslipId() {
         const characters ='ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
         let result = '';
@@ -576,5 +591,24 @@ export class BetsService {
         return result;
 
     }
+
+    async getProbability(producerId: number, eventId: number, marketId: number, specifier: string, outcomeId: string): Promise<number> {
+
+        let odds  = {
+            producerID:producerId,
+            eventID:eventId,
+            marketID:marketId,
+            outcomeID:outcomeId,
+            specifier:specifier,
+        }
+
+        let oddStatus =  await this.getOddsProbability(odds).toPromise()
+
+        this.logger.info(oddStatus)
+
+        return oddStatus.probability
+
+    }
+
 
 }
