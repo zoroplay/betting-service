@@ -535,7 +535,6 @@ export class BetsService {
         }
     }
 
-
     async bookBet(bet): Promise<PlaceBetResponse> {
 
         if (bet.clientId == 0)
@@ -806,31 +805,57 @@ export class BetsService {
                 where: {betslip_id: code, client_id: clientId},
                 relations: {selections: true}
             });
-            console.log(JSON.stringify(booking));
 
             if (booking) {
                 
                 const selections = [];
 
-                for (const selection of booking.selections) {
-                    selections.push({
-                        eventName: selection.event_name,
-                        eventDate: selection.event_date,
-                        eventType: selection.event_type,
-                        eventId: selection.event_id,
-                        matchId: selection.match_id,
-                        producerId: selection.producer_id,
-                        marketId: selection.market_id,
-                        marketName: selection.market_name,
-                        specifier: selection.specifier,
-                        outcomeId: selection.outcome_id,
-                        outcomeName: selection.outcome_name,
-                        odds: selection.odds,
-                        sport: selection.sport_name,
-                        category: selection.category_name,
-                        tournament: selection.tournament_name,
-                        selectionId: selection.selection_id,
-                    })
+                if (booking.selections.length) {
+
+                    for (const selection of booking.selections) {
+                        selections.push({
+                            eventName: selection.event_name,
+                            eventDate: selection.event_date,
+                            eventType: selection.event_type,
+                            eventId: selection.event_id,
+                            matchId: selection.match_id,
+                            producerId: selection.producer_id,
+                            marketId: selection.market_id,
+                            marketName: selection.market_name,
+                            specifier: selection.specifier,
+                            outcomeId: selection.outcome_id,
+                            outcomeName: selection.outcome_name,
+                            odds: selection.odds,
+                            sport: selection.sport_name,
+                            category: selection.category_name,
+                            tournament: selection.tournament_name,
+                            selectionId: selection.selection_id,
+                        })
+                    }
+                } else {
+                    const bookingSelections = await this.bookingSelectionRepo.find({where: {booking}});
+                    if (bookingSelections.length) {
+                        for (const selection of bookingSelections) {
+                            selections.push({
+                                eventName: selection.event_name,
+                                eventDate: selection.event_date,
+                                eventType: selection.event_type,
+                                eventId: selection.event_id,
+                                matchId: selection.match_id,
+                                producerId: selection.producer_id,
+                                marketId: selection.market_id,
+                                marketName: selection.market_name,
+                                specifier: selection.specifier,
+                                outcomeId: selection.outcome_id,
+                                outcomeName: selection.outcome_name,
+                                odds: selection.odds,
+                                sport: selection.sport_name,
+                                category: selection.category_name,
+                                tournament: selection.tournament_name,
+                                selectionId: selection.selection_id,
+                            })
+                        }
+                    }
                 }
                 const data = {
                     stake: booking.stake,
