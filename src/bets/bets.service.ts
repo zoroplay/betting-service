@@ -809,8 +809,8 @@ export class BetsService {
             if (booking) {
                 const data = {
                     stake: booking.stake,
-                    BetSlip: booking.betslip_id,
-                    totalOdds: booking.total_odd,
+                    betslipId: booking.betslip_id,
+                    totalOdd: booking.total_odd,
                     possibleWin: booking.possible_win,
                     selections: []
                 }
@@ -838,6 +838,8 @@ export class BetsService {
                 }
 
                 data.selections = selections;
+
+                console.log(JSON.stringify(data));
 
                 return {status: 200, success: true, message: 'Booking code found', data };
             } else {
