@@ -2,7 +2,6 @@ import {Entity, PrimaryGeneratedColumn, Column, Index, CreateDateColumn, UpdateD
 import { Booking } from "./booking.entity";
 
 @Entity()
-@Index(['event_id', 'market_id', 'specifier', 'outcome_id'], { unique: true })
 export class BookingSelection {
     @PrimaryGeneratedColumn({ type: "bigint"})
     id: number;
