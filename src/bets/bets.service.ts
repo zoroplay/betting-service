@@ -517,7 +517,17 @@ export class BetsService {
             // do debit
             this.logger.debug("published to "+queueName)
 
-            return {status: 201, message: "Bet placed successfully", data: betResult, success: true}
+            return {
+                status: 201, 
+                message: "Bet placed successfully", 
+                data: {
+                    betslipId: betResult.betslip_id,
+                    stake: betResult.stake,
+                    possibleWin: betResult.possible_win,
+                    totalOdd: betResult.total_odd, 
+                },
+                success: true
+            }
         } else {
             return {status: 400, message: "We are unable to accept this bet at the moment ", success: false};
 
@@ -691,7 +701,6 @@ export class BetsService {
         //let transactionRunner = null;
         const betData = new Booking();
         let betResult = null;
-        let mtsSelection = [];
 
         try {
 
@@ -773,7 +782,17 @@ export class BetsService {
 
         if (betData) {
 
-            return {status: 201, message: "Booking placed successfully", data: betResult, success: true}
+            return {
+                status: 201, 
+                message: "Booking placed successfully", 
+                data: {
+                    betslipId: betResult.betslip_id,
+                    stake: betResult.stake,
+                    possibleWin: betResult.possible_win,
+                    totalOdd: betResult.total_odd, 
+                }, 
+                success: true
+            }
         } else {
             return {status: 400, message: "We are unable to accept this bet at the moment ", success: false};
 
