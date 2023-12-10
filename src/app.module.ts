@@ -23,6 +23,8 @@ import {TypeOrmModule} from "@nestjs/typeorm";
 import {RabbitmqModule} from "./rabbitmq.module";
 import 'dotenv/config'
 import {GrpcModule} from "./grpc/grpc.module";
+import { Booking } from './entity/booking.entity';
+import { BookingSelection } from './entity/booking.selection.entity';
 
 @Module({
     imports: [
@@ -43,7 +45,7 @@ import {GrpcModule} from "./grpc/grpc.module";
           username: process.env.DB_USERNAME,
           password: process.env.DB_PASSWORD,
           database: process.env.DB_NAME,
-          entities:[Bet,BetSlip,BetStatus,Mts,OddsLive,OddsPrematch,Producer,Setting,Settlement,BetCancel,SettlementRollback,BetClosure,Winning,Cronjob],
+          entities:[Bet,BetSlip,BetStatus,Booking,BookingSelection,Mts,OddsLive,OddsPrematch,Producer,Setting,Settlement,BetCancel,SettlementRollback,BetClosure,Winning,Cronjob],
           //entities: [__dirname + '/entity/*.ts'],
           //entities: [__dirname + '/ ** / *.entity{.ts,.js}'],
           //entities: [__dirname + '/ ** / *.entity{.ts,.js}'],
