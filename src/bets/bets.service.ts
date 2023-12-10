@@ -304,23 +304,23 @@ export class BetsService {
                 return {status: 400, message: "missing odds in your selection ", success: false};
 
             // get odds
-            let odd = await this.getOdds(selection.producerId, selection.eventId, selection.marketId, selection.specifier, selection.outcomeId)
+            // let odd = await this.getOdds(selection.producerId, selection.eventId, selection.marketId, selection.specifier, selection.outcomeId)
 
-            if (odd === 0 ) { // || odd.active == 0 || odd.status !== 0 ) {
+            // if (odd === 0 ) { // || odd.active == 0 || odd.status !== 0 ) {
 
-                this.logger.info("selection suspended " + JSON.stringify(selection))
+            //     this.logger.info("selection suspended " + JSON.stringify(selection))
 
-                return {
-                    message: "Your selection " + selection.eventName + " - " + selection.marketName + " is suspended",
-                    status: 400,
-                    success: false
-                };
+            //     return {
+            //         message: "Your selection " + selection.eventName + " - " + selection.marketName + " is suspended",
+            //         status: 400,
+            //         success: false
+            //     };
 
-            } else {
+            // } else {
 
-                this.logger.info("Got Odds " + odd)
+            //     this.logger.info("Got Odds " + odd)
 
-            }
+            // }
 
 
             // get probability overallProbability
@@ -346,7 +346,7 @@ export class BetsService {
                 tournament_name: selection.tournament,
                 category_name: selection.category,
                 sport_name: selection.sport,
-                odds: odd,
+                odds: selection.odds,
                 probability:selectionProbability,
                 is_live: selection.type === 'live' ? 1 : 0
             })
