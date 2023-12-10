@@ -304,28 +304,28 @@ export class BetsService {
                 return {status: 400, message: "missing odds in your selection ", success: false};
 
             // get odds
-            // let odd = await this.getOdds(selection.producerId, selection.eventId, selection.marketId, selection.specifier, selection.outcomeId)
+            let odd = await this.getOdds(selection.producerId, selection.eventId, selection.marketId, selection.specifier, selection.outcomeId)
 
-            // if (odd === 0 ) { // || odd.active == 0 || odd.status !== 0 ) {
+            if (odd === 0 ) { // || odd.active == 0 || odd.status !== 0 ) {
 
-            //     this.logger.info("selection suspended " + JSON.stringify(selection))
+                this.logger.info("selection suspended " + JSON.stringify(selection))
 
-            //     return {
-            //         message: "Your selection " + selection.eventName + " - " + selection.marketName + " is suspended",
-            //         status: 400,
-            //         success: false
-            //     };
+                return {
+                    message: "Your selection " + selection.eventName + " - " + selection.marketName + " is suspended",
+                    status: 400,
+                    success: false
+                };
 
-            // } else {
+            } else {
 
-            //     this.logger.info("Got Odds " + odd)
+                this.logger.info("Got Odds " + odd)
 
-            // }
+            }
 
 
             // get probability overallProbability
-            // let selectionProbability = await this.getProbability(selection.producerId, selection.eventId, selection.marketId, selection.specifier, selection.outcomeId)
-            // overallProbability = overallProbability * selectionProbability
+            let selectionProbability = await this.getProbability(selection.producerId, selection.eventId, selection.marketId, selection.specifier, selection.outcomeId)
+            overallProbability = overallProbability * selectionProbability
 
             // selection.odds = odd
             selections.push({
@@ -346,8 +346,8 @@ export class BetsService {
                 tournament_name: selection.tournament,
                 category_name: selection.category,
                 sport_name: selection.sport,
-                odds: selection.odds,
-                // probability:selectionProbability,
+                odds: odd,
+                probability:selectionProbability,
                 is_live: selection.type === 'live' ? 1 : 0
             })
 
@@ -420,7 +420,7 @@ export class BetsService {
             betData.total_bets = selections.length;
             betData.source = bet.source;
             betData.ip_address = bet.ipAddress;
-            // betData.probability = overallProbability
+            betData.probability = overallProbability
 
             //let betResult = await this.saveBetWithTransactions(betData, transactionManager)
             betResult = await this.betRepository.save(betData)
