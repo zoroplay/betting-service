@@ -9,8 +9,11 @@ service BettingService {
   rpc GetAllSettings (GetAll) returns (AllSettingsResponse) {}
   rpc CancelBet (BetID) returns (StatusResponse) {}
   rpc PlaceBet (PlaceBetRequest) returns (PlaceBetResponse) {}
+  rpc BookBet (PlaceBetRequest) returns (PlaceBetResponse) {}
   rpc BetHistory (BetHistoryRequest) returns (BetHistoryResponse) {}
+  rpc UpdateBet (UpdateBetRequest) returns (UpdateBetResponse) {}
   rpc GetProbabilityFromBetID(BetID) returns (Probability) {}
+  rpc GetBooking(BookingCode) returns (PlaceBetResponse) {}
 
 }
 
@@ -58,6 +61,24 @@ message BetID {
   int32 betID = 1;
 }
 
+message UpdateBetRequest {
+  int32 betId = 1;
+  string status = 2;
+  string entityType = 3;
+  int32 clientId = 4;
+}
+
+message UpdateBetResponse {
+  bool success = 1;
+  int32 status = 2;
+  string message = 3;
+}
+
+message BookingCode {
+  string code = 1;
+  int32 clientId = 2;
+}
+
 message StatusResponse {
   string response = 1;
 }
@@ -69,6 +90,7 @@ message PlaceBetRequest {
   float stake = 4;
   string source = 5;
   string ipAddress = 6;
+  string betType = 7;
 }
 
 message BetSlip {
@@ -131,6 +153,7 @@ message BetSlipHistory {
   string category = 18;
   string matchId = 19;
   string eventDate = 20;
+  string selectionId = 21;
 }
 
 message BetHistory {
