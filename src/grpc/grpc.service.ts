@@ -226,14 +226,14 @@ export class GrpcService {
             specifier:specifier,
         }
 
-        let oddStatus =  await this.getOddsProbability(odds).toPromise()
+        let oddStatus =  await this.getProbability(odds).toPromise()
 
         this.logger.info(oddStatus)
 
         return oddStatus.probability
     }
 
-    getOddsProbability(data: GetOddsRequest ): Observable<OddsProbability>  {
+    getProbability(data: GetOddsRequest ): Observable<OddsProbability>  {
 
         return this.oddsService.GetProbability(data)
     }
