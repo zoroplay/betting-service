@@ -324,8 +324,8 @@ export class BetsService {
 
 
             // get probability overallProbability
-            let selectionProbability = await this.getProbability(selection.producerId, selection.matchId, selection.marketId, selection.specifier, selection.outcomeId)
-            overallProbability = overallProbability * selectionProbability
+            // let selectionProbability = await this.getProbability(selection.producerId, selection.matchId, selection.marketId, selection.specifier, selection.outcomeId)
+            // overallProbability = overallProbability * selectionProbability
 
             // selection.odds = odd
             selections.push({
@@ -347,7 +347,7 @@ export class BetsService {
                 category_name: selection.category,
                 sport_name: selection.sport,
                 odds: odd,
-                probability:selectionProbability,
+                // probability:selectionProbability,
                 is_live: selection.type === 'live' ? 1 : 0
             })
 
@@ -632,24 +632,24 @@ export class BetsService {
                 return {status: 400, message: "missing odds in your selection ", success: false};
 
             // get odds
-            // let odd = await this.getOdds(selection.producerId, selection.eventId, selection.marketId, selection.specifier, selection.outcomeId)
+            let odd = await this.getOdds(selection.producerId, selection.matchId, selection.marketId, selection.specifier, selection.outcomeId)
 
-            // if (odd === 0 ) { // || odd.active == 0 || odd.status !== 0 ) {
+            if (odd === 0 ) { // || odd.active == 0 || odd.status !== 0 ) {
 
-            //     this.logger.info("selection suspended " + JSON.stringify(selection))
-            //     /*
-            //     return {
-            //         message: "Your selection " + selection.eventName + " - " + selection.marketName + " is suspended",
-            //         status: 400,
-            //         success: false
-            //     };
-            //     */
+                this.logger.info("selection suspended " + JSON.stringify(selection))
+                
+                return {
+                    message: "Your selection " + selection.eventName + " - " + selection.marketName + " is suspended",
+                    status: 400,
+                    success: false
+                };
+                
 
-            // } else {
+            } else {
 
-            //     this.logger.info("Got Odds " + odd)
+                this.logger.info("Got Odds " + odd)
 
-            // }
+            }
 
             // selection.odds = odd
             selections.push({
@@ -670,7 +670,7 @@ export class BetsService {
                 tournament_name: selection.tournament,
                 category_name: selection.category,
                 sport_name: selection.sport,
-                odds: selection.odds,
+                odds: odd,
                 is_live: selection.type === 'live' ? 1 : 0
             })
             totalOdds = totalOdds * parseFloat(selection.odds.toFixed(2))
@@ -825,24 +825,29 @@ export class BetsService {
                 if (booking.selections.length) {
 
                     for (const selection of booking.selections) {
-                        selections.push({
-                            eventName: selection.event_name,
-                            eventDate: selection.event_date,
-                            eventType: selection.event_type,
-                            eventId: selection.event_id,
-                            matchId: selection.match_id,
-                            producerId: selection.producer_id,
-                            marketId: selection.market_id,
-                            marketName: selection.market_name,
-                            specifier: selection.specifier,
-                            outcomeId: selection.outcome_id,
-                            outcomeName: selection.outcome_name,
-                            odds: selection.odds,
-                            sport: selection.sport_name,
-                            category: selection.category_name,
-                            tournament: selection.tournament_name,
-                            selectionId: selection.selection_id,
-                        })
+                        let odd = await this.getOdds(selection.producer_id, selection.match_id, selection.market_id, selection.specifier, selection.outcome_id)
+
+                        if (odd > 0 ) { // || odd.active == 0 || odd.status !== 0 ) {
+                        
+                            selections.push({
+                                eventName: selection.event_name,
+                                eventDate: selection.event_date,
+                                eventType: selection.event_type,
+                                eventId: selection.event_id,
+                                matchId: selection.match_id,
+                                producerId: selection.producer_id,
+                                marketId: selection.market_id,
+                                marketName: selection.market_name,
+                                specifier: selection.specifier,
+                                outcomeId: selection.outcome_id,
+                                outcomeName: selection.outcome_name,
+                                odds: selection.odds,
+                                sport: selection.sport_name,
+                                category: selection.category_name,
+                                tournament: selection.tournament_name,
+                                selectionId: selection.selection_id,
+                            })
+                        }
                     }
                 } else {
                     const bookingSelections = await this.bookingSelectionRepo.find({where: {booking}});
@@ -874,6 +879,7 @@ export class BetsService {
                     betslipId: booking.betslip_id,
                     totalOdd: booking.total_odd,
                     possibleWin: booking.possible_win,
+                    source: 'mobile',
                     selections
                 }
 
