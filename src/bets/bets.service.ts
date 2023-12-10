@@ -304,7 +304,7 @@ export class BetsService {
                 return {status: 400, message: "missing odds in your selection ", success: false};
 
             // get odds
-            let odd = await this.getOdds(selection.producerId, selection.eventId, selection.marketId, selection.specifier, selection.outcomeId)
+            let odd = await this.getOdds(selection.producerId, selection.matchId, selection.marketId, selection.specifier, selection.outcomeId)
 
             if (odd === 0 ) { // || odd.active == 0 || odd.status !== 0 ) {
 
@@ -324,7 +324,7 @@ export class BetsService {
 
 
             // get probability overallProbability
-            let selectionProbability = await this.getProbability(selection.producerId, selection.eventId, selection.marketId, selection.specifier, selection.outcomeId)
+            let selectionProbability = await this.getProbability(selection.producerId, selection.matchId, selection.marketId, selection.specifier, selection.outcomeId)
             overallProbability = overallProbability * selectionProbability
 
             // selection.odds = odd
