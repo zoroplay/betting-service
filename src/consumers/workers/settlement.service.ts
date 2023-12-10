@@ -49,7 +49,6 @@ export class SettlementService {
     async createSettlement(data: any): Promise<number> {
 
         data = JSON.parse(JSON.stringify(data))
-        //this.logger.info("createSettlement match_id "+data.match_id)
 
         let matchID = data.match_id
         let markets = data.markets;
@@ -77,6 +76,8 @@ export class SettlementService {
                 let result = outcome.result
                 let void_factor = outcome.void_factor
                 let dead_heat_factor = outcome.dead_heat_factor
+
+                this.logger.info("settlement | match_id "+matchID+" | marketID "+marketID+" | specifier "+specifier+" | outcomeID "+outcomeID+" | result "+result)
 
                 if (!await this.betExists(matchID, marketID, specifier, outcomeID)) {
 
