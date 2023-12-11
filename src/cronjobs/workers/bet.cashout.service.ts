@@ -115,9 +115,22 @@ export class BetSettlementService {
         betSlips: true,
       },
     });
+
+    // Custom Cashout fixed probability : .85 —> Event Not started
+
+    // Cashout With Additional Profit :
+    // Bets placed before game starts—> Pre-Match
+    // Simple Cashout :
+    // Bets placed while games are ongoing—> Live Match
     // get probability at ticket time
     const probabilityAtTicketTime = 94 / 100;
     // get current probability
+    const fixedProbability = 85 / 100;
+    // check if bet event has not started
+    const eventNotStarted = true;
+    if (eventNotStarted == true) {
+      return this.getCashoutWithFixedProbability(bet, fixedProbability);
+    }
     const currentProbability = 94 / 100;
     const wonEventOdds = bet.betSlips
       .filter((slip) => slip.won > 0)
@@ -133,39 +146,25 @@ export class BetSettlementService {
     }
     // get won event odds
     if (wonEventOdds.length <= 0) {
-      // if no event is won yet use simple cashout
-      return bet.stake * bet.total_odd * currentProbability;
+      // if no event is won yet use simple cashout i.e event not started
+      return this.getCashoutWithFixedProbability(bet, fixedProbability);
     } else {
-      // else use advanced cashout
-      const productOfOdds = wonEventOdds.reduce((a, b) => a * b, 1);
-      // multiply won event selection odds
-      // get reduction factor
-      const ladder = {
-        lower: {
-          ticketValueFactor: 1.0,
-          desiredReductionFactor: 101 / 100,
-        },
-        higher: {
-          ticketValueFactor: 1.2,
-          desiredReductionFactor: 103 / 100,
-        },
-      };
-      const interpolationWeight = 100 / 100;
-      const ticketValueFactor = currentProbability / probabilityAtTicketTime;
-      const lowerFactor =
-        ladder.lower.ticketValueFactor / ladder.lower.desiredReductionFactor;
-      const higherFactor =
-        ladder.higher.ticketValueFactor / ladder.higher.desiredReductionFactor;
-      const subInterpolationWeight = 1 - interpolationWeight;
-      // get reduction factor
-      const reductionFactor =
-        ticketValueFactor /
-        (interpolationWeight * lowerFactor +
-          subInterpolationWeight * higherFactor);
-      // get cashout value
-      const cashoutValue =
-        (bet.stake * currentProbability * productOfOdds) / reductionFactor;
-      return cashoutValue;
+      const betState = bet.bet_type;
+      const PRE_MATCH = 0;
+      const LIVE = 1;
+      switch (betState) {
+        case PRE_MATCH:
+          return this.getSimpleCashout(bet, currentProbability);
+          break;
+        case LIVE:
+          return this.getCashoutWithAdditionalProfit(
+            bet,
+            wonEventOdds,
+            currentProbability,
+            probabilityAtTicketTime,
+          );
+          break;
+      }
     }
 
     // if bet is pre
@@ -373,5 +372,50 @@ export class BetSettlementService {
       Lost: false,
       Pending: true,
     };
+  }
+  async getCashoutWithFixedProbability(
+    bet: Bet,
+    fixedProbability: any,
+  ): Promise<any> {
+    return bet.stake * fixedProbability;
+  }
+  async getSimpleCashout(bet: Bet, probability: any): Promise<any> {
+    return bet.stake * bet.total_odd * probability;
+  }
+  async getCashoutWithAdditionalProfit(
+    bet: Bet,
+    wonEventOdds: Array<number>,
+    currentProbability: any,
+    probabilityAtTicketTime: any,
+  ): Promise<any> {
+    const productOfOdds = wonEventOdds.reduce((a, b) => a * b, 1);
+    // multiply won event selection odds
+    // get reduction factor
+    const ladder = {
+      lower: {
+        ticketValueFactor: 1.0,
+        desiredReductionFactor: 101 / 100,
+      },
+      higher: {
+        ticketValueFactor: 1.2,
+        desiredReductionFactor: 103 / 100,
+      },
+    };
+    const interpolationWeight = 100 / 100;
+    const ticketValueFactor = currentProbability / probabilityAtTicketTime;
+    const lowerFactor =
+      ladder.lower.ticketValueFactor / ladder.lower.desiredReductionFactor;
+    const higherFactor =
+      ladder.higher.ticketValueFactor / ladder.higher.desiredReductionFactor;
+    const subInterpolationWeight = 1 - interpolationWeight;
+    // get reduction factor
+    const reductionFactor =
+      ticketValueFactor /
+      (interpolationWeight * lowerFactor +
+        subInterpolationWeight * higherFactor);
+    // get cashout value
+    const cashoutValue =
+      (bet.stake * currentProbability * productOfOdds) / reductionFactor;
+    return cashoutValue;
   }
 }
