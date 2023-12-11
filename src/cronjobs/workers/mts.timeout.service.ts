@@ -9,6 +9,8 @@ import {Cron} from "@nestjs/schedule";
 import {Cronjob} from "../../entity/cronjob.entity";
 import {AmqpConnection} from "@golevelup/nestjs-rabbitmq";
 import {BetStatus} from "../../entity/betstatus.entity";
+import { Setting } from "src/entity/setting.entity";
+import axios from "axios";
 
 @Injectable()
 export class MtsTimeoutService {
@@ -25,6 +27,9 @@ export class MtsTimeoutService {
         private cronJobRepository: Repository<Cronjob>,
         @InjectRepository(BetStatus)
         private betStatusRepository: Repository<BetStatus>,
+        @InjectRepository(Setting)
+        private settingRepository: Repository<Setting>,
+
         private readonly entityManager: EntityManager,
         private readonly amqpConnection: AmqpConnection,
     ) {
@@ -141,18 +146,28 @@ export class MtsTimeoutService {
 
             //@TODO refund use the stake he/she used
 
-            //5. debit user by calling wallet service
-            let debitPayload = {
-                // currency: clientSettings.currency,
-                amount: bet.stake,
-                user_id: bet.user_id,
-                client_id: bet.client_id,
-                description: "Bet Cancelled - MTS Timeout",
-                bet_id: id,
-                type: 'Sport'
-            }
+            //5. credit user by calling wallet service
 
             this.logger.info("done processing mts timeout for betID " + id)
+
+            let creditPayload = {
+                bet_id: bet.betslip_id,
+                source: bet.source,
+                amount: bet.stake_after_tax,
+                user_id: bet.user_id,
+                description: "Bet Cancelled - MTS Timeout",
+            }
+
+             // get client settings
+            var clientSettings = await this.settingRepository.findOne({
+                where: {
+                    client_id: bet.client_id // add client id to bets
+                }
+            });
+
+
+            axios.post(clientSettings.url + '/api/wallet/credit', creditPayload);
+
 
         }
 
