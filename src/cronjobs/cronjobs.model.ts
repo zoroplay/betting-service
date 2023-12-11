@@ -13,6 +13,7 @@ import {CronjobController} from "./cronjob.controller";
 import {CronjobService} from "./cronjob.service";
 import {Cronjob} from "../entity/cronjob.entity";
 import {BetStatus} from "../entity/betstatus.entity";
+import {MtsTimeoutService} from "./workers/mts.timeout.service";
 
 @Module({
     imports: [
@@ -20,7 +21,7 @@ import {BetStatus} from "../entity/betstatus.entity";
         ScheduleModule.forRoot(),
         CronJobModule,
     ],
-    providers: [BetResultingController, BetSettlementService,CronjobService],
+    providers: [BetResultingController, BetSettlementService,MtsTimeoutService,CronjobService],
     controllers: [CronjobController],
 })
 export class CronJobModule {
