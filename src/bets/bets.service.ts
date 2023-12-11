@@ -527,6 +527,7 @@ export class BetsService {
 
             let queueName = "mts.bet_pending"
             await this.amqpConnection.publish(queueName, queueName, mtsBet);
+
             // do debit
             this.logger.debug("published to "+queueName)
 
