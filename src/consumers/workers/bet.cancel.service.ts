@@ -4,6 +4,8 @@ import {InjectRepository} from "@nestjs/typeorm";
 import {EntityManager, Repository} from "typeorm";
 import {BetCancel} from "../../entity/betcancel.entity";
 import {BET_CANCELLED, BET_PENDING, TRANSACTION_TYPE_BET_CANCEL} from "../../constants";
+import { Setting } from "src/entity/setting.entity";
+import axios from "axios";
 
 @Injectable()
 export class BetCancelService {
@@ -13,6 +15,9 @@ export class BetCancelService {
     constructor(
         @InjectRepository(BetCancel)
         private betCancelRepository: Repository<BetCancel>,
+        @InjectRepository(Setting)
+        private settingRepository: Repository<Setting>,
+
         private readonly entityManager: EntityManager,
     ) {
 
@@ -53,11 +58,11 @@ export class BetCancelService {
 
             if (startTime.length > 0 && endTime.length > 0) { // if bet cancel has start and end time
 
-                let rows = await this.entityManager.query("SELECT bet_id FROM bet_slip WHERE specifier = ? AND market_id = ? AND event_id = ? AND status = 0 AND created BETWEEN ? AND ? ",
+                let rows = await this.entityManager.query("SELECT bet_id FROM bet_slip WHERE specifier = ? AND market_id = ? AND match_id = ? AND status = 0 AND created BETWEEN ? AND ? ",
                     [specifier, marketID, matchID, startTime, endTime])
 
                 // update all betslips to be cancelled
-                await this.entityManager.query("UPDATE bet_slip SET status = " + BET_CANCELLED + " WHERE specifier = ? AND market_id = ? AND event_id = ? AND status = 0 AND created BETWEEN ? AND ? ",
+                await this.entityManager.query("UPDATE bet_slip SET status = " + BET_CANCELLED + " WHERE specifier = ? AND market_id = ? AND match_id = ? AND status = 0 AND created BETWEEN ? AND ? ",
                     [specifier, marketID, matchID, startTime, endTime])
 
                 for (const slip of rows) {
@@ -66,11 +71,11 @@ export class BetCancelService {
                 }
             } else if (startTime.length == 0 && endTime.length > 0) { //  if bet cancel has end time only
 
-                let rows = await this.entityManager.query("SELECT bet_id FROM bet_slip WHERE specifier = ? AND market_id = ? AND event_id = ? AND status = 0 AND created < ? ",
+                let rows = await this.entityManager.query("SELECT bet_id FROM bet_slip WHERE specifier = ? AND market_id = ? AND match_id = ? AND status = 0 AND created < ? ",
                     [specifier, marketID, matchID, endTime])
 
                 // update all betslips to be cancelled
-                await this.entityManager.query("UPDATE bet_slip SET status =" + BET_CANCELLED + " WHERE specifier = ? AND market_id = ? AND event_id = ? AND status = 0 AND created < ? ",
+                await this.entityManager.query("UPDATE bet_slip SET status =" + BET_CANCELLED + " WHERE specifier = ? AND market_id = ? AND match_id = ? AND status = 0 AND created < ? ",
                     [specifier, marketID, matchID, endTime])
 
                 for (const slip of rows) {
@@ -79,11 +84,11 @@ export class BetCancelService {
                 }
             } else if (startTime.length > 0 && endTime.length == 0) { //  if bet cancel has start time only
 
-                let rows = await this.entityManager.query("SELECT bet_id FROM bet_slip WHERE specifier = ? AND market_id = ? AND event_id = ? AND status = 0 AND created > ? ",
+                let rows = await this.entityManager.query("SELECT bet_id FROM bet_slip WHERE specifier = ? AND market_id = ? AND match_id = ? AND status = 0 AND created > ? ",
                     [specifier, marketID, matchID, startTime])
 
                 // update all betslips to be cancelled
-                await this.entityManager.query("UPDATE bet_slip SET status = " + BET_CANCELLED + " WHERE specifier = ? AND market_id = ? AND event_id = ? AND status = 0 AND created > ? ",
+                await this.entityManager.query("UPDATE bet_slip SET status = " + BET_CANCELLED + " WHERE specifier = ? AND market_id = ? AND match_id = ? AND status = 0 AND created > ? ",
                     [specifier, marketID, matchID, startTime])
 
                 for (const slip of rows) {
@@ -92,11 +97,11 @@ export class BetCancelService {
                 }
             } else { //  if bet cancel has no time
 
-                let rows = await this.entityManager.query("SELECT bet_id FROM bet_slip WHERE specifier = ? AND market_id = ? AND event_id = ? AND status = 0  ",
+                let rows = await this.entityManager.query("SELECT bet_id FROM bet_slip WHERE specifier = ? AND market_id = ? AND match_id = ? AND status = 0  ",
                     [specifier, marketID, matchID])
 
                 // update all betslips to be cancelled
-                await this.entityManager.query("UPDATE bet_slip SET status = " + BET_CANCELLED + " WHERE specifier = ? AND market_id = ? AND event_id = ? AND status = 0  ",
+                await this.entityManager.query("UPDATE bet_slip SET status = " + BET_CANCELLED + " WHERE specifier = ? AND market_id = ? AND match_id = ? AND status = 0  ",
                     [specifier, marketID, matchID])
 
                 for (const slip of rows) {
@@ -133,14 +138,22 @@ export class BetCancelService {
             for (const cancelledBet of cancelledBets) {
 
                 let creditPayload = {
-                    currency: cancelledBet.currency,
+                    bet_id: cancelledBet.betslip_id,
+                    source: cancelledBet.source,
                     amount: cancelledBet.stake_after_tax,
                     user_id: cancelledBet.user_id,
-                    client_id: cancelledBet.client_id,
-                    description: "Bet betID " + cancelledBet.id + " was cancelled",
-                    transaction_id: cancelledBet.id,
-                    transaction_type: TRANSACTION_TYPE_BET_CANCEL
+                    description: "Bet betID " + cancelledBet.betslip_id + " was cancelled",
                 }
+
+                 // get client settings
+                var clientSettings = await this.settingRepository.findOne({
+                    where: {
+                        client_id: cancelledBet.client_id // add client id to bets
+                    }
+                });
+
+
+                axios.post(clientSettings.url + '/api/wallet/credit', creditPayload);
 
                 // send credit payload to wallet service
             }

@@ -481,7 +481,7 @@ export class BetsService {
                 amount: stake,
                 user_id: bet.userId,
                 client_id: bet.clientId,
-                description: "Place Bet Request ",
+                description: "Bet Deposit (Sport)",
                 bet_id: betResult.betslip_id,
                 source: betResult.source,
                 type: 'Sport'

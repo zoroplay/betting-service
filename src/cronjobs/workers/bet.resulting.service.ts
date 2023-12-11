@@ -10,6 +10,7 @@ import {Bet} from "../../entity/bet.entity";
 import {Cronjob} from "../../entity/cronjob.entity";
 import {Winning} from "../../entity/winning.entity";
 import any = jasmine.any;
+import axios from "axios";
 
 @Controller('cronjob/bet/resulting')
 export class BetResultingController {
@@ -205,18 +206,24 @@ export class BetResultingController {
         }
 
         let creditPayload = {
-            currency: row.currency,
             amount: winning_after_tax,
             user_id: profileID,
-            client_id: row.client_id,
-            description: "Won betID "+betID,
-            transaction_id: betID,
-            transaction_type: TRANSACTION_TYPE_WINNING
+            bet_id: row.betslip_id,
+            description: "Sport Win",
+            source: row.source,
         }
 
         this.logger.info(creditPayload)
 
-        // send credit payload to wallet service
+         // get client settings
+         var clientSettings = await this.settingRepository.findOne({
+            where: {
+                client_id: row.client_id // add client id to bets
+            }
+        });
+
+
+        axios.post(clientSettings.url + '/api/wallet/credit', creditPayload);
 
         return winner.id
 

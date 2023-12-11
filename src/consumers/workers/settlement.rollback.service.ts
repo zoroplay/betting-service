@@ -5,6 +5,8 @@ import {EntityManager, Repository} from "typeorm";
 import {BetSlip} from "../../entity/betslip.entity";
 import {SettlementRollback} from "../../entity/settlementrollback.entity";
 import {BET_LOST, BET_PENDING, BET_WON, TRANSACTION_TYPE_BET_ROLLBACK} from "../../constants";
+import axios from "axios";
+import { Setting } from "src/entity/setting.entity";
 
 @Injectable()
 export class SettlementRollbackService {
@@ -17,6 +19,9 @@ export class SettlementRollbackService {
         private betslipRepository: Repository<BetSlip>,
         @InjectRepository(SettlementRollback)
         private settlementRollbackRepository: Repository<SettlementRollback>,
+        @InjectRepository(Setting)
+        private settingRepository: Repository<Setting>,
+        
         private readonly entityManager: EntityManager,
     ) {
 
@@ -71,7 +76,7 @@ export class SettlementRollbackService {
                 [specifier, marketID, matchID])
 
             // count affected slips
-            let slipCounts = await this.entityManager.query("SELECT COUNT(id) as total FROM bet_slip WHERE specifier = ? AND market_id = ? AND event_id = ?  ",
+            let slipCounts = await this.entityManager.query("SELECT COUNT(id) as total FROM bet_slip WHERE specifier = ? AND market_id = ? AND match_id = ?  ",
                 [specifier, marketID, matchID])
 
             if (!slipCounts || slipCounts.total == 0) {
@@ -87,11 +92,11 @@ export class SettlementRollbackService {
             await this.settlementRollbackRepository.save(settlementRollback)
 
             //2. ############## get all bet_slips that were settled
-            let settledSlips = await this.entityManager.query("SELECT id,bet_id,won FROM bet_slip WHERE  event_id = ? AND market_id = ? AND specifier = ? ", [matchID, marketID, specifier])
+            let settledSlips = await this.entityManager.query("SELECT id,bet_id,won FROM bet_slip WHERE  match_id = ? AND market_id = ? AND specifier = ? ", [matchID, marketID, specifier])
 
             // reset all bet slips
             // update bet slip status query
-            await this.entityManager.query("UPDATE bet_slip SET status = " + BET_PENDING + ", won = -1,settlement_id = 0  WHERE  event_id = ? AND market_id = ? AND specifier = ? ", [matchID, marketID, specifier])
+            await this.entityManager.query("UPDATE bet_slip SET status = " + BET_PENDING + ", won = -1,settlement_id = 0  WHERE  match_id = ? AND market_id = ? AND specifier = ? ", [matchID, marketID, specifier])
 
             let settledData = []
             let betIDs = []
@@ -128,16 +133,23 @@ export class SettlementRollbackService {
                 await this.entityManager.query("DELETE FROM winning WHERE bet_id = " + settledBets.id + " LIMIT 1 ")
 
                 let debitPayload = {
-                    currency: settledBet.currency,
                     amount: settledBet.winning_after_tax,
                     user_id: settledBet.user_id,
-                    client_id: settledBet.client_id,
-                    description: "BetID " + settledBet.id + " was rolled back",
-                    transaction_id: settledBet.id,
-                    transaction_type: TRANSACTION_TYPE_BET_ROLLBACK
+                    description: "BetID " + settledBet.betslip_id + " was rolled back",
+                    bet_id: settledBet.betslip_id,
+                    source: settledBet.source
                 }
 
                 // send debit payload to wallet service
+                 // get client settings
+                var clientSettings = await this.settingRepository.findOne({
+                    where: {
+                        client_id: settledBet.client_id // add client id to bets
+                    }
+                });
+
+
+                axios.post(clientSettings.url + '/api/wallet/credit', debitPayload);
 
             }
 
