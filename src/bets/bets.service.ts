@@ -74,7 +74,7 @@ export class BetsService {
 
     async findAll({userId, status, to, from, clientId}: BetHistoryRequest): Promise<BetHistoryResponse> {
 
-        let bets : any
+        let bets : any = [];
 
         try {
 
