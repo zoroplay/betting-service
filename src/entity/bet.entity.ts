@@ -27,11 +27,11 @@ export class Bet {
     currency: string;
 
     @Index()
-    @Column({ type: "varchar", length: 100, nullable: true })
+    @Column({type:"varchar", nullable: true, default: BET_TYPE_NORMAL })
     bet_type: string;
 
     @Index()
-    @Column({type:"int", nullable: false, default: BET_TYPE_NORMAL })
+    @Column({type:"varchar", nullable: true })
     bet_category: string;
 
     @Index()

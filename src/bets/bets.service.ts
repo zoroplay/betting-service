@@ -95,12 +95,12 @@ export class BetsService {
             }
 
             if(from && from !== '' ) {
-                where.push("date(created) >= ? ")
+                where.push("created >= ? ")
                 params.push(from)
             }
 
             if(to && to !== '' ) {
-                where.push("date(created) <= ? ")
+                where.push("created <= ? ")
                 params.push(to)
             }
 
