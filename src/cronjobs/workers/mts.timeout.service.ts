@@ -84,7 +84,7 @@ export class MtsTimeoutService {
             let live = 0;
 
             // check betID has any live events
-            let betslipsRows = await this.entityManager.query("SELECT count(id) as counts FROM bet_slip WHERE bet_id = " + betID + " AND producer_id IN (1,4) ")
+            let betslipsRows = await this.entityManager.query("SELECT count(id) as counts FROM bet_slip WHERE bet_id = " + id + " AND producer_id IN (1,4) ")
 
             if (betslipsRows) {
 
