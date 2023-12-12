@@ -35,9 +35,25 @@ export class CronjobService {
 
         this.betSettlementService.taskProcessBetSettlement().then(function () {
 
-            //vm.logger.info("done running processBetSettlement ")
+            vm.logger.info("done running processBetSettlement ")
 
         })
     }
+
+
+    /*
+    @Cron(CronExpression.EVERY_5_SECONDS) // run every 5 seconds
+    processBetSettlement() {
+
+        let vm = this;
+
+        this.betSettlementService.taskProcessBetSettlement().then(function () {
+
+            //vm.logger.info("done running processBetSettlement ")
+
+        })
+
+    }
+    */
 
 }
