@@ -53,7 +53,7 @@ export class CronjobService {
     })
     async startUp(){
 
-        // reset all cron jobs
+        // reset all cron jobs when the application starts
         await this.cronjobRepository.update(
             {
                 status: 1,
