@@ -106,7 +106,7 @@ export class BetSettlementService {
 
     async createBetSettlement(settlementID: number): Promise<number> {
 
-        this.logger.info("createBetSettlement | settlementID "+id)
+        this.logger.info("createBetSettlement | settlementID "+settlementID)
 
         let rows = await this.entityManager.query("SELECT DISTINCT b.id,b.stake,b.stake_after_tax,b.total_bets,b.total_odd,b.bet_type,b.user_id,b.client_id " +
             "FROM bet b " +
