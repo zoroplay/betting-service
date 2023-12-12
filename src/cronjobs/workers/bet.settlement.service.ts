@@ -75,7 +75,6 @@ export class BetSettlementService {
         task.status = 1;
         await this.cronJobRepository.upsert(task,['status'])
 
-
         let rows = await this.settlementRepository.find({
             where: {
                 processed: 0
