@@ -38,7 +38,7 @@ export class MtsTimeoutService {
 
         this.taskProcessMtsTimeoutBetCancelation().then(function () {
 
-            vm.logger.info("done running taskProcessMtsTimeoutBetCancelation ")
+           // vm.logger.info("done running taskProcessMtsTimeoutBetCancelation ")
 
         })
     }

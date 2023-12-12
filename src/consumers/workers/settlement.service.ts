@@ -77,7 +77,7 @@ export class SettlementService {
                 let void_factor = outcome.void_factor
                 let dead_heat_factor = outcome.dead_heat_factor
 
-                this.logger.info("settlement | match_id "+matchID+" | marketID "+marketID+" | specifier "+specifier+" | outcomeID "+outcomeID+" | result "+result)
+               // this.logger.info("settlement | match_id "+matchID+" | marketID "+marketID+" | specifier "+specifier+" | outcomeID "+outcomeID+" | result "+result)
 
                 if (!await this.betExists(matchID, marketID, specifier, outcomeID)) {
 
