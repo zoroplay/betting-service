@@ -999,10 +999,29 @@ export class BetsService {
 
             if (entityType === 'bet') {
 
+                const bet = await this.betRepository.findOne({where: {id: betId}});
+                let creditPayload; 
                 switch (status) {
                     case 'won':
                        updateStatus = BET_WON;
                        // to-DO: credit user
+                       creditPayload = {
+                            amount: bet.winning_after_tax,
+                            user_id: bet.user_id,
+                            bet_id: bet.betslip_id,
+                            description: "Sport Win",
+                            source: bet.source,
+                        }
+                            
+                        // get client settings
+                        var clientSettings = await this.settingRepository.findOne({
+                            where: {
+                                client_id: bet.client_id // add client id to bets
+                            }
+                        });
+
+                        axios.post(clientSettings.url + '/api/wallet/credit', creditPayload);
+
                         break;
                     case 'lost':
                         updateStatus = BET_LOST;
@@ -1011,6 +1030,23 @@ export class BetsService {
                     case 'void': 
                         updateStatus = BET_VOIDED;
                         // TO-DO: return stake and credit user
+                        // to-DO: credit user
+                        creditPayload = {
+                            amount: bet.stake,
+                            user_id: bet.user_id,
+                            bet_id: bet.betslip_id,
+                            description: "Stake Return Win",
+                            source: bet.source,
+                        }
+                            
+                        // get client settings
+                        var clientSettings = await this.settingRepository.findOne({
+                            where: {
+                                client_id: bet.client_id // add client id to bets
+                            }
+                        });
+
+                        axios.post(clientSettings.url + '/api/wallet/credit', creditPayload);
                         break;
                     default:
                         updateStatus = BET_PENDING;
@@ -1030,6 +1066,7 @@ export class BetsService {
                 switch (status) {
                     case 'won':
                        updateStatus = BET_WON;
+                       
                         break;
                     case 'lost':
                         updateStatus = BET_LOST;
