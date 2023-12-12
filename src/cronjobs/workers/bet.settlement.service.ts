@@ -87,13 +87,30 @@ export class BetSettlementService {
         task.status = 1;
         await this.cronJobRepository.upsert(task,['status'])
 
-        let rows = await this.entityManager.query("SELECT id FROM settlement where processed = 0 ")
+
+        let rows = await this.settlementRepository.find({
+            where: {
+                processed: 0
+            }
+        });
+
+        //this.entityManager.query("SELECT id FROM settlement where processed = 0 ")
+
         for (const row of rows) {
 
             let id = row.id;
             this.logger.info("start processing settlementID "+id)
+
             await this.createBetSettlement(id)
-            await this.entityManager.query("UPDATE settlement SET processed = 1 WHERE id = "+id)
+
+            await this.settlementRepository.update(
+                {
+                    id: id,
+                },
+                {
+                    processed: 1
+                })
+
             this.logger.info("done processing settlementID "+id)
 
         }
