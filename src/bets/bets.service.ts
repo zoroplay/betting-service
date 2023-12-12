@@ -996,63 +996,21 @@ export class BetsService {
     async updateBet({betId, status, entityType, clientId }: UpdateBetRequest): Promise<UpdateBetResponse> {
         try {
             let updateStatus;
-            let status;
 
             if (entityType === 'bet') {
 
-                const bet = await this.betRepository.findOne({where: {id: betId}});
-                let creditPayload; 
                 switch (status) {
                     case 'won':
                        updateStatus = BET_WON;
-                       status = STATUS_WON;
                        // to-DO: credit user
-                       creditPayload = {
-                            amount: bet.winning_after_tax,
-                            user_id: bet.user_id,
-                            bet_id: bet.betslip_id,
-                            description: "Sport Win",
-                            source: bet.source,
-                        }
-                            
-                        // get client settings
-                        var clientSettings = await this.settingRepository.findOne({
-                            where: {
-                                client_id: bet.client_id // add client id to bets
-                            }
-                        });
-
-                        axios.post(clientSettings.url + '/api/wallet/credit', creditPayload);
-
                         break;
                     case 'lost':
                         updateStatus = BET_LOST;
-                        status = STATUS_LOST;
-
                         // TO-DO: check if ticket was won
                         break;
                     case 'void': 
                         updateStatus = BET_VOIDED;
-                        status = STATUS_NOT_LOST_OR_WON;
-
                         // TO-DO: return stake and credit user
-                        // to-DO: credit user
-                        creditPayload = {
-                            amount: bet.stake,
-                            user_id: bet.user_id,
-                            bet_id: bet.betslip_id,
-                            description: "Stake Return Win",
-                            source: bet.source,
-                        }
-                            
-                        // get client settings
-                        var clientSettings = await this.settingRepository.findOne({
-                            where: {
-                                client_id: bet.client_id // add client id to bets
-                            }
-                        });
-
-                        axios.post(clientSettings.url + '/api/wallet/credit', creditPayload);
                         break;
                     default:
                         updateStatus = BET_PENDING;
@@ -1065,7 +1023,6 @@ export class BetsService {
                     },
                     {
                         status: updateStatus,
-                        won: status
                     }
                 );
             } else {
@@ -1073,7 +1030,6 @@ export class BetsService {
                 switch (status) {
                     case 'won':
                        updateStatus = BET_WON;
-                       
                         break;
                     case 'lost':
                         updateStatus = BET_LOST;
