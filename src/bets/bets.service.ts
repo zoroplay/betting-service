@@ -82,6 +82,7 @@ export class BetsService {
         let start = 0;
         let left_records = 0;
         let totalStake = 0;
+        let current_page = page - 1
 
         try {
             
@@ -152,7 +153,6 @@ export class BetsService {
                 last_page = totalPages
             }
 
-            let current_page = page - 1
 
             let offset = 0
 

@@ -12,4 +12,5 @@ export interface BetHistoryResponse {
     totalRecords: number;
     /** total number of stake for the period */
     totalStake: number;
+    currentPage: number;
 }
