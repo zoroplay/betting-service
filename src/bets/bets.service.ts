@@ -112,7 +112,7 @@ export class BetsService {
 
             // count games
 
-            let queryCount = `SELECT count(id) as total FROM bet ${where.join(" AND ")} `
+            let queryCount = `SELECT count(id) as total FROM bet WHERE client_id = ? AND ${where.join(" AND ")} `
 
             let res = await this.entityManager.query(queryCount, params)
             if (res) {
