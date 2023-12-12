@@ -109,7 +109,8 @@ export class BetSettlementService {
                 },
                 {
                     processed: 1
-                })
+                }
+            )
 
             this.logger.info("done processing settlementID "+id)
 
