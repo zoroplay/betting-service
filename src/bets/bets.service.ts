@@ -72,12 +72,20 @@ export class BetsService {
 
     }
 
-    async findAll({userId, status, to, from, clientId}: BetHistoryRequest): Promise<BetHistoryResponse> {
+    async findAll({userId, status, to, from, clientId, perPage, page}: BetHistoryRequest): Promise<BetHistoryResponse> {
 
-        let bets : any
+        let response = {} as BetHistoryResponse;
+
+        let bets: any = [];
+        let total = 0;
+        let last_page = 0;
+        let start = 0;
+        let left_records = 0;
+        let totalStake = 0;
+        let current_page = page - 1
 
         try {
-
+            
             let params = [];
             params.push(clientId);
             let where = []
@@ -95,16 +103,97 @@ export class BetsService {
             }
 
             if(from && from !== '' ) {
-                where.push("date(created) >= ? ")
+                where.push("created >= ? ")
                 params.push(from)
             }
 
             if(to && to !== '' ) {
-                where.push("date(created) <= ? ")
+                where.push("created <= ? ")
                 params.push(to)
             }
 
-            let queryString = "SELECT id,betslip_id,stake,currency,bet_type,total_odd,possible_win,source,total_bets,status,won,created FROM bet WHERE client_id = ? AND " + where.join(' AND ')+" ORDER BY id DESC"
+            // count games
+
+            let queryCount = `SELECT count(id) as total FROM bet WHERE client_id = ? AND ${where.join(" AND ")} `
+
+            let res = await this.entityManager.query(queryCount, params)
+
+            if (res) {
+
+                let result = res[0]
+                total = result.total;
+            }
+
+            console.log('total | '+total)
+
+            let sumQuery = `SELECT SUM(stake) as total_stake FROM bet WHERE client_id = ? AND ${where.join(" AND ")} `
+
+            let resSum = await this.entityManager.query(sumQuery, params)
+
+            if (resSum) {
+
+                let result = res[0]
+                totalStake = result.total_total;
+            }
+            // calculate offset
+
+            if (total <= perPage) {
+
+                last_page = 1
+
+            } else {
+
+                let totalPages = Math.ceil(total / perPage)
+
+                if (total > perPage && total % perPage > 0) {
+
+                    totalPages++
+                }
+
+                last_page = totalPages
+            }
+
+
+            let offset = 0
+
+            if (current_page > 0) {
+
+                offset = perPage * current_page
+
+            } else {
+
+                current_page = 0
+                offset = 0
+            }
+
+            if (offset > total) {
+
+                let a = current_page * perPage
+
+                if (a > total) {
+
+                    offset = (current_page - 1) * perPage
+
+                } else {
+
+                    offset = total - a
+                }
+            }
+
+            start = offset + 1
+
+            current_page++
+            left_records = total - offset
+            let off = offset - 1
+
+            if (off > 0) {
+
+                offset = off
+            }
+
+            let limit = ` LIMIT ${offset},${perPage}`
+
+            let queryString = `SELECT id,betslip_id,stake,currency,bet_type,total_odd,possible_win,source,total_bets,status,won,created FROM bet WHERE client_id = ? AND  ${where.join(' AND ')} ORDER BY created DESC ${limit}`
 
             bets = await this.entityManager.query(queryString,params)
 
@@ -189,12 +278,21 @@ export class BetsService {
             bet.totalOdd = bet.total_odd;
             bet.possibleWin = bet.possible_win;
             bet.betType = bet.bet_type;
+            bet.betCategory = bet.bet_category;
+            bet.totalSelections = bet.total_bets;
 
             myBets.push(bet)
 
         }
+        response.lastPage = last_page
+        response.from = start
+        response.to = (start + total)
+        response.remainingRecords = left_records
+        response.bets = myBets;
+        response.totalRecords = total;
+        response.totalStake = totalStake;
 
-        return {bets: myBets};
+        return response;
     }
 
     async placeBet(bet): Promise<PlaceBetResponse> {
@@ -481,7 +579,7 @@ export class BetsService {
                 amount: stake,
                 user_id: bet.userId,
                 client_id: bet.clientId,
-                description: "Place Bet Request ",
+                description: "Bet Deposit (Sport)",
                 bet_id: betResult.betslip_id,
                 source: betResult.source,
                 type: 'Sport'
