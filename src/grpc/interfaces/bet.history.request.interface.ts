@@ -4,4 +4,6 @@ export interface BetHistoryRequest {
     from?: string;
     to?: string;
     clientId: number,
+    page?: number,
+    perPage: number,
 }

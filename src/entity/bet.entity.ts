@@ -15,12 +15,20 @@ export class Bet {
     user_id: number;
 
     @Index()
+    @Column({ type: "varchar", length: 150, nullable: true})
+    username: string;
+
+    @Index()
     @Column({ type: "varchar", length: 20, nullable: false })
     betslip_id: string;
 
     @Index()
     @Column({ type: "decimal", precision: 20, scale: 2, nullable: false })
     stake: number;
+
+    @Index()
+    @Column({ type: "decimal", precision: 20, scale: 2, nullable: false })
+    min_stake: number;
 
     @Index()
     @Column({ type: "varchar", length: 20, nullable: false })
@@ -37,6 +45,10 @@ export class Bet {
     @Index()
     @Column({ type: "decimal", precision: 20, scale: 2, nullable: false })
     total_odd: number;
+
+    @Index()
+    @Column({ type: "decimal", precision: 20, scale: 2, nullable: false })
+    min_odd: number;
 
     @Column({ type: "decimal", precision: 20, scale: 2, nullable: false })
     possible_win: number;
@@ -84,6 +96,22 @@ export class Bet {
     @Index()
     @Column({ type: "varchar", length: 50, nullable: false })
     source: string;
+
+    @Index()
+    @Column({ type: "varchar", length: 50, nullable: true })
+    sports: string;
+
+    @Index()
+    @Column({ type: "varchar", length: 50, nullable: true })
+    tournaments: string;
+
+    @Index()
+    @Column({ type: "varchar", length: 50, nullable: true })
+    markets: string;
+
+    @Index()
+    @Column({ type: "varchar", length: 50, nullable: true })
+    events: string;
 
     @Index()
     @Column({ type: "varchar", length: 50, nullable: true })
