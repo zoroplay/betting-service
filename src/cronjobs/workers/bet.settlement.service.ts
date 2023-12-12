@@ -49,14 +49,14 @@ export class BetSettlementService {
 
     }
 
-    @Cron(CronExpression.EVERY_5_SECONDS) // run every 2 seconds
+    @Cron(CronExpression.EVERY_SECOND) // run every 5 seconds
     processBetSettlement() {
 
         let vm = this;
 
         this.taskProcessBetSettlement().then(function () {
 
-           // vm.logger.info("done running processBetSettlement ")
+            vm.logger.info("done running processBetSettlement ")
 
         })
     }
@@ -105,6 +105,8 @@ export class BetSettlementService {
     }
 
     async createBetSettlement(settlementID: number): Promise<number> {
+
+        this.logger.info("createBetSettlement | settlementID "+id)
 
         let rows = await this.entityManager.query("SELECT DISTINCT b.id,b.stake,b.stake_after_tax,b.total_bets,b.total_odd,b.bet_type,b.user_id,b.client_id " +
             "FROM bet b " +
