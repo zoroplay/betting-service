@@ -8,4 +8,8 @@ export interface BetHistoryResponse {
     to: number;
     /** how many records are remaining */
     remainingRecords: number;
+    /** total records for the period */
+    totalRecords: number;
+    /** total number of stake for the period */
+    totalStake: number;
 }

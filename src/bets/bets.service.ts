@@ -81,6 +81,7 @@ export class BetsService {
         let last_page = 0;
         let start = 0;
         let left_records = 0;
+        let totalStake = 0;
 
         try {
             
@@ -115,6 +116,7 @@ export class BetsService {
             let queryCount = `SELECT count(id) as total FROM bet WHERE client_id = ? AND ${where.join(" AND ")} `
 
             let res = await this.entityManager.query(queryCount, params)
+
             if (res) {
 
                 let result = res[0]
@@ -123,6 +125,15 @@ export class BetsService {
 
             console.log('total | '+total)
 
+            let sumQuery = `SELECT SUM(stake) as total_stake FROM bet WHERE client_id = ? AND ${where.join(" AND ")} `
+
+            let resSum = await this.entityManager.query(sumQuery, params)
+
+            if (resSum) {
+
+                let result = res[0]
+                totalStake = result.total_total;
+            }
             // calculate offset
 
             if (total <= perPage) {
@@ -275,9 +286,11 @@ export class BetsService {
         }
         response.lastPage = last_page
         response.from = start
-        response.to = start + total
+        response.to = (start + total)
         response.remainingRecords = left_records
         response.bets = myBets;
+        response.totalRecords = total;
+        response.totalStake = total;
 
         return response;
     }
