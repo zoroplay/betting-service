@@ -28,7 +28,7 @@ export class CronjobService {
 
     }
 
-    @Cron(CronExpression.EVERY_SECOND) // run every 5 seconds
+    @Cron(CronExpression.EVERY_5_SECONDS) // run every 5 seconds
     processBetSettlement() {
 
         let vm = this;
