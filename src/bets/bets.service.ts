@@ -290,7 +290,7 @@ export class BetsService {
         response.remainingRecords = left_records
         response.bets = myBets;
         response.totalRecords = total;
-        response.totalStake = total;
+        response.totalStake = totalStake;
 
         return response;
     }
