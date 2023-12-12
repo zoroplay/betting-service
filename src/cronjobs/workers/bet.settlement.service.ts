@@ -75,7 +75,6 @@ export class BetSettlementService {
         task.status = 1;
         await this.cronJobRepository.upsert(task,['status'])
 
-
         let rows = await this.settlementRepository.find({
             where: {
                 processed: 0
@@ -148,7 +147,7 @@ export class BetSettlementService {
         let queryString = "SELECT id,bet_id,status, won, void_factor, dead_heat_factor,odds FROM bet_slip " +
             "WHERE bet_id IN (" + betIds.join(',') + ")"
 
-        console.log(queryString)
+       // console.log(queryString)
 
         let betSlips = await this.entityManager.query(queryString);
 
@@ -237,7 +236,7 @@ export class BetSettlementService {
 
             let result = await this.resultBet(bet, clientSettings)
 
-            console.log(bet.id+" | "+JSON.stringify(result,undefined,2))
+            //console.log(bet.id+" | "+JSON.stringify(result,undefined,2))
 
             if (result.Won) {
 
