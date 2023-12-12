@@ -274,6 +274,7 @@ export class BetsService {
                 
             }
 
+            bet.id = bet.id;
             bet.betslipId = bet.betslip_id;
             bet.totalOdd = bet.total_odd;
             bet.possibleWin = bet.possible_win;
