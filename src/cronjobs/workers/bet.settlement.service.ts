@@ -49,18 +49,6 @@ export class BetSettlementService {
 
     }
 
-    @Cron(CronExpression.EVERY_SECOND) // run every 5 seconds
-    processBetSettlement() {
-
-        let vm = this;
-
-        this.taskProcessBetSettlement().then(function () {
-
-            vm.logger.info("done running processBetSettlement ")
-
-        })
-    }
-
     async taskProcessBetSettlement() {
 
         const taskName = 'bet.settlement'
@@ -76,7 +64,7 @@ export class BetSettlementService {
 
         if(cronJob !== null && cronJob.id > 0 ) {
 
-            //this.logger.info('another '+taskName+' job is alread running');
+            this.logger.info('another '+taskName+' job is already running');
             return
         }
 
