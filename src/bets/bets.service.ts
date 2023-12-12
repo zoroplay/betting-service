@@ -996,6 +996,7 @@ export class BetsService {
     async updateBet({betId, status, entityType, clientId }: UpdateBetRequest): Promise<UpdateBetResponse> {
         try {
             let updateStatus;
+            let status;
 
             if (entityType === 'bet') {
 
@@ -1004,6 +1005,7 @@ export class BetsService {
                 switch (status) {
                     case 'won':
                        updateStatus = BET_WON;
+                       status = STATUS_WON;
                        // to-DO: credit user
                        creditPayload = {
                             amount: bet.winning_after_tax,
@@ -1025,10 +1027,14 @@ export class BetsService {
                         break;
                     case 'lost':
                         updateStatus = BET_LOST;
+                        status = STATUS_LOST;
+
                         // TO-DO: check if ticket was won
                         break;
                     case 'void': 
                         updateStatus = BET_VOIDED;
+                        status = STATUS_NOT_LOST_OR_WON;
+
                         // TO-DO: return stake and credit user
                         // to-DO: credit user
                         creditPayload = {
@@ -1059,6 +1065,7 @@ export class BetsService {
                     },
                     {
                         status: updateStatus,
+                        won: status
                     }
                 );
             } else {
