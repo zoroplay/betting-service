@@ -97,7 +97,10 @@ export class BetsService {
 
             }
 
-            if(status !== '') {
+            if (status === 'settled') {
+                where.push("won != ? ")
+                params.push(-1)
+            } else if (status !== '') {
                 where.push("won = ? ")
                 params.push(status)
             }
