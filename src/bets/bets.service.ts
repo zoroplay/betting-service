@@ -98,7 +98,7 @@ export class BetsService {
             }
 
             if(status !== '') {
-                where.push("status = ? ")
+                where.push("won = ? ")
                 params.push(status)
             }
 
@@ -193,7 +193,7 @@ export class BetsService {
 
             let limit = ` LIMIT ${offset},${perPage}`
 
-            let queryString = `SELECT id,betslip_id,stake,currency,bet_type,total_odd,possible_win,source,total_bets,status,won,created FROM bet WHERE client_id = ? AND  ${where.join(' AND ')} ORDER BY created DESC ${limit}`
+            let queryString = `SELECT id,betslip_id,stake,currency,bet_type,total_odd,possible_win,source,total_bets,won,created FROM bet WHERE client_id = ? AND  ${where.join(' AND ')} ORDER BY created DESC ${limit}`
 
             bets = await this.entityManager.query(queryString,params)
 
@@ -225,23 +225,32 @@ export class BetsService {
             if(bet.won == STATUS_NOT_LOST_OR_WON) {
 
                 bet.statusDescription = "Pending"
+                bet.status = 0;
             }
 
             if(bet.won == STATUS_LOST) {
 
                 bet.statusDescription = "Lost"
+                bet.status = 2;
             }
 
             if(bet.won == STATUS_WON) {
 
                 bet.statusDescription = "Won"
+                bet.status = 1;
+            }
+
+            if(bet.won == BET_VOIDED) {
+
+                bet.statusDescription = "Void"
+                bet.status = 3;
             }
 
             bet.selections = [];
             if (slips.length > 0 ) {
                 for (const slip of slips) {
                     let slipStatus;
-                    switch (slip.status) {
+                    switch (slip.won) {
                         case STATUS_NOT_LOST_OR_WON:
                             slipStatus = 'Pending'
                             break;
@@ -251,6 +260,7 @@ export class BetsService {
                         case STATUS_WON:
                             slipStatus = 'Won'
                         default:
+                            slipStatus  = 'Void'
                             break;
                     }
         
@@ -1001,11 +1011,11 @@ export class BetsService {
 
                 switch (status) {
                     case 'won':
-                       updateStatus = BET_WON;
+                       updateStatus = STATUS_WON;
                        // to-DO: credit user
                         break;
                     case 'lost':
-                        updateStatus = BET_LOST;
+                        updateStatus = STATUS_LOST;
                         // TO-DO: check if ticket was won
                         break;
                     case 'void': 
@@ -1013,7 +1023,7 @@ export class BetsService {
                         // TO-DO: return stake and credit user
                         break;
                     default:
-                        updateStatus = BET_PENDING;
+                        updateStatus = STATUS_NOT_LOST_OR_WON;
                         break;
                 }
                 // update bet status
@@ -1022,24 +1032,24 @@ export class BetsService {
                         id: betId,
                     },
                     {
-                        status: updateStatus,
+                        won: updateStatus,
                     }
                 );
             } else {
 
                 switch (status) {
                     case 'won':
-                       updateStatus = BET_WON;
+                       updateStatus = STATUS_WON;
                         break;
                     case 'lost':
-                        updateStatus = BET_LOST;
+                        updateStatus = STATUS_LOST;
                         break;
                     case 'void': 
                         updateStatus = BET_VOIDED;
                         // TO-DO: recalculate odds
                         break;
                     default:
-                        updateStatus = BET_PENDING;
+                        updateStatus = STATUS_NOT_LOST_OR_WON;
                         break;
                 }
                 // update selection status
@@ -1048,7 +1058,7 @@ export class BetsService {
                         id: betId,
                     },
                     {
-                        status: updateStatus,
+                        won: updateStatus,
                     }
                 );
             }
