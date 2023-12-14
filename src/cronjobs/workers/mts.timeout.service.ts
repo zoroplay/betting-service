@@ -148,25 +148,25 @@ export class MtsTimeoutService {
 
             //5. credit user by calling wallet service
 
-            this.logger.info("done processing mts timeout for betID " + id)
+            // this.logger.info("done processing mts timeout for betID " + id)
 
-            let creditPayload = {
-                bet_id: bet.betslip_id,
-                source: bet.source,
-                amount: bet.stake_after_tax,
-                user_id: bet.user_id,
-                description: "Bet Cancelled - MTS Timeout",
-            }
+            // let creditPayload = {
+            //     bet_id: bet.betslip_id,
+            //     source: bet.source,
+            //     amount: bet.stake_after_tax,
+            //     user_id: bet.user_id,
+            //     description: "Bet Cancelled - MTS Timeout",
+            // }
 
-             // get client settings
-            var clientSettings = await this.settingRepository.findOne({
-                where: {
-                    client_id: bet.client_id // add client id to bets
-                }
-            });
+            //  // get client settings
+            // var clientSettings = await this.settingRepository.findOne({
+            //     where: {
+            //         client_id: bet.client_id // add client id to bets
+            //     }
+            // });
 
 
-            axios.post(clientSettings.url + '/api/wallet/credit', creditPayload);
+            // axios.post(clientSettings.url + '/api/wallet/credit', creditPayload);
 
 
         }
