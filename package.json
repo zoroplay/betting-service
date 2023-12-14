@@ -36,6 +36,7 @@
     "amqp-connection-manager": "^4.1.14",
     "amqplib": "^0.10.3",
     "axios": "^1.6.2",
+    "dayjs": "^1.11.10",
     "dotenv": "^16.3.1",
     "json-logger-service": "^9.0.1",
     "mysql2": "^3.6.1",
