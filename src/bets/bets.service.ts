@@ -580,7 +580,7 @@ export class BetsService {
                     outcome_id: selection.outcome_id,
                     specifier: selection.specifier,
                     odds: parseFloat(selection.odds),
-                    event_id: selection.event_id,
+                    event_id: selection.match_id,
                     event_type: selection.event_type,
                     event_prefix: "sr",
                 })
