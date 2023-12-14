@@ -28,6 +28,7 @@ import { BookingSelection } from 'src/entity/booking.selection.entity';
 import { BookingCode } from 'src/grpc/interfaces/booking.code.interface';
 import { UpdateBetRequest } from 'src/grpc/interfaces/update.bet.request.interface';
 import { UpdateBetResponse } from 'src/grpc/interfaces/update.bet.response.interface';
+import dayjs from 'dayjs';
 
 @Injectable()
 export class BetsService {
@@ -106,13 +107,13 @@ export class BetsService {
             }
 
             if(from && from !== '' ) {
-                where.push("created >= ? ")
-                params.push(from)
+                where.push("DATE(created) >= ? ")
+                params.push(dayjs(from).format('YYYY-MM-DD'))
             }
 
             if(to && to !== '' ) {
                 where.push("created <= ? ")
-                params.push(to)
+                params.push(dayjs(to).format('YYYY-MM-DD'))
             }
 
             // count games
