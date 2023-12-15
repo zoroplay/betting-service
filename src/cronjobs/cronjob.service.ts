@@ -42,7 +42,7 @@ export class CronjobService {
 
         this.betSettlementService.taskProcessBetSettlement().then(function () {
 
-            vm.logger.info("done running processBetSettlement ")
+            //vm.logger.info("done running processBetSettlement ")
 
         })
     }
