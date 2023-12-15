@@ -116,7 +116,8 @@ export class BetSettlementService {
         let rows = await this.entityManager.query("SELECT DISTINCT b.id,b.stake,b.stake_after_tax,b.total_bets,b.total_odd,b.bet_type,b.user_id,b.client_id " +
             "FROM bet b " +
             "INNER JOIN bet_slip bs on b.id = bs.bet_id " +
-            "WHERE b.status IN (0,1) AND b.won = "+STATUS_NOT_LOST_OR_WON+" AND bs.settlement_id = ?", [settlementID])
+            "INNER JOIN bet_status bst on b.id = bst.bet_id " +
+            "WHERE bst.status = 1 AND b.status IN (0,1) AND b.won = "+STATUS_NOT_LOST_OR_WON+" AND bs.settlement_id = ?", [settlementID])
 
         let bets = new Map()
 

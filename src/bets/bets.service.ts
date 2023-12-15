@@ -423,8 +423,8 @@ export class BetsService {
 
 
             // get probability overallProbability
-            // let selectionProbability = await this.getProbability(selection.producerId, selection.matchId, selection.marketId, selection.specifier, selection.outcomeId)
-            // overallProbability = overallProbability * selectionProbability
+            let selectionProbability = await this.getProbability(selection.producerId, selection.matchId, selection.marketId, selection.specifier, selection.outcomeId)
+            overallProbability = overallProbability * selectionProbability
 
             // selection.odds = odd
             selections.push({
@@ -446,7 +446,7 @@ export class BetsService {
                 category_name: selection.category,
                 sport_name: selection.sport,
                 odds: odd,
-                // probability:selectionProbability,
+                probability:selectionProbability,
                 is_live: selection.type === 'live' ? 1 : 0
             })
 
@@ -622,7 +622,6 @@ export class BetsService {
                 currency: clientSettings.currency,
             }
 
-            
 
             let queueName = "mts.bet_pending"
             await this.amqpConnection.publish(queueName, queueName, mtsBet);
@@ -1130,11 +1129,19 @@ export class BetsService {
             specifier:specifier,
         }
 
-        let oddStatus =  await this.getOddsProbability(odds).toPromise()
+        try {
 
-        this.logger.info(oddStatus)
+            let oddStatus =  await this.getOddsProbability(odds).toPromise()
 
-        return oddStatus.probability
+            this.logger.info(oddStatus)
+
+            return oddStatus.probability
+
+        }catch (e) {
+
+            this.logger.error(e.toString())
+            return 1
+        }
 
     }
 
