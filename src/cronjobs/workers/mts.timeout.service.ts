@@ -78,7 +78,7 @@ export class MtsTimeoutService {
         await this.cronJobRepository.upsert(task, ['status'])
 
         let queryString = "SELECT b.id,TIMESTAMPDIFF(SECOND,b.created,now()) as difference FROM bet b LEFT JOIN bet_status bs ON b.id=bs.bet_id WHERE bs.idIS NULL AND TIMESTAMPDIFF(SECOND,b.created,now()) > 3 AND b.created BETWEEN date_sub(now(), INTERVAL 3 MINUTE ) AND NOW() "
-        queryString = "SELECT b.id,TIMESTAMPDIFF(SECOND,b.created,now()) as difference FROM bet b LEFT JOIN bet_status bs ON b.id=bs.bet_id WHERE bs.id IS NULL AND TIMESTAMPDIFF(SECOND,b.created,now()) > 3 AND b.created BETWEEN date_sub(now(), INTERVAL 3 MINUTE ) AND NOW()"
+        queryString = "SELECT b.id,TIMESTAMPDIFF(SECOND,b.created,now()) as difference FROM bet b LEFT JOIN bet_status bs ON b.id=bs.bet_id WHERE bs.id IS NULL AND TIMESTAMPDIFF(SECOND,b.created,now()) > 10 AND b.created BETWEEN date_sub(now(), INTERVAL 3 MINUTE ) AND NOW()"
 
         let rows = await this.entityManager.query(queryString)
         for (const row of rows) {
@@ -106,6 +106,7 @@ export class MtsTimeoutService {
             let reqPayload = {
                 bet_id: id,
                 code: "102",
+                reply_prefix: 'betting_service',
             }
 
             let queueName = "mts.bet_cancel"
