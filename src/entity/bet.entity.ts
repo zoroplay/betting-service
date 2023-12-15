@@ -27,7 +27,7 @@ export class Bet {
     stake: number;
 
     @Index()
-    @Column({ type: "decimal", precision: 20, scale: 2, nullable: false })
+    @Column({ type: "decimal", precision: 20, scale: 2, nullable: true, default: 0 })
     min_stake: number;
 
     @Index()
@@ -47,7 +47,7 @@ export class Bet {
     total_odd: number;
 
     @Index()
-    @Column({ type: "decimal", precision: 20, scale: 2, nullable: false })
+    @Column({ type: "decimal", precision: 20, scale: 2, nullable: true, default: 0 })
     min_odd: number;
 
     @Column({ type: "decimal", precision: 20, scale: 2, nullable: false })
