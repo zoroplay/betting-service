@@ -3,7 +3,7 @@ import {JsonLogger, LoggerFactory} from "json-logger-service";
 import {InjectRepository} from "@nestjs/typeorm";
 import {EntityManager, Repository} from "typeorm";
 import {BetSlip} from "../../entity/betslip.entity";
-import {BET_CANCELLED} from "../../constants";
+import {BET_CANCELLED, BET_PENDING} from "../../constants";
 import {Bet} from "../../entity/bet.entity";
 import {Cron} from "@nestjs/schedule";
 import {Cronjob} from "../../entity/cronjob.entity";
@@ -122,7 +122,7 @@ export class MtsTimeoutService {
             await this.betRepository.update(
                 {
                     id: id,
-                    status: BET_CANCELLED,
+                    status: BET_PENDING,
                 },
                 {
                     status: BET_CANCELLED,
@@ -132,10 +132,11 @@ export class MtsTimeoutService {
             await this.betslipRepository.update(
                 {
                     bet_id: id,
-                    status: BET_CANCELLED,
+                    status: BET_PENDING,
                 },
                 {
                     status: BET_CANCELLED,
+                    won: BET_PENDING
                 });
 
             let bet = await this.betRepository.findOne({
@@ -148,26 +149,24 @@ export class MtsTimeoutService {
 
             //5. credit user by calling wallet service
 
-            // this.logger.info("done processing mts timeout for betID " + id)
+            this.logger.info("done processing mts timeout for betID " + id)
 
-            // let creditPayload = {
-            //     bet_id: bet.betslip_id,
-            //     source: bet.source,
-            //     amount: bet.stake_after_tax,
-            //     user_id: bet.user_id,
-            //     description: "Bet Cancelled - MTS Timeout",
-            // }
+            let creditPayload = {
+                bet_id: bet.betslip_id,
+                source: bet.source,
+                amount: bet.stake_after_tax,
+                user_id: bet.user_id,
+                description: "Bet Cancelled - MTS Timeout",
+            }
 
-            //  // get client settings
-            // var clientSettings = await this.settingRepository.findOne({
-            //     where: {
-            //         client_id: bet.client_id // add client id to bets
-            //     }
-            // });
+             // get client settings
+            var clientSettings = await this.settingRepository.findOne({
+                where: {
+                    client_id: bet.client_id // add client id to bets
+                }
+            });
 
-
-            // axios.post(clientSettings.url + '/api/wallet/credit', creditPayload);
-
+            axios.post(clientSettings.url + '/api/wallet/credit', creditPayload);
 
         }
 
