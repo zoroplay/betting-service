@@ -35,6 +35,7 @@ export class MtsBetAcceptedService {
     async processBetAcceptedMessage(data: any): Promise<number> {
 
         data = JSON.parse(JSON.stringify(data))
+        this.logger.info("processBetAcceptedMessage "+JSON.stringify(data))
 
         let betID = data.bet_id;
 

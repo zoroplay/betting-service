@@ -641,7 +641,7 @@ export class BetsService {
             await this.amqpConnection.publish(queueName, queueName, mtsBet);
 
             // do debit
-            this.logger.debug("published to "+queueName)
+            this.logger.info("published to "+queueName)
 
             return {
                 status: 201, 
