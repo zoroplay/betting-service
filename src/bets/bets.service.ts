@@ -398,6 +398,9 @@ export class BetsService {
             if (selection.producerId === 0 )
                 return {status: 400, message: "missing producer id in your selection ", success: false};
 
+            if (selection.sportId === 0 )
+                return {status: 400, message: "missing sport id in your selection ", success: false};
+
             if (selection.marketId === 0 )
                 return {status: 400, message: "missing market id in your selection ", success: false};
 
@@ -575,7 +578,7 @@ export class BetsService {
                 await this.betslipRepository.save(betSlipData);
 
                 mtsSelection.push({
-                    sport_id: selection.sport_id,
+                    sport_id: parseInt(selection.sportId),
                     producer_id: parseInt(selection.producer_id),
                     market_id: parseInt(selection.market_id),
                     outcome_id: selection.outcome_id,
