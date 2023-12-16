@@ -401,6 +401,8 @@ export class BetsService {
             if (selection.sportId === 0 )
                 return {status: 400, message: "missing sport id in your selection ", success: false};
 
+            this.logger.info("got sportId "+selection.sportId)
+
             if (selection.marketId === 0 )
                 return {status: 400, message: "missing market id in your selection ", success: false};
 
@@ -578,7 +580,7 @@ export class BetsService {
                 await this.betslipRepository.save(betSlipData);
 
                 mtsSelection.push({
-                    sport_id: parseInt(selection.sportId),
+                    sport_id: parseInt(selection.sport_id),
                     producer_id: parseInt(selection.producer_id),
                     market_id: parseInt(selection.market_id),
                     outcome_id: selection.outcome_id,
