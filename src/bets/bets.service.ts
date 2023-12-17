@@ -349,17 +349,16 @@ export class BetsService {
                                     
         let user;
         if (userRes.status) {
-            user = userRes;
+            user = userRes.data;
         }
 
         if(!user) 
             return {status: 400, message: "please login to procceed", success: false};
 
+        
 
         if (user.available_balance < bet.stake)
             return {status: 400, message: "Insufficient balance ", success: false};
-
-        console.log(JSON.stringify(user));
 
         let userSelection =  bet.selections
         // console.log("userSelection | "+JSON.stringify(userSelection))
