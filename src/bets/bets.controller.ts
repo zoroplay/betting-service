@@ -22,7 +22,7 @@ export class BetsController {
 
     @GrpcMethod('BettingService', 'PlaceBet')
     PlaceBet(data: PlaceBet): Promise<PlaceBetResponse> {
-
+        JSON.stringify(data);
         return this.betsService.placeBet(data);
     }
 
