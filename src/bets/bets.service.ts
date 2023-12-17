@@ -359,6 +359,7 @@ export class BetsService {
         if (user.available_balance < bet.stake)
             return {status: 400, message: "Insufficient balance ", success: false};
 
+        console.log(JSON.stringify(user));
 
         let userSelection =  bet.selections
         // console.log("userSelection | "+JSON.stringify(userSelection))
