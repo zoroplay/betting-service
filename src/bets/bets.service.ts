@@ -197,9 +197,8 @@ export class BetsService {
 
             let limit = ` LIMIT ${offset},${perPage}`
 
-            let queryString = `SELECT id,betslip_id,stake,currency,bet_type,total_odd,possible_win,source,total_bets,won,created FROM bet WHERE client_id = ? AND  ${where.join(' AND ')} ORDER BY created DESC ${limit}`
+            let queryString = `SELECT id,user_id,username,betslip_id,stake,currency,bet_type,bet_category,total_odd,possible_win,source,total_bets,won,status,created FROM bet WHERE client_id = ? AND  ${where.join(' AND ')} ORDER BY created DESC ${limit}`
 
-            console.log(queryString)
             bets = await this.entityManager.query(queryString,params)
 
         }
