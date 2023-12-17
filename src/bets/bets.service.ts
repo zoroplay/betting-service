@@ -253,18 +253,23 @@ export class BetsService {
             bet.selections = [];
             if (slips.length > 0 ) {
                 for (const slip of slips) {
-                    let slipStatus;
+                    let slipStatusDesc, slipStatus;
                     switch (slip.won) {
                         case STATUS_NOT_LOST_OR_WON:
-                            slipStatus = 'Pending'
+                            slipStatusDesc = 'Pending'
+                            slipStatus = 0;
                             break;
                         case STATUS_LOST:
-                            slipStatus = 'Lost'
+                            slipStatusDesc = 'Lost'
+                            slipStatus = 2;
+
                             break;
                         case STATUS_WON:
-                            slipStatus = 'Won'
+                            slipStatusDesc = 'Won'
+                            slipStatus = 1;
                         default:
                             slipStatus  = 'Void'
+                            slipStatus = 3;
                             break;
                     }
         
@@ -282,13 +287,16 @@ export class BetsService {
                         category: slip.category_name,
                         tournament: slip.tournament_name,
                         type: slip.is_live === 1 ? 'live' : 'pre',
-                        status: slipStatus,
+                        statusDescription: slipStatusDesc,
+                        status: slipStatus
                     })
                 }
                 
             }
 
             bet.id = bet.id;
+            bet.userId = bet.user_id;
+            bet.username = bet.username;
             bet.betslipId = bet.betslip_id;
             bet.totalOdd = bet.total_odd;
             bet.possibleWin = bet.possible_win;
@@ -525,10 +533,11 @@ export class BetsService {
             //4. create bet
             betData.client_id = bet.clientId;
             betData.user_id = bet.userId;
+            betData.username = bet.username;
             betData.betslip_id = this.generateBetslipId()
             betData.stake = bet.stake;
             betData.currency = clientSettings.currency;
-            betData.bet_type = bet.bet_type;
+            betData.bet_category = bet.betType;
             betData.total_odd = totalOdds;
             betData.possible_win = possibleWin;
             betData.tax_on_stake = taxOnStake;
