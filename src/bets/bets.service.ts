@@ -107,13 +107,13 @@ export class BetsService {
             }
 
             if(from && from !== '' ) {
-                where.push("DATE(created) >= ? ")
-                params.push(dayjs(from).format('YYYY-MM-DD'))
+                where.push("created >= ? ")
+                params.push(from)
             }
 
             if(to && to !== '' ) {
                 where.push("created <= ? ")
-                params.push(dayjs(to).format('YYYY-MM-DD'))
+                params.push(to)
             }
 
             // count games
@@ -199,6 +199,7 @@ export class BetsService {
 
             let queryString = `SELECT id,betslip_id,stake,currency,bet_type,total_odd,possible_win,source,total_bets,won,created FROM bet WHERE client_id = ? AND  ${where.join(' AND ')} ORDER BY created DESC ${limit}`
 
+            console.log(queryString)
             bets = await this.entityManager.query(queryString,params)
 
         }
