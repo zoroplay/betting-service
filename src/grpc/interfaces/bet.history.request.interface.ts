@@ -7,4 +7,5 @@ export interface BetHistoryRequest {
     page?: number,
     perPage: number,
     betslipId: string,
+    username: string,
 }

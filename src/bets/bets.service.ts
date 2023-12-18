@@ -73,7 +73,7 @@ export class BetsService {
 
     }
 
-    async findAll({userId, status, to, from, clientId, perPage, page, betslipId}: BetHistoryRequest): Promise<BetHistoryResponse> {
+    async findAll({userId, status, to, from, clientId, perPage, page, betslipId, username}: BetHistoryRequest): Promise<BetHistoryResponse> {
 
         let response = {} as BetHistoryResponse;
 
@@ -119,6 +119,11 @@ export class BetsService {
             if(betslipId && betslipId !== '') {
                 where.push('betslip_id = ?')
                 params.push(betslipId);
+            }
+
+            if(username && username !== '') {
+                where.push('username = ?')
+                params.push(username);
             }
 
             // count games
