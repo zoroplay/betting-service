@@ -110,6 +110,7 @@ message PlaceBetRequest {
   string source = 5;
   string ipAddress = 6;
   string betType = 7;
+  string username = 8;
 }
 
 message BetSlip {
@@ -151,6 +152,8 @@ message BetHistoryRequest {
   string status = 5;
   int32 page = 6;
   int32 perPage = 7;
+  string betslipId = 8;
+  string username = 9;
 }
 
 message BetSlipHistory {
@@ -192,6 +195,8 @@ message BetHistory {
   int32 totalSelections = 12;
   int32 betCategory = 13;
   int32 id = 14;
+  int32 userId = 15;
+  string username = 16;
 }
 
 message BetHistoryResponse {

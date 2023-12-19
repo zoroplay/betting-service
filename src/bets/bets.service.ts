@@ -73,7 +73,7 @@ export class BetsService {
 
     }
 
-    async findAll({userId, status, to, from, clientId, perPage, page}: BetHistoryRequest): Promise<BetHistoryResponse> {
+    async findAll({userId, status, to, from, clientId, perPage, page, betslipId, username}: BetHistoryRequest): Promise<BetHistoryResponse> {
 
         let response = {} as BetHistoryResponse;
 
@@ -107,13 +107,23 @@ export class BetsService {
             }
 
             if(from && from !== '' ) {
-                where.push("DATE(created) >= ? ")
-                params.push(dayjs(from).format('YYYY-MM-DD'))
+                where.push("created >= ? ")
+                params.push(from)
             }
 
             if(to && to !== '' ) {
                 where.push("created <= ? ")
-                params.push(dayjs(to).format('YYYY-MM-DD'))
+                params.push(to)
+            }
+
+            if(betslipId && betslipId !== '') {
+                where.push('betslip_id = ?')
+                params.push(betslipId);
+            }
+
+            if(username && username !== '') {
+                where.push('username = ?')
+                params.push(username);
             }
 
             // count games
@@ -197,7 +207,7 @@ export class BetsService {
 
             let limit = ` LIMIT ${offset},${perPage}`
 
-            let queryString = `SELECT id,betslip_id,stake,currency,bet_type,total_odd,possible_win,source,total_bets,won,created FROM bet WHERE client_id = ? AND  ${where.join(' AND ')} ORDER BY created DESC ${limit}`
+            let queryString = `SELECT id,user_id,username,betslip_id,stake,currency,bet_type,bet_category,total_odd,possible_win,source,total_bets,won,status,created FROM bet WHERE client_id = ? AND  ${where.join(' AND ')} ORDER BY created DESC ${limit}`
 
             bets = await this.entityManager.query(queryString,params)
 
@@ -253,18 +263,23 @@ export class BetsService {
             bet.selections = [];
             if (slips.length > 0 ) {
                 for (const slip of slips) {
-                    let slipStatus;
+                    let slipStatusDesc, slipStatus;
                     switch (slip.won) {
                         case STATUS_NOT_LOST_OR_WON:
-                            slipStatus = 'Pending'
+                            slipStatusDesc = 'Pending'
+                            slipStatus = 0;
                             break;
                         case STATUS_LOST:
-                            slipStatus = 'Lost'
+                            slipStatusDesc = 'Lost'
+                            slipStatus = 2;
+
                             break;
                         case STATUS_WON:
-                            slipStatus = 'Won'
+                            slipStatusDesc = 'Won'
+                            slipStatus = 1;
                         default:
                             slipStatus  = 'Void'
+                            slipStatus = 3;
                             break;
                     }
         
@@ -282,13 +297,16 @@ export class BetsService {
                         category: slip.category_name,
                         tournament: slip.tournament_name,
                         type: slip.is_live === 1 ? 'live' : 'pre',
-                        status: slipStatus,
+                        statusDescription: slipStatusDesc,
+                        status: slipStatus
                     })
                 }
                 
             }
 
             bet.id = bet.id;
+            bet.userId = bet.user_id;
+            bet.username = bet.username;
             bet.betslipId = bet.betslip_id;
             bet.totalOdd = bet.total_odd;
             bet.possibleWin = bet.possible_win;
@@ -341,16 +359,16 @@ export class BetsService {
                                     
         let user;
         if (userRes.status) {
-            user = userRes;
+            user = userRes.data;
         }
 
         if(!user) 
             return {status: 400, message: "please login to procceed", success: false};
 
+        
 
         if (user.available_balance < bet.stake)
             return {status: 400, message: "Insufficient balance ", success: false};
-
 
         let userSelection =  bet.selections
         // console.log("userSelection | "+JSON.stringify(userSelection))
@@ -525,10 +543,11 @@ export class BetsService {
             //4. create bet
             betData.client_id = bet.clientId;
             betData.user_id = bet.userId;
+            betData.username = bet.username;
             betData.betslip_id = this.generateBetslipId()
             betData.stake = bet.stake;
             betData.currency = clientSettings.currency;
-            betData.bet_type = bet.bet_type;
+            betData.bet_category = bet.betType;
             betData.total_odd = totalOdds;
             betData.possible_win = possibleWin;
             betData.tax_on_stake = taxOnStake;
