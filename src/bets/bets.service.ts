@@ -371,7 +371,7 @@ export class BetsService {
             return {status: 400, message: "Insufficient balance ", success: false};
 
         let userSelection =  bet.selections
-        console.log("userSelection | "+JSON.stringify(userSelection))
+        // console.log("userSelection | "+JSON.stringify(userSelection))
 
         if(clientSettings == undefined || clientSettings.id == undefined || clientSettings.id == 0 ) {
             // return {status: 400, data: "invalid client"};
