@@ -43,7 +43,7 @@ export class MtsBetAcceptedService {
         betStatus.status = 1
         betStatus.bet_id = betID
         betStatus.description = "Bet accepted by MTS"
-        await this.betStatusRepository.save(betStatus)
+        await this.betStatusRepository.upsert(betStatus,['status','description'])
 
         return 1
     }
