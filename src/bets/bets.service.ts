@@ -94,36 +94,36 @@ export class BetsService {
 
             if (userId > 0) {
 
-                where.push("user_id = ? ")
+                where.push("b.user_id = ? ")
                 params.push(userId)
 
             }
 
             if (status === 'settled') {
-                where.push("won != ? ")
+                where.push("b.won != ? ")
                 params.push(-1)
             } else if (status !== '') {
-                where.push("won = ? ")
+                where.push("b.won = ? ")
                 params.push(status)
             }
 
             if(from && from !== '' ) {
-                where.push("created >= ? ")
+                where.push("b.created >= ? ")
                 params.push(from)
             }
 
             if(to && to !== '' ) {
-                where.push("created <= ? ")
+                where.push("b.created <= ? ")
                 params.push(to)
             }
 
             if(betslipId && betslipId !== '') {
-                where.push('betslip_id = ?')
+                where.push('b.betslip_id = ?')
                 params.push(betslipId);
             }
 
             if(username && username !== '') {
-                where.push('username = ?')
+                where.push('b.username = ?')
                 params.push(username);
             }
 
@@ -208,8 +208,8 @@ export class BetsService {
 
             let limit = ` LIMIT ${offset},${perPage}`
 
-            let queryString = `SELECT id,user_id,username,betslip_id,stake,currency,bet_type,bet_category,total_odd,possible_win,
-            source,total_bets,won,status,created, w.winning_after_tax as winnings FROM bet INNER JOIN winning w ON w.bet_id = bet.id 
+            let queryString = `SELECT b.id,b.user_id,b.username,b.betslip_id,b.stake,b.currency,b.bet_type,b.bet_category,b.total_odd,b.possible_win,
+            b.source,b.total_bets,b.won,b.status,b.created, w.winning_after_tax as winnings FROM bet b INNER JOIN winning w ON w.bet_id = bet.id 
             WHERE client_id = ? AND  ${where.join(' AND ')} ORDER BY created DESC ${limit}`
 
             bets = await this.entityManager.query(queryString,params)
