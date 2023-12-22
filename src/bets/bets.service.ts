@@ -29,6 +29,7 @@ import { BookingCode } from 'src/grpc/interfaces/booking.code.interface';
 import { UpdateBetRequest } from 'src/grpc/interfaces/update.bet.request.interface';
 import { UpdateBetResponse } from 'src/grpc/interfaces/update.bet.response.interface';
 import * as dayjs from 'dayjs';
+import { Winning } from 'src/entity/winning.entity';
 
 @Injectable()
 export class BetsService {
@@ -207,7 +208,9 @@ export class BetsService {
 
             let limit = ` LIMIT ${offset},${perPage}`
 
-            let queryString = `SELECT id,user_id,username,betslip_id,stake,currency,bet_type,bet_category,total_odd,possible_win,source,total_bets,won,status,created FROM bet WHERE client_id = ? AND  ${where.join(' AND ')} ORDER BY created DESC ${limit}`
+            let queryString = `SELECT id,user_id,username,betslip_id,stake,currency,bet_type,bet_category,total_odd,possible_win,
+            source,total_bets,won,status,created, w.winning_after_tax as winnings FROM bet INNER JOIN winning w ON w.bet_id = bet.id 
+            WHERE client_id = ? AND  ${where.join(' AND ')} ORDER BY created DESC ${limit}`
 
             bets = await this.entityManager.query(queryString,params)
 
@@ -313,6 +316,7 @@ export class BetsService {
             bet.betType = bet.bet_type;
             bet.betCategory = bet.bet_category;
             bet.totalSelections = bet.total_bets;
+            bet.winnings = bet.winnings;
 
             myBets.push(bet)
 
@@ -329,9 +333,15 @@ export class BetsService {
     }
 
     async findSingle({clientId, betslipId}: FindBetRequest): Promise<FindBetResponse> {
+        console.log(betslipId)
+        let bet = await this.betRepository
+            .createQueryBuilder('bet')
+            .innerJoin(Winning, 'winning', 'bet.id = winning.bet_id')
+            .where("bet.betslip_id = :betslipId", {betslipId})
+            .andWhere("bet.client_id = :clientId", {clientId})
+            .getOne();
 
-        let bet = await this.betRepository.findOne({where: {betslip_id: betslipId, client_id: clientId}});
-
+        console.log(bet);
         if (bet) {
             
             // get bet items
