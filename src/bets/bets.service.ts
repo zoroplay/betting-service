@@ -330,7 +330,6 @@ export class BetsService {
     }
 
     async findSingle({clientId, betslipId}: FindBetRequest): Promise<FindBetResponse> {
-        console.log(betslipId)
         let bet = await this.betRepository
             .createQueryBuilder('bet')
             .select('bet.id,bet.user_id,bet.username,bet.betslip_id,bet.stake,bet.currency,bet.bet_type,bet.bet_category,bet.total_odd,bet.possible_win,bet.source,bet.total_bets,bet.won,bet.status,bet.created,winning.winning_after_tax')
@@ -339,7 +338,6 @@ export class BetsService {
             .andWhere("bet.client_id = :clientId", {clientId})
             .getRawOne();
 
-        console.log(bet);
         if (bet) {
             
             // get bet items
@@ -412,6 +410,7 @@ export class BetsService {
             }
 
             data.id = bet.id;
+            data.stake = bet.stake;
             data.created = bet.created;
             data.userId = bet.user_id;
             data.username = bet.username;
@@ -422,6 +421,7 @@ export class BetsService {
             data.betCategory = bet.bet_category;
             data.totalSelections = bet.total_bets;
             data.winnings = bet.winning_after_tax;
+            data.source = bet.source;
             
             return {status: true, message: 'Bet Found', bet: data};
         } else {
