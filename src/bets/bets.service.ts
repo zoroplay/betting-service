@@ -333,11 +333,11 @@ export class BetsService {
         console.log(betslipId)
         let bet = await this.betRepository
             .createQueryBuilder('bet')
-            // .select('bet.id,bet.user_id,bet.username,bet.betslip_id,bet.stake,bet.currency,bet.bet_type,bet.bet_category,bet.total_odd,bet.possible_win,bet.source,bet.total_bets,bet.won,bet.status,bet.created,winning.winning_after_tax')
-            // .leftJoin(Winning, 'winning', 'bet.id = winning.bet_id')
+            .select('bet.id,bet.user_id,bet.username,bet.betslip_id,bet.stake,bet.currency,bet.bet_type,bet.bet_category,bet.total_odd,bet.possible_win,bet.source,bet.total_bets,bet.won,bet.status,bet.created,winning.winning_after_tax')
+            .leftJoin(Winning, 'winning', 'bet.id = winning.bet_id')
             .where("bet.betslip_id = :betslipId", {betslipId})
             .andWhere("bet.client_id = :clientId", {clientId})
-            .getOne();
+            .getRawOne();
 
         console.log(bet);
         if (bet) {
