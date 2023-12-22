@@ -29,6 +29,7 @@ import { BookingCode } from 'src/grpc/interfaces/booking.code.interface';
 import { UpdateBetRequest } from 'src/grpc/interfaces/update.bet.request.interface';
 import { UpdateBetResponse } from 'src/grpc/interfaces/update.bet.response.interface';
 import * as dayjs from 'dayjs';
+import { Winning } from 'src/entity/winning.entity';
 
 @Injectable()
 export class BetsService {
@@ -332,7 +333,8 @@ export class BetsService {
         console.log(betslipId)
         let bet = await this.betRepository
             .createQueryBuilder('bet')
-            // .innerJoin(Winning, 'winning', 'bet.id = winning.bet_id')
+            .select('bet.id,bet.user_id,bet.username,bet.betslip_id,bet.stake,bet.currency,bet.bet_type,bet.bet_category,bet.total_odd,bet.possible_win,bet.source,bet.total_bets,betwon,bet.status,bet.created,winning.winning_after_tax')
+            .leftJoin(Winning, 'winning', 'bet.id = winning.bet_id')
             .where("bet.betslip_id = :betslipId", {betslipId})
             .andWhere("bet.client_id = :clientId", {clientId})
             .getOne();
@@ -410,6 +412,7 @@ export class BetsService {
             }
 
             data.id = bet.id;
+            data.created = bet.created;
             data.userId = bet.user_id;
             data.username = bet.username;
             data.betslipId = bet.betslip_id;
@@ -418,6 +421,7 @@ export class BetsService {
             data.betType = bet.bet_type;
             data.betCategory = bet.bet_category;
             data.totalSelections = bet.total_bets;
+            data.winnings = bet.winning_after_tax;
             
             return {status: true, message: 'Bet Found', bet: data};
         } else {
