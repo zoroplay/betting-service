@@ -4,8 +4,8 @@ import {GrpcMethod} from "@nestjs/microservices";
 import {JsonLogger, LoggerFactory} from "json-logger-service";
 import {PlaceBet} from "../grpc/interfaces/placebet.interface";
 import {PlaceBetResponse} from "../grpc/interfaces/placebet.response.interface";
-import {BetHistoryRequest} from "../grpc/interfaces/bet.history.request.interface";
-import {BetHistoryResponse} from "../grpc/interfaces/bet.history.response.interface";
+import {BetHistoryRequest, FindBetRequest} from "../grpc/interfaces/bet.history.request.interface";
+import {BetHistoryResponse, FindBetResponse} from "../grpc/interfaces/bet.history.response.interface";
 import { BookingCode } from 'src/grpc/interfaces/booking.code.interface';
 import { UpdateBetRequest } from 'src/grpc/interfaces/update.bet.request.interface';
 import { UpdateBetResponse } from 'src/grpc/interfaces/update.bet.response.interface';
@@ -48,5 +48,10 @@ export class BetsController {
         return this.betsService.findAll(data)
     }
 
+    @GrpcMethod('BettingService', 'FindBet')
+    FindBet(data: FindBetRequest): Promise<FindBetResponse> {
+
+        return this.betsService.findSingle(data)
+    }
 }
 

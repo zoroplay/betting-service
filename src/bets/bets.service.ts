@@ -10,7 +10,7 @@ import {OddsLive} from '../entity/oddslive.entity';
 import {OddsPrematch} from '../entity/oddsprematch.entity';
 import {JsonLogger, LoggerFactory} from 'json-logger-service';
 import {BET_LOST, BET_PENDING, BET_VOIDED, BET_WON, STATUS_LOST, STATUS_NOT_LOST_OR_WON, STATUS_WON, TRANSACTION_TYPE_PLACE_BET} from "../constants";
-import {BetHistoryResponse} from "../grpc/interfaces/bet.history.response.interface";
+import {BetHistoryResponse, FindBetResponse} from "../grpc/interfaces/bet.history.response.interface";
 import { PlaceBetResponse } from 'src/grpc/interfaces/placebet.response.interface';
 import { BetSlipSelection } from 'src/grpc/interfaces/betslip.interface';
 import { Observable, catchError, map } from 'rxjs';
@@ -22,7 +22,7 @@ import { HttpService } from '@nestjs/axios';
 import {GetOddsReply, OddsProbability} from "./interfaces/oddsreply.interface";
 import {GetOddsRequest} from "./interfaces/oddsrequest.interface";
 import axios from 'axios';
-import { BetHistoryRequest } from 'src/grpc/interfaces/bet.history.request.interface';
+import { BetHistoryRequest, FindBetRequest } from 'src/grpc/interfaces/bet.history.request.interface';
 import { Booking } from 'src/entity/booking.entity';
 import { BookingSelection } from 'src/entity/booking.selection.entity';
 import { BookingCode } from 'src/grpc/interfaces/booking.code.interface';
@@ -326,6 +326,97 @@ export class BetsService {
         response.totalStake = totalStake;
 
         return response;
+    }
+
+    async findSingle({clientId, betslipId}: FindBetRequest): Promise<FindBetResponse> {
+
+        let bet = await this.betRepository.findOne({where: {betslip_id: betslipId, client_id: clientId}});
+
+        if (bet) {
+            
+            // get bet items
+            let slips = await this.betslipRepository.find({where: {bet_id: bet.id}});
+            
+            let data: any = {}
+            data.selections = [];
+
+            if(bet.won == STATUS_NOT_LOST_OR_WON) {
+                data.statusDescription = "Pending"
+                data.status = 0;
+            }
+
+            if(bet.won == STATUS_LOST) {
+                data.statusDescription = "Lost"
+                data.status = 2;
+            }
+
+            if(bet.won == STATUS_WON) {
+                data.statusDescription = "Won"
+                data.status = 1;
+            }
+
+            if(bet.won == BET_VOIDED) {
+                data.statusDescription = "Void"
+                data.status = 3;
+            }
+
+            if (slips.length > 0 ) {
+                for (const slip of slips) {
+                    let slipStatusDesc, slipStatus;
+                    switch (slip.won) {
+                        case STATUS_NOT_LOST_OR_WON:
+                            slipStatusDesc = 'Pending'
+                            slipStatus = 0;
+                            break;
+                        case STATUS_LOST:
+                            slipStatusDesc = 'Lost'
+                            slipStatus = 2;
+
+                            break;
+                        case STATUS_WON:
+                            slipStatusDesc = 'Won'
+                            slipStatus = 1;
+                        default:
+                            slipStatus  = 'Void'
+                            slipStatus = 3;
+                            break;
+                    }
+        
+                    data.selections.push({
+                        eventName: slip.event_name,
+                        eventDate: slip.event_date,
+                        eventType: slip.event_type,
+                        eventId: slip.event_id,
+                        matchId: slip.match_id,
+                        marketName: slip.market_name,
+                        specifier: slip.specifier,
+                        outcomeName: slip.outcome_name,
+                        odds: slip.odds,
+                        sport: slip.sport_name,
+                        category: slip.category_name,
+                        tournament: slip.tournament_name,
+                        type: slip.is_live === 1 ? 'live' : 'pre',
+                        statusDescription: slipStatusDesc,
+                        status: slipStatus
+                    })
+                }
+                
+            }
+
+            data.id = bet.id;
+            data.userId = bet.user_id;
+            data.username = bet.username;
+            data.betslipId = bet.betslip_id;
+            data.totalOdd = bet.total_odd;
+            data.possibleWin = bet.possible_win;
+            data.betType = bet.bet_type;
+            data.betCategory = bet.bet_category;
+            data.totalSelections = bet.total_bets;
+            
+            return {status: true, message: 'Bet Found', bet: data};
+        } else {
+            return {status: false, message: 'Betslip not found'};
+        }
     }
 
     async placeBet(bet): Promise<PlaceBetResponse> {
@@ -1033,6 +1124,8 @@ export class BetsService {
     async updateBet({betId, status, entityType, clientId }: UpdateBetRequest): Promise<UpdateBetResponse> {
         try {
             let updateStatus;
+            
+            const bet = await this.betRepository.findOne({where: {id: betId}});
 
             if (entityType === 'bet') {
 
@@ -1047,7 +1140,23 @@ export class BetsService {
                         break;
                     case 'void': 
                         updateStatus = BET_VOIDED;
-                        // TO-DO: return stake and credit user
+                        // revert the stake
+                        let creditPayload = {
+                            amount: bet.stake,
+                            user_id: bet.user_id,
+                            description: "Bet betID " + bet.betslip_id + " was cancelled",
+                            bet_id: bet.betslip_id,
+                            source: bet.source
+                        }
+
+                        // get client settings
+                        var clientSettings = await this.settingRepository.findOne({
+                            where: {
+                                client_id: bet.client_id // add client id to bets
+                            }
+                        });
+
+                        axios.post(clientSettings.url + '/api/wallet/credit', creditPayload);
                         break;
                     default:
                         updateStatus = STATUS_NOT_LOST_OR_WON;

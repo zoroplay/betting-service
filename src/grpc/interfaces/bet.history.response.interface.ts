@@ -14,3 +14,9 @@ export interface BetHistoryResponse {
     totalStake: number;
     currentPage: number;
 }
+
+export interface FindBetResponse {
+    bet?: any;
+    message: string;
+    status: boolean;
+}
