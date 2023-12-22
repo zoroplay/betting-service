@@ -29,6 +29,15 @@ import { BookingSelection } from 'src/entity/booking.selection.entity';
           url: process.env.FEEDS_SERVICE_GRPC_URI
         },
       },
+      {
+        name: 'OUTRIGHTS_PACKAGE',
+        transport: Transport.GRPC,
+        options: {
+          package: 'protobuf',
+          protoPath: join(__dirname, 'outrights.proto'),
+          url: process.env.OUTRIGHTS_SERVICE_GRPC_URI
+        },
+      },
     ]),
   ],
   controllers: [BetsController],

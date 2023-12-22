@@ -22,9 +22,9 @@ import {Cronjob} from "./entity/cronjob.entity";
 import {TypeOrmModule} from "@nestjs/typeorm";
 import {RabbitmqModule} from "./rabbitmq.module";
 import 'dotenv/config'
-import {GrpcModule} from "./grpc/grpc.module";
 import { Booking } from './entity/booking.entity';
 import { BookingSelection } from './entity/booking.selection.entity';
+import {SettingsModule} from "./settings/settings.module";
 
 @Module({
     imports: [
@@ -37,7 +37,7 @@ import { BookingSelection } from './entity/booking.selection.entity';
         ConsumerModule,
         CronJobModule,
         RabbitmqModule,
-        GrpcModule,
+        SettingsModule,
         TypeOrmModule.forRoot({
           type: process.env.DB_TYPE as any,
           host: process.env.DB_HOST,

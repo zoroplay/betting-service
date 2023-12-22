@@ -28,6 +28,11 @@ export class BookingSelection {
     @Column({ type: "varchar", length: 20, nullable: false, default: 'match' })
     event_type: string;
 
+
+    @Index()
+    @Column({ type: "varchar", length: 20, nullable: false, default: 'sr' })
+    event_prefix: string;
+
     @Index()
     @Column({ type: "varchar", length: 200, nullable: false })
     event_name: string;
