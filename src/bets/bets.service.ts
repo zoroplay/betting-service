@@ -208,7 +208,7 @@ export class BetsService {
 
             let queryString = `SELECT b.id,b.user_id,b.username,b.betslip_id,b.stake,b.currency,b.bet_type,b.bet_category,b.total_odd,b.possible_win,b.source,b.total_bets,
             b.won,b.status,b.created,w.winning_after_tax as winnings 
-            FROM bet b LEFT JOIN winning w ON w.bet_id = b.id WHERE client_id = ? AND  ${where.join(' AND ')} ORDER BY created DESC ${limit}`
+            FROM bet b LEFT JOIN winning w ON w.bet_id = b.id WHERE b.client_id = ? AND  ${where.join(' AND ')} ORDER BY b.created DESC ${limit}`
 
             bets = await this.entityManager.query(queryString,params)
 
