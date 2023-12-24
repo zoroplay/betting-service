@@ -11,6 +11,13 @@ import { UpdateBetRequest } from './interfaces/update.bet.request.interface';
 import { UpdateBetResponse } from './interfaces/update.bet.response.interface';
 import {BetID} from "./interfaces/betid.interface";
 import {Probability} from "./interfaces/betslip.interface";
+import {PlaceBet} from "../grpc/interfaces/placebet.interface";
+import {PlaceBetResponse} from "../grpc/interfaces/placebet.response.interface";
+import {BetHistoryRequest, FindBetRequest} from "../grpc/interfaces/bet.history.request.interface";
+import {BetHistoryResponse, FindBetResponse} from "../grpc/interfaces/bet.history.response.interface";
+import { BookingCode } from 'src/grpc/interfaces/booking.code.interface';
+import { UpdateBetRequest } from 'src/grpc/interfaces/update.bet.request.interface';
+import { UpdateBetResponse } from 'src/grpc/interfaces/update.bet.response.interface';
 
 @Controller('bets')
 export class BetsController {
@@ -47,6 +54,12 @@ export class BetsController {
     BetHistory(data: BetHistoryRequest): Promise<BetHistoryResponse> {
 
         return this.betsService.findAll(data)
+    }
+
+    @GrpcMethod('BettingService', 'FindBet')
+    FindBet(data: FindBetRequest): Promise<FindBetResponse> {
+
+        return this.betsService.findSingle(data)
     }
 
     @GrpcMethod('BettingService', 'GetProbabilityFromBetID')

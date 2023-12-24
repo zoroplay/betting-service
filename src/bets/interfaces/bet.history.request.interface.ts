@@ -9,3 +9,8 @@ export interface BetHistoryRequest {
     betslipId: string,
     username: string,
 }
+
+export interface FindBetRequest{
+    clientId: number,
+    betslipId: string,
+}

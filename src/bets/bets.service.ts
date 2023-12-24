@@ -9,6 +9,9 @@ import {BET_LOST, BET_PENDING, BET_VOIDED, BET_WON, STATUS_LOST, STATUS_NOT_LOST
 import {BetHistoryResponse} from "./interfaces/bet.history.response.interface";
 import { PlaceBetResponse } from './interfaces/placebet.response.interface';
 import {BetSlipSelection, Probability, ProbabilityBetSlipSelection} from './interfaces/betslip.interface';
+import {BetHistoryResponse, FindBetResponse} from "../grpc/interfaces/bet.history.response.interface";
+import { PlaceBetResponse } from 'src/grpc/interfaces/placebet.response.interface';
+import { BetSlipSelection } from 'src/grpc/interfaces/betslip.interface';
 import { Observable, catchError, map } from 'rxjs';
 import { ProducerstatusreplyInterface } from './interfaces/producerstatusreply.interface';
 import { AmqpConnection } from '@golevelup/nestjs-rabbitmq';
@@ -18,6 +21,7 @@ import { HttpService } from '@nestjs/axios';
 import {GetOddsReply, OddsProbability} from "./interfaces/oddsreply.interface";
 import {GetOddsRequest} from "./interfaces/oddsrequest.interface";
 import axios from 'axios';
+import { BetHistoryRequest, FindBetRequest } from 'src/grpc/interfaces/bet.history.request.interface';
 import { BetHistoryRequest } from './interfaces/bet.history.request.interface';
 import { Booking } from 'src/entity/booking.entity';
 import { BookingSelection } from 'src/entity/booking.selection.entity';
@@ -25,6 +29,7 @@ import { BookingCode } from './interfaces/booking.code.interface';
 import { UpdateBetRequest } from './interfaces/update.bet.request.interface';
 import { UpdateBetResponse } from './interfaces/update.bet.response.interface';
 import * as dayjs from 'dayjs';
+import { Winning } from 'src/entity/winning.entity';
 import OutrightsService from "./outrights.service.interface";
 
 @Injectable()
@@ -59,7 +64,7 @@ export class BetsService {
 
         @Inject('OUTRIGHTS_PACKAGE')
         private readonly outrightsClient: ClientGrpc
-        
+
 
     ) {
 
@@ -91,43 +96,41 @@ export class BetsService {
             let where = []
 
             if (userId > 0) {
-
-                where.push("user_id = ? ")
+                where.push("b.user_id = ? ")
                 params.push(userId)
-
             }
 
             if (status === 'settled') {
-                where.push("won != ? ")
+                where.push("b.won != ? ")
                 params.push(-1)
             } else if (status !== '') {
-                where.push("won = ? ")
+                where.push("b.won = ? ")
                 params.push(status)
             }
 
             if(from && from !== '' ) {
-                where.push("created >= ? ")
+                where.push("b.created >= ? ")
                 params.push(from)
             }
 
             if(to && to !== '' ) {
-                where.push("created <= ? ")
+                where.push("b.created <= ? ")
                 params.push(to)
             }
 
             if(betslipId && betslipId !== '') {
-                where.push('betslip_id = ?')
+                where.push('b.betslip_id = ?')
                 params.push(betslipId);
             }
 
             if(username && username !== '') {
-                where.push('username = ?')
+                where.push('b.username = ?')
                 params.push(username);
             }
 
             // count games
 
-            let queryCount = `SELECT count(id) as total FROM bet WHERE client_id = ? AND ${where.join(" AND ")} `
+            let queryCount = `SELECT count(id) as total FROM bet b WHERE client_id = ? AND ${where.join(" AND ")} `
 
             let res = await this.entityManager.query(queryCount, params)
 
@@ -139,7 +142,7 @@ export class BetsService {
 
             console.log('total | '+total)
 
-            let sumQuery = `SELECT SUM(stake) as total_stake FROM bet WHERE client_id = ? AND ${where.join(" AND ")} `
+            let sumQuery = `SELECT SUM(stake) as total_stake FROM bet b WHERE client_id = ? AND ${where.join(" AND ")} `
 
             let resSum = await this.entityManager.query(sumQuery, params)
 
@@ -206,7 +209,9 @@ export class BetsService {
 
             let limit = ` LIMIT ${offset},${perPage}`
 
-            let queryString = `SELECT id,user_id,username,betslip_id,stake,currency,bet_type,bet_category,total_odd,possible_win,source,total_bets,won,status,created FROM bet WHERE client_id = ? AND  ${where.join(' AND ')} ORDER BY created DESC ${limit}`
+            let queryString = `SELECT b.id,b.user_id,b.username,b.betslip_id,b.stake,b.currency,b.bet_type,b.bet_category,b.total_odd,b.possible_win,b.source,b.total_bets,
+            b.won,b.status,b.created,w.winning_after_tax as winnings 
+            FROM bet b LEFT JOIN winning w ON w.bet_id = b.id WHERE b.client_id = ? AND  ${where.join(' AND ')} ORDER BY b.created DESC ${limit}`
 
             bets = await this.entityManager.query(queryString,params)
 
@@ -313,6 +318,7 @@ export class BetsService {
             bet.betType = bet.bet_type;
             bet.betCategory = bet.bet_category;
             bet.totalSelections = bet.total_bets;
+            bet.winnings = bet.winnings;
 
             myBets.push(bet)
 
@@ -326,6 +332,106 @@ export class BetsService {
         response.totalStake = totalStake;
 
         return response;
+    }
+
+    async findSingle({clientId, betslipId}: FindBetRequest): Promise<FindBetResponse> {
+        let bet = await this.betRepository
+            .createQueryBuilder('bet')
+            .select('bet.id,bet.user_id,bet.username,bet.betslip_id,bet.stake,bet.currency,bet.bet_type,bet.bet_category,bet.total_odd,bet.possible_win,bet.source,bet.total_bets,bet.won,bet.status,bet.created,winning.winning_after_tax')
+            .leftJoin(Winning, 'winning', 'bet.id = winning.bet_id')
+            .where("bet.betslip_id = :betslipId", {betslipId})
+            .andWhere("bet.client_id = :clientId", {clientId})
+            .getRawOne();
+
+        if (bet) {
+
+            // get bet items
+            let slips = await this.betslipRepository.find({where: {bet_id: bet.id}});
+
+            let data: any = {}
+            data.selections = [];
+
+            if(bet.won == STATUS_NOT_LOST_OR_WON) {
+                data.statusDescription = "Pending"
+                data.status = 0;
+            }
+
+            if(bet.won == STATUS_LOST) {
+                data.statusDescription = "Lost"
+                data.status = 2;
+            }
+
+            if(bet.won == STATUS_WON) {
+                data.statusDescription = "Won"
+                data.status = 1;
+            }
+
+            if(bet.won == BET_VOIDED) {
+                data.statusDescription = "Void"
+                data.status = 3;
+            }
+
+            if (slips.length > 0 ) {
+                for (const slip of slips) {
+                    let slipStatusDesc, slipStatus;
+                    switch (slip.won) {
+                        case STATUS_NOT_LOST_OR_WON:
+                            slipStatusDesc = 'Pending'
+                            slipStatus = 0;
+                            break;
+                        case STATUS_LOST:
+                            slipStatusDesc = 'Lost'
+                            slipStatus = 2;
+
+                            break;
+                        case STATUS_WON:
+                            slipStatusDesc = 'Won'
+                            slipStatus = 1;
+                        default:
+                            slipStatus  = 'Void'
+                            slipStatus = 3;
+                            break;
+                    }
+
+                    data.selections.push({
+                        eventName: slip.event_name,
+                        eventDate: slip.event_date,
+                        eventType: slip.event_type,
+                        eventId: slip.event_id,
+                        matchId: slip.match_id,
+                        marketName: slip.market_name,
+                        specifier: slip.specifier,
+                        outcomeName: slip.outcome_name,
+                        odds: slip.odds,
+                        sport: slip.sport_name,
+                        category: slip.category_name,
+                        tournament: slip.tournament_name,
+                        type: slip.is_live === 1 ? 'live' : 'pre',
+                        statusDescription: slipStatusDesc,
+                        status: slipStatus
+                    })
+                }
+
+            }
+
+            data.id = bet.id;
+            data.stake = bet.stake;
+            data.created = bet.created;
+            data.userId = bet.user_id;
+            data.username = bet.username;
+            data.betslipId = bet.betslip_id;
+            data.totalOdd = bet.total_odd;
+            data.possibleWin = bet.possible_win;
+            data.betType = bet.bet_type;
+            data.betCategory = bet.bet_category;
+            data.totalSelections = bet.total_bets;
+            data.winnings = bet.winning_after_tax;
+            data.source = bet.source;
+
+            return {status: true, message: 'Bet Found', bet: data};
+        } else {
+            return {status: false, message: 'Betslip not found'};
+        }
     }
 
     async placeBet(bet): Promise<PlaceBetResponse> {
@@ -1052,6 +1158,8 @@ export class BetsService {
         try {
             let updateStatus;
 
+            const bet = await this.betRepository.findOne({where: {id: betId}});
+
             if (entityType === 'bet') {
 
                 switch (status) {
@@ -1065,7 +1173,23 @@ export class BetsService {
                         break;
                     case 'void': 
                         updateStatus = BET_VOIDED;
-                        // TO-DO: return stake and credit user
+                        // revert the stake
+                        let creditPayload = {
+                            amount: bet.stake,
+                            user_id: bet.user_id,
+                            description: "Bet betID " + bet.betslip_id + " was cancelled",
+                            bet_id: bet.betslip_id,
+                            source: bet.source
+                        }
+
+                        // get client settings
+                        var clientSettings = await this.settingRepository.findOne({
+                            where: {
+                                client_id: bet.client_id // add client id to bets
+                            }
+                        });
+
+                        axios.post(clientSettings.url + '/api/wallet/credit', creditPayload);
                         break;
                     default:
                         updateStatus = STATUS_NOT_LOST_OR_WON;
@@ -1143,7 +1267,7 @@ export class BetsService {
         let vm = this;
 
         let oddStatus = {} as GetOddsReply
-        
+
         if(eventType.toLowerCase() === "match")
             oddStatus =  await this.getOddsStatus(odds).toPromise()
         else
