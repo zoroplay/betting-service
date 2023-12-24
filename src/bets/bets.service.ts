@@ -5,31 +5,26 @@ import {Bet} from '../entity/bet.entity';
 import {BetSlip} from '../entity/betslip.entity';
 import {Setting} from '../entity/setting.entity';
 import {JsonLogger, LoggerFactory} from 'json-logger-service';
-import {BET_LOST, BET_PENDING, BET_VOIDED, BET_WON, STATUS_LOST, STATUS_NOT_LOST_OR_WON, STATUS_WON, TRANSACTION_TYPE_PLACE_BET} from "../constants";
-import {BetHistoryResponse} from "./interfaces/bet.history.response.interface";
-import { PlaceBetResponse } from './interfaces/placebet.response.interface';
+import {BET_PENDING, BET_VOIDED, STATUS_LOST, STATUS_NOT_LOST_OR_WON, STATUS_WON} from "../constants";
+import {BetHistoryResponse, FindBetResponse} from "./interfaces/bet.history.response.interface";
+import {PlaceBetResponse} from './interfaces/placebet.response.interface';
 import {BetSlipSelection, Probability, ProbabilityBetSlipSelection} from './interfaces/betslip.interface';
-import {BetHistoryResponse, FindBetResponse} from "../grpc/interfaces/bet.history.response.interface";
-import { PlaceBetResponse } from 'src/grpc/interfaces/placebet.response.interface';
-import { BetSlipSelection } from 'src/grpc/interfaces/betslip.interface';
-import { Observable, catchError, map } from 'rxjs';
-import { ProducerstatusreplyInterface } from './interfaces/producerstatusreply.interface';
-import { AmqpConnection } from '@golevelup/nestjs-rabbitmq';
-import { ClientGrpc } from '@nestjs/microservices';
+import {Observable} from 'rxjs';
+import {ProducerstatusreplyInterface} from './interfaces/producerstatusreply.interface';
+import {AmqpConnection} from '@golevelup/nestjs-rabbitmq';
+import {ClientGrpc} from '@nestjs/microservices';
 import OddsService from "./odds.service.interface";
-import { HttpService } from '@nestjs/axios';
+import {HttpService} from '@nestjs/axios';
 import {GetOddsReply, OddsProbability} from "./interfaces/oddsreply.interface";
 import {GetOddsRequest} from "./interfaces/oddsrequest.interface";
 import axios from 'axios';
-import { BetHistoryRequest, FindBetRequest } from 'src/grpc/interfaces/bet.history.request.interface';
-import { BetHistoryRequest } from './interfaces/bet.history.request.interface';
-import { Booking } from 'src/entity/booking.entity';
-import { BookingSelection } from 'src/entity/booking.selection.entity';
-import { BookingCode } from './interfaces/booking.code.interface';
-import { UpdateBetRequest } from './interfaces/update.bet.request.interface';
-import { UpdateBetResponse } from './interfaces/update.bet.response.interface';
-import * as dayjs from 'dayjs';
-import { Winning } from 'src/entity/winning.entity';
+import {BetHistoryRequest, FindBetRequest} from './interfaces/bet.history.request.interface';
+import {Booking} from 'src/entity/booking.entity';
+import {BookingSelection} from 'src/entity/booking.selection.entity';
+import {BookingCode} from './interfaces/booking.code.interface';
+import {UpdateBetRequest} from './interfaces/update.bet.request.interface';
+import {UpdateBetResponse} from './interfaces/update.bet.response.interface';
+import {Winning} from 'src/entity/winning.entity';
 import OutrightsService from "./outrights.service.interface";
 
 @Injectable()
@@ -397,6 +392,7 @@ export class BetsService {
                         eventName: slip.event_name,
                         eventDate: slip.event_date,
                         eventType: slip.event_type,
+                        eventPrefix: slip.event_prefix,
                         eventId: slip.event_id,
                         matchId: slip.match_id,
                         marketName: slip.market_name,
