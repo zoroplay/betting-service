@@ -3,11 +3,7 @@ import {InjectRepository} from '@nestjs/typeorm';
 import {EntityManager, Repository} from 'typeorm';
 import {Bet} from '../entity/bet.entity';
 import {BetSlip} from '../entity/betslip.entity';
-import {Mts} from '../entity/mts.entity';
 import {Setting} from '../entity/setting.entity';
-import {Producer} from '../entity/producer.entity';
-import {OddsLive} from '../entity/oddslive.entity';
-import {OddsPrematch} from '../entity/oddsprematch.entity';
 import {JsonLogger, LoggerFactory} from 'json-logger-service';
 import {BET_LOST, BET_PENDING, BET_VOIDED, BET_WON, STATUS_LOST, STATUS_NOT_LOST_OR_WON, STATUS_WON, TRANSACTION_TYPE_PLACE_BET} from "../constants";
 import {BetHistoryResponse} from "./interfaces/bet.history.response.interface";
@@ -51,10 +47,6 @@ export class BetsService {
         private settingRepository: Repository<Setting>,
         @InjectRepository(BookingSelection)
         private bookingSelectionRepo: Repository<BookingSelection>,
-        @InjectRepository(OddsLive)
-        private liveRepository: Repository<OddsLive>,
-        @InjectRepository(OddsPrematch)
-        private prematchRepository: Repository<OddsPrematch>,
 
         private readonly entityManager: EntityManager,
 
@@ -379,10 +371,8 @@ export class BetsService {
             return {status: 400, message: "Insufficient balance ", success: false};
 
         let userSelection =  bet.selections
-        // console.log("userSelection | "+JSON.stringify(userSelection))
 
-        if(clientSettings == undefined || clientSettings.id == undefined || clientSettings.id == 0 ) {
-            // return {status: 400, data: "invalid client"};
+        if(clientSettings.id == undefined || clientSettings.id == 0 ) {
             clientSettings = new Setting();
             clientSettings.id = 1;
             clientSettings.client_id = 1;
@@ -404,8 +394,8 @@ export class BetsService {
 
 
         //2. odds validation
-        var selections = [];
-        var totalOdds = 1;
+        let selections = [];
+        let totalOdds = 1;
 
         let overallProbability = 1
 
@@ -421,6 +411,11 @@ export class BetsService {
 
             if (!selection.eventPrefix)
                 selection.eventPrefix = "sr";
+
+            if(selection.eventId === 0 && selection.matchId > 0) {
+
+                selection.eventId = selection.matchId
+            }
 
             if (selection.eventId === 0 )
                 return {status: 400, message: "missing event ID in your selection ", success: false};
@@ -485,7 +480,6 @@ export class BetsService {
                 producer_id: selection.producerId,
                 sport_id: selection.sportId,
                 event_id: selection.eventId,
-                match_id: selection.matchId,
                 market_id: selection.marketId,
                 market_name: selection.marketName,
                 specifier: selection.specifier,
@@ -597,7 +591,7 @@ export class BetsService {
                 betSlipData.event_prefix = selection.event_prefix;
                 betSlipData.event_date = selection.event_date;
                 betSlipData.event_id = selection.event_id;
-                betSlipData.match_id = selection.match_id;
+                betSlipData.match_id = selection.event_id;
                 betSlipData.selection_id = selection.selection_id;
                 betSlipData.event_name = selection.event_name;
                 betSlipData.sport_name = selection.sport_name;
@@ -623,7 +617,7 @@ export class BetsService {
                     outcome_id: selection.outcome_id,
                     specifier: selection.specifier,
                     odds: parseFloat(selection.odds),
-                    event_id: selection.match_id,
+                    event_id: parseInt(selection.event_id),
                     event_type: selection.event_type,
                     event_prefix: selection.event_prefix,
                 })
