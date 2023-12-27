@@ -1,6 +1,7 @@
 import { HttpStatus, Injectable } from "@nestjs/common";
 import { GamingActivityRequest, GamingActivityResponse } from "./interfaces/report.interface";
-import dayjs from "dayjs";
+import * as dayjs from 'dayjs';
+
 import { EntityManager } from "typeorm";
 
 @Injectable()
