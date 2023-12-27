@@ -23,12 +23,12 @@ export class ReportService {
             let group_by;
             const startDate = dayjs(from).format('YYYY-MM-DD HH:mm');
             const endDate = dayjs(to).format('YYYY-MM-DD HH:mm');
-            
+            const voidStatus = '(3,4)';
             let params = [];
             params.push(clientID);
             params.push(startDate)
             params.push(endDate)
-            params.push('(3,4)')
+            params.push(voidStatus)
 
             if (productType === 'virtual') {
                 table = 'virtual_bets';
