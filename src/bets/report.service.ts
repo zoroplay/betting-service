@@ -28,7 +28,7 @@ export class ReportService {
             params.push(clientID);
             params.push(startDate)
             params.push(endDate)
-            params.push([3,4])
+            params.push('(3,4)')
 
             if (productType === 'virtual') {
                 table = 'virtual_bets';
