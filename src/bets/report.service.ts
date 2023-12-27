@@ -46,7 +46,7 @@ export class ReportService {
                     break;
             }
 
-            let sql = `SELECT MONTH(${table}.created) AS month, DATE(${table}.created) as date SUM(${table}.stake) AS turnover, COUNT(*) as total`;
+            let sql = `SELECT MONTH(${table}.created) AS month, DATE(${table}.created) as date, SUM(${table}.stake) AS turnover, COUNT(*) as total`;
 
             if (productType === 'sports') {
                 sql += ', avg(bet.stake) as average, SUM(w.winning_after_tax) as winnings, bet.source, bet.bet_type';
@@ -68,10 +68,10 @@ export class ReportService {
             sql += ` FROM ${table} LEFT JOIN winning w ON w.bet_id = bet.id`;
 
             if(productType === 'sports ' && (groupBy == 'sport' || groupBy == 'tournament' || groupBy == 'market')){
-                sql = 'JOIN bet_slip ON bet_slip.bet_id = bet.id';
+                sql = ' JOIN bet_slip ON bet_slip.bet_id = bet.id';
             }
 
-            sql += `WHERE client_id = ? AND ${table}.created BETWEEN ? AND ? AND bet.status NOT IN ? `;
+            sql += ` WHERE client_id = ? AND ${table}.created BETWEEN ? AND ? AND bet.status NOT IN ? `;
 
 
             if(username && username !== ''){
@@ -105,6 +105,7 @@ export class ReportService {
 
             sql += ` GROUP BY ${group_by}`;
 
+            console.log(sql)
             bets = await this.entityManager.query(sql, params);
 
             // if(!empty($input['product_type'])){
