@@ -11,6 +11,8 @@ import { UpdateBetRequest } from 'src/grpc/interfaces/update.bet.request.interfa
 import { UpdateBetResponse } from 'src/grpc/interfaces/update.bet.response.interface';
 import { ReportService } from './report.service';
 import { GamingActivityRequest, GamingActivityResponse } from './interfaces/report.interface';
+import {BetID} from "./interfaces/betid.interface";
+import {Probability} from "./interfaces/betslip.interface";
 
 @Controller('bets')
 export class BetsController {
@@ -25,7 +27,6 @@ export class BetsController {
 
     @GrpcMethod('BettingService', 'PlaceBet')
     PlaceBet(data: PlaceBet): Promise<PlaceBetResponse> {
-        // console.log(JSON.stringify(data));
         return this.betsService.placeBet(data);
     }
 
@@ -61,5 +62,12 @@ export class BetsController {
     GamingActivity(data: GamingActivityRequest): Promise<GamingActivityResponse> {
         return this.reportService.gamingActivity(data);
     }
+
+    @GrpcMethod('BettingService', 'GetProbabilityFromBetID')
+    GetProbabilityFromBetID(data: BetID): Promise<Probability> {
+
+        return this.betsService.getProbabilityFromBetID(data.betID)
+    }
+
 }
 

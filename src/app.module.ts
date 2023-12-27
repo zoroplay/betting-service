@@ -8,11 +8,8 @@ import {CronJobModule} from "./cronjobs/cronjobs.model";
 import {Bet} from "./entity/bet.entity";
 import {BetStatus} from "./entity/betstatus.entity";
 import {BetSlip} from "./entity/betslip.entity";
-import {OddsLive} from "./entity/oddslive.entity";
 import {Mts} from "./entity/mts.entity";
-import {OddsPrematch} from "./entity/oddsprematch.entity";
 import {Setting} from "./entity/setting.entity";
-import {Producer} from "./entity/producer.entity";
 import {Settlement} from "./entity/settlement.entity";
 import {BetCancel} from "./entity/betcancel.entity";
 import {SettlementRollback} from "./entity/settlementrollback.entity";
@@ -22,9 +19,9 @@ import {Cronjob} from "./entity/cronjob.entity";
 import {TypeOrmModule} from "@nestjs/typeorm";
 import {RabbitmqModule} from "./rabbitmq.module";
 import 'dotenv/config'
-import {GrpcModule} from "./grpc/grpc.module";
 import { Booking } from './entity/booking.entity';
 import { BookingSelection } from './entity/booking.selection.entity';
+import {SettingsModule} from "./settings/settings.module";
 
 @Module({
     imports: [
@@ -37,7 +34,7 @@ import { BookingSelection } from './entity/booking.selection.entity';
         ConsumerModule,
         CronJobModule,
         RabbitmqModule,
-        GrpcModule,
+        SettingsModule,
         TypeOrmModule.forRoot({
           type: process.env.DB_TYPE as any,
           host: process.env.DB_HOST,
@@ -45,7 +42,7 @@ import { BookingSelection } from './entity/booking.selection.entity';
           username: process.env.DB_USERNAME,
           password: process.env.DB_PASSWORD,
           database: process.env.DB_NAME,
-          entities:[Bet,BetSlip,BetStatus,Booking,BookingSelection,Mts,OddsLive,OddsPrematch,Producer,Setting,Settlement,BetCancel,SettlementRollback,BetClosure,Winning,Cronjob],
+          entities:[Bet,BetSlip,BetStatus,Booking,BookingSelection,Mts,Setting,Settlement,BetCancel,SettlementRollback,BetClosure,Winning,Cronjob],
           //entities: [__dirname + '/entity/*.ts'],
           //entities: [__dirname + '/ ** / *.entity{.ts,.js}'],
           //entities: [__dirname + '/ ** / *.entity{.ts,.js}'],

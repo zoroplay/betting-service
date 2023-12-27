@@ -16,7 +16,7 @@ async function bootstrap() {
     options: {
       url: `${process.env.GRPC_HOST}:${process.env.GRPC_PORT}`,
       package: 'betting',
-      protoPath: join(__dirname, './grpc/proto/grpc.proto'),
+      protoPath: join(__dirname, './proto/betting-service.proto'),
     }
   });
 

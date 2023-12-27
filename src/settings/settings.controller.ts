@@ -1,19 +1,17 @@
 import {Controller} from "@nestjs/common";
 import {GrpcMethod} from "@nestjs/microservices";
 import {CreateSetting} from "./interfaces/create.settings.interface";
-import {EmptyInterface} from "./interfaces/empty.interface";
 import {AllSettingsResponse} from "./interfaces/all.settings.response.interface";
-import {GrpcService} from "./grpc.service";
+import {SettingsService} from "./settings.service";
 import {SettingsResponse} from "./interfaces/settings.response.interface";
 import {SettingsById} from "./interfaces/settings.byid.interface";
-import {BetID} from "./interfaces/betid.interface";
-import {Probability} from "./interfaces/betslip.interface";
+import {EmptyInterface} from "../bets/interfaces/empty.interface";
 
 @Controller()
-export class GrpcController {
+export class SettingsController {
 
     constructor(
-        private readonly settingsService: GrpcService,
+        private readonly settingsService: SettingsService,
     ) {
     }
 
@@ -42,11 +40,5 @@ export class GrpcController {
     GetAllSettings(data: EmptyInterface): Promise<AllSettingsResponse> {
 
         return this.settingsService.findAll()
-    }
-
-    @GrpcMethod('BettingService', 'GetProbabilityFromBetID')
-    GetProbabilityFromBetID(data: BetID): Promise<Probability> {
-
-        return this.settingsService.getProbabilityFromBetID(data.betID)
     }
 }
