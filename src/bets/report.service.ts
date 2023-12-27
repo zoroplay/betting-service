@@ -21,8 +21,9 @@ export class ReportService {
             let bets = [];
 
             let group_by;
-            const startDate = dayjs(from).format('YYYY-MM-DD HH:mm');
-            const endDate = dayjs(to).format('YYYY-MM-DD HH:mm');
+            const startDate = dayjs(from).format('YYYY-MM-DD HH:mm:ss');
+            const endDate = dayjs(to).format('YYYY-MM-DD HH:mm:ss');
+            console.log(startDate, endDate);
             const voidStatus = `(3,4)`;
             let params = [];
             params.push(clientID);
