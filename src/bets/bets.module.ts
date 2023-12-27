@@ -14,6 +14,7 @@ import {join} from "path";
 import { HttpModule } from '@nestjs/axios';
 import { Booking } from 'src/entity/booking.entity';
 import { BookingSelection } from 'src/entity/booking.selection.entity';
+import { ReportService } from './report.service';
 
 @Module({
   imports: [
@@ -32,6 +33,6 @@ import { BookingSelection } from 'src/entity/booking.selection.entity';
     ]),
   ],
   controllers: [BetsController],
-  providers: [BetsService]
+  providers: [BetsService, ReportService]
 })
 export class BetsModule {}

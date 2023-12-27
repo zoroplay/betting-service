@@ -145,8 +145,8 @@ export class BetsService {
 
             if (resSum) {
 
-                let result = res[0]
-                totalStake = result.total_total;
+                let result = resSum[0]
+                totalStake = result.total_stake;
             }
             // calculate offset
 

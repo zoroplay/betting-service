@@ -9,6 +9,8 @@ import {BetHistoryResponse, FindBetResponse} from "../grpc/interfaces/bet.histor
 import { BookingCode } from 'src/grpc/interfaces/booking.code.interface';
 import { UpdateBetRequest } from 'src/grpc/interfaces/update.bet.request.interface';
 import { UpdateBetResponse } from 'src/grpc/interfaces/update.bet.response.interface';
+import { ReportService } from './report.service';
+import { GamingActivityRequest, GamingActivityResponse } from './interfaces/report.interface';
 
 @Controller('bets')
 export class BetsController {
@@ -18,6 +20,7 @@ export class BetsController {
     constructor(
 
         private readonly betsService: BetsService,
+        private readonly reportService: ReportService,
     ) {}
 
     @GrpcMethod('BettingService', 'PlaceBet')
@@ -52,6 +55,11 @@ export class BetsController {
     FindBet(data: FindBetRequest): Promise<FindBetResponse> {
 
         return this.betsService.findSingle(data)
+    }
+
+    @GrpcMethod('BettingService', 'GamingActivity')
+    GamingActivity(data: GamingActivityRequest): Promise<GamingActivityResponse> {
+        return this.reportService.gamingActivity(data);
     }
 }
 
