@@ -83,7 +83,7 @@ message GamingActivityResponse {
   bool success = 1;
   int32 status = 2;
   string message = 3;
-  repeated GamingActivity bets = 4;
+  repeated GamingActivity data = 4;
   string error = 5;
 }
 

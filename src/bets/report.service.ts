@@ -15,7 +15,7 @@ export class ReportService {
     ) {}
 
     async gamingActivity(data: GamingActivityRequest): Promise<GamingActivityResponse> {
-        console.log(data);
+
         const {groupBy, productType, from, to, username, clientID, betType, source, eventType} = data;
         let table = 'bet';
 
@@ -28,7 +28,6 @@ export class ReportService {
             let group_by;
             const startDate = dayjs(from, 'DD/MM/YYYY HH:mm:ss').format('YYYY-MM-DD HH:mm:ss');
             const endDate = dayjs(to, 'DD/MM/YYYY HH:mm:ss').format('YYYY-MM-DD HH:mm:ss');
-            console.log(startDate, endDate);
             const voidStatus = `(3,4)`;
             let params = [];
             params.push(clientID);
