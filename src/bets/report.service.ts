@@ -23,12 +23,12 @@ export class ReportService {
             let group_by;
             const startDate = dayjs(from).format('YYYY-MM-DD HH:mm');
             const endDate = dayjs(to).format('YYYY-MM-DD HH:mm');
-            const voidStatus = '(3,4)';
+            const voidStatus = `(3,4)`;
             let params = [];
             params.push(clientID);
             params.push(startDate)
             params.push(endDate)
-            params.push(voidStatus)
+            // params.push(voidStatus)
 
             if (productType === 'virtual') {
                 table = 'virtual_bets';
@@ -71,7 +71,7 @@ export class ReportService {
                 sql = ' JOIN bet_slip ON bet_slip.bet_id = bet.id';
             }
 
-            sql += ` WHERE client_id = ? AND ${table}.created BETWEEN ? AND ? AND bet.status NOT IN ? `;
+            sql += ` WHERE client_id = ? AND ${table}.created BETWEEN ? AND ? AND bet.status NOT IN (3,4) `;
 
 
             if(username && username !== ''){
