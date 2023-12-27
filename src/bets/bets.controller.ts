@@ -2,17 +2,17 @@ import {Controller} from '@nestjs/common';
 import {BetsService} from './bets.service';
 import {GrpcMethod} from "@nestjs/microservices";
 import {JsonLogger, LoggerFactory} from "json-logger-service";
-import {PlaceBet} from "../grpc/interfaces/placebet.interface";
-import {PlaceBetResponse} from "../grpc/interfaces/placebet.response.interface";
-import {BetHistoryRequest, FindBetRequest} from "../grpc/interfaces/bet.history.request.interface";
-import {BetHistoryResponse, FindBetResponse} from "../grpc/interfaces/bet.history.response.interface";
-import { BookingCode } from 'src/grpc/interfaces/booking.code.interface';
-import { UpdateBetRequest } from 'src/grpc/interfaces/update.bet.request.interface';
-import { UpdateBetResponse } from 'src/grpc/interfaces/update.bet.response.interface';
-import { ReportService } from './report.service';
-import { GamingActivityRequest, GamingActivityResponse } from './interfaces/report.interface';
+import {PlaceBet} from "./interfaces/placebet.interface";
+import {PlaceBetResponse} from "./interfaces/placebet.response.interface";
+import {BetHistoryRequest, FindBetRequest} from "./interfaces/bet.history.request.interface";
+import {BetHistoryResponse, FindBetResponse} from "./interfaces/bet.history.response.interface";
+import {BookingCode} from './interfaces/booking.code.interface';
+import {UpdateBetRequest} from './interfaces/update.bet.request.interface';
+import {UpdateBetResponse} from './interfaces/update.bet.response.interface';
 import {BetID} from "./interfaces/betid.interface";
 import {Probability} from "./interfaces/betslip.interface";
+import { ReportService } from './report.service';
+import { GamingActivityRequest, GamingActivityResponse } from './interfaces/report.interface';
 
 @Controller('bets')
 export class BetsController {
