@@ -1,8 +1,12 @@
 import { HttpStatus, Injectable } from "@nestjs/common";
 import { GamingActivityRequest, GamingActivityResponse } from "./interfaces/report.interface";
-import * as dayjs from 'dayjs';
-
 import { EntityManager } from "typeorm";
+
+import * as dayjs from 'dayjs';
+var customParseFormat = require('dayjs/plugin/customParseFormat')
+
+dayjs.extend(customParseFormat)
+
 
 @Injectable()
 export class ReportService {
@@ -22,8 +26,8 @@ export class ReportService {
             let bets = [];
 
             let group_by;
-            const startDate = dayjs(from).format('YYYY-MM-DD HH:mm:ss');
-            const endDate = dayjs(to).format('YYYY-MM-DD HH:mm:ss');
+            const startDate = dayjs(from, 'DD/MM/YYYY HH:mm:ss').format('YYYY-MM-DD HH:mm:ss');
+            const endDate = dayjs(to, 'DD/MM/YYYY HH:mm:ss').format('YYYY-MM-DD HH:mm:ss');
             console.log(startDate, endDate);
             const voidStatus = `(3,4)`;
             let params = [];
