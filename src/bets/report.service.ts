@@ -103,17 +103,17 @@ export class ReportService {
 
             if (resSum) {
                 let result = resSum[0];
-                console.log(result);
-                totalStake = result.turnover;
-                totalWinnings = result.winnings;
-                totalTickets = result.total;
+                totalStake = result.turnover || 0;
+                totalWinnings = result.winnings || 0;
+                totalTickets = result.total || 0;
             }
 
             sql += ` GROUP BY ${group_by}`;
 
-            // console.log(sql)
-            bets = await this.entityManager.query(sql, params);
-            console.log(bets);
+            console.log(sql)
+            console.log(params);
+            let mainQuery  = await this.entityManager.query(sql, params);
+            if (mainQuery) bets = mainQuery;
             // if(!empty($input['product_type'])){
             //     $bets = $bets->where('bets.product_type', $input['product_type']);
             // }
