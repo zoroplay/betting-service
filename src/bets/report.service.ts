@@ -109,9 +109,7 @@ export class ReportService {
             }
 
             sql += ` GROUP BY ${group_by}`;
-
-            console.log(sql)
-            console.log(params);
+            
             let mainQuery  = await this.entityManager.query(sql, params);
             if (mainQuery) bets = mainQuery;
             // if(!empty($input['product_type'])){
