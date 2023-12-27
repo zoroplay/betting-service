@@ -61,6 +61,7 @@ export class SettlementService {
 
         let producer_id = data.producer_id;
         let event_type = data.event_type;
+        let eventPrefix = data.event_prefix;
 
         let counts = 0
 
@@ -79,7 +80,7 @@ export class SettlementService {
 
                // this.logger.info("settlement | match_id "+matchID+" | marketID "+marketID+" | specifier "+specifier+" | outcomeID "+outcomeID+" | result "+result)
 
-                if (!await this.betExists(matchID, marketID, specifier, outcomeID)) {
+                if (!await this.betExists(eventPrefix, event_type, matchID, marketID, specifier, outcomeID)) {
 
                     continue
                 }
