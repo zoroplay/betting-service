@@ -11,6 +11,7 @@ export class ReportService {
     ) {}
 
     async gamingActivity(data: GamingActivityRequest): Promise<GamingActivityResponse> {
+        console.log(data);
         const {groupBy, productType, from, to, username, clientID, betType, source, eventType} = data;
         let table = 'bet';
 
