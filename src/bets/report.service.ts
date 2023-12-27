@@ -102,7 +102,8 @@ export class ReportService {
             let resSum = await this.entityManager.query(sql, params)
 
             if (resSum) {
-                let result = resSum[0]
+                let result = resSum[0];
+                console.log(result);
                 totalStake = result.turnover;
                 totalWinnings = result.winnings;
                 totalTickets = result.total;
@@ -110,9 +111,9 @@ export class ReportService {
 
             sql += ` GROUP BY ${group_by}`;
 
-            console.log(sql)
+            // console.log(sql)
             bets = await this.entityManager.query(sql, params);
-
+            console.log(bets);
             // if(!empty($input['product_type'])){
             //     $bets = $bets->where('bets.product_type', $input['product_type']);
             // }
