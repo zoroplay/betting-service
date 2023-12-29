@@ -34,11 +34,9 @@ service Odds {
 message GetOddsRequest {
   int32 producerID = 1;
   int32 eventID = 2;
-  int32 eventType = 3;
-  int32 eventPrefix = 4;
-  int32 marketID = 5;
-  string specifier = 6;
-  string outcomeID = 7;
+  int32 marketID = 3;
+  string specifier = 4;
+  string outcomeID = 5;
 }
 
 // The response message containing the odds status
