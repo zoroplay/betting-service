@@ -549,7 +549,7 @@ export class BetsService {
                 return {status: 400, message: "missing odds in your selection ", success: false};
 
             // get odds
-            let odd = await this.getOdds(selection.producerId, selection.eventPrefix, selection.eventType, selection.eventId, selection.marketId, selection.specifier, selection.outcomeId)
+            let odd = await this.getOdds(selection.producerId, 'sr', 'match', selection.eventId, selection.marketId, selection.specifier, selection.outcomeId)
 
             if (odd === 0 ) { // || odd.active == 0 || odd.status !== 0 ) {
 
@@ -1264,10 +1264,10 @@ export class BetsService {
 
         let oddStatus = {} as GetOddsReply
 
-        // if(eventType.toLowerCase() === "match")
+        if(eventType.toLowerCase() === "match")
             oddStatus =  await this.getOddsStatus(odds).toPromise()
-        // else
-        //     oddStatus =  await this.getOutrightsOddsStatus(odds).toPromise()
+        else
+            oddStatus =  await this.getOutrightsOddsStatus(odds).toPromise()
 
         this.logger.info(oddStatus)
 
