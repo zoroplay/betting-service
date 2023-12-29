@@ -569,7 +569,7 @@ export class BetsService {
 
 
             // get probability overallProbability
-            let selectionProbability = await this.getProbability(selection.producerId, selection.eventPrefix, selection.eventType, selection.eventId, selection.marketId, selection.specifier, selection.outcomeId)
+            let selectionProbability = await this.getProbability(selection.producerId, selection.eventPrefix, selection.eventType, selection.matchId, selection.marketId, selection.specifier, selection.outcomeId)
             overallProbability = overallProbability * selectionProbability
 
             // selection.odds = odd
@@ -1260,6 +1260,8 @@ export class BetsService {
             outcomeID:outcomeId,
             specifier:specifier,
         }
+
+        this.logger.info('odds ' + JSON.stringify(odds));
 
         let vm = this;
 
