@@ -582,6 +582,7 @@ export class BetsService {
                 producer_id: selection.producerId,
                 sport_id: selection.sportId,
                 event_id: selection.eventId,
+                match_id: selection.matchId,
                 market_id: selection.marketId,
                 market_name: selection.marketName,
                 specifier: selection.specifier,
@@ -686,29 +687,29 @@ export class BetsService {
                 // console.log(JSON.stringify(selection));
 
                 let betSlipData = new BetSlip()
-                betSlipData.bet_id = betResult.id;
-                betSlipData.client_id = bet.clientId;
-                betSlipData.user_id = bet.userId;
-                betSlipData.event_type = selection.event_type;
-                betSlipData.event_prefix = selection.event_prefix;
-                betSlipData.event_date = selection.event_date;
-                betSlipData.event_id = selection.event_id;
-                betSlipData.match_id = selection.event_id;
-                betSlipData.selection_id = selection.selection_id;
-                betSlipData.event_name = selection.event_name;
-                betSlipData.sport_name = selection.sport_name;
+                betSlipData.bet_id          = betResult.id;
+                betSlipData.client_id       = bet.clientId;
+                betSlipData.user_id         = bet.userId;
+                betSlipData.event_type      = selection.event_type;
+                betSlipData.event_prefix    = selection.event_prefix;
+                betSlipData.event_date      = selection.event_date;
+                betSlipData.event_id        = selection.event_id;
+                betSlipData.match_id        = selection.match_id;
+                betSlipData.selection_id    = selection.selection_id;
+                betSlipData.event_name      = selection.event_name;
+                betSlipData.sport_name      = selection.sport_name;
                 betSlipData.tournament_name = selection.tournament_name;
-                betSlipData.category_name = selection.category_name;
-                betSlipData.producer_id = selection.producer_id;
-                betSlipData.market_name = selection.market_name;
-                betSlipData.market_id = selection.market_id;
-                betSlipData.outcome_name = selection.outcome_name;
-                betSlipData.outcome_id = selection.outcome_id;
-                betSlipData.specifier = selection.specifier;
-                betSlipData.is_live = selection.is_live;
-                betSlipData.odds = selection.odds
-                betSlipData.status = BET_PENDING
-                betSlipData.probability = selection.probability
+                betSlipData.category_name   = selection.category_name;
+                betSlipData.producer_id     = selection.producer_id;
+                betSlipData.market_name     = selection.market_name;
+                betSlipData.market_id       = selection.market_id;
+                betSlipData.outcome_name    = selection.outcome_name;
+                betSlipData.outcome_id      = selection.outcome_id;
+                betSlipData.specifier       = selection.specifier;
+                betSlipData.is_live         = selection.is_live;
+                betSlipData.odds            = selection.odds
+                betSlipData.status          = BET_PENDING
+                betSlipData.probability     = selection.probability
                 //await this.saveBetSlipWithTransactions(betSlipData,transactionManager);
                 await this.betslipRepository.save(betSlipData);
 
@@ -719,7 +720,7 @@ export class BetsService {
                     outcome_id: selection.outcome_id,
                     specifier: selection.specifier,
                     odds: parseFloat(selection.odds),
-                    event_id: parseInt(selection.event_id),
+                    event_id: parseInt(selection.match_id),
                     event_type: selection.event_type,
                     event_prefix: selection.event_prefix,
                 })
@@ -886,7 +887,7 @@ export class BetsService {
                 return {status: 400, message: "missing odds in your selection ", success: false};
 
             // get odds
-            let odd = await this.getOdds(selection.producerId, selection.eventPrefix, selection.eventType, selection.eventId, selection.marketId, selection.specifier, selection.outcomeId)
+            let odd = await this.getOdds(selection.producerId, selection.eventPrefix, selection.eventType, selection.matchId, selection.marketId, selection.specifier, selection.outcomeId)
 
             if (odd === 0 ) { // || odd.active == 0 || odd.status !== 0 ) {
 
@@ -1264,13 +1265,10 @@ export class BetsService {
 
         let oddStatus = {} as GetOddsReply
 
-        if(eventType.toLowerCase() === "match") {
-            this.logger.info('checking prematch odds');
+        if(eventType.toLowerCase() === "match")
             oddStatus =  await this.getOddsStatus(odds).toPromise()
-        }else{
-            this.logger.info('checking outrights odds')
+        else
             oddStatus =  await this.getOutrightsOddsStatus(odds).toPromise()
-        }
 
         this.logger.info(oddStatus)
 
