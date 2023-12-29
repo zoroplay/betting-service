@@ -1264,6 +1264,9 @@ export class BetsService {
 
         let oddStatus = {} as GetOddsReply
 
+        this.logger.info("checking odds " + JSON.stringify(odds))
+
+
         if(eventType.toLowerCase() === "match")
             oddStatus =  await this.getOddsStatus(odds).toPromise()
         else
