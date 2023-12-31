@@ -77,7 +77,7 @@ export class ReportService {
                 sql = ' JOIN bet_slip ON bet_slip.bet_id = bet.id';
             }
 
-            sql += ` WHERE bet.client_id = ? AND ${table}.created BETWEEN ? AND ? AND bet.status NOT IN (3,4) `;
+            sql += ` WHERE bet.client_id = ? AND ${table}.created BETWEEN ? AND ? AND bet.status NOT IN (${BET_CANCELLED}, ${BET_VOIDED}) `;
 
 
             if(username && username !== ''){

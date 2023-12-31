@@ -99,8 +99,9 @@ export class BetsService {
                 where.push("b.won != ? ")
                 params.push(-1)
             } else if (status !== '') {
-                where.push("b.status NOT IN ? ")
-                params.push(`(${BET_CANCELLED},${BET_VOIDED})`)
+                where.push(`b.status NOT IN (${BET_CANCELLED},${BET_VOIDED})`)
+                // let param = `(${BET_CANCELLED},${BET_VOIDED})`;
+                // params.push(param)
             }
 
             if(from && from !== '' ) {
