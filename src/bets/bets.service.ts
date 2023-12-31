@@ -5,7 +5,7 @@ import {Bet} from '../entity/bet.entity';
 import {BetSlip} from '../entity/betslip.entity';
 import {Setting} from '../entity/setting.entity';
 import {JsonLogger, LoggerFactory} from 'json-logger-service';
-import {BET_PENDING, BET_VOIDED, STATUS_LOST, STATUS_NOT_LOST_OR_WON, STATUS_WON} from "../constants";
+import {BET_CANCELLED, BET_PENDING, BET_VOIDED, STATUS_LOST, STATUS_NOT_LOST_OR_WON, STATUS_WON} from "../constants";
 import {BetHistoryResponse, FindBetResponse} from "./interfaces/bet.history.response.interface";
 import {PlaceBetResponse} from './interfaces/placebet.response.interface';
 import {BetSlipSelection, Probability, ProbabilityBetSlipSelection} from './interfaces/betslip.interface';
@@ -99,8 +99,8 @@ export class BetsService {
                 where.push("b.won != ? ")
                 params.push(-1)
             } else if (status !== '') {
-                where.push("b.won = ? ")
-                params.push(status)
+                where.push("b.status NOT IN ? ")
+                params.push(`(${BET_CANCELLED},${BET_VOIDED})`)
             }
 
             if(from && from !== '' ) {
@@ -1261,8 +1261,6 @@ export class BetsService {
             specifier:specifier,
         }
 
-        this.logger.info('odds ' + JSON.stringify(odds));
-
         let vm = this;
 
         let oddStatus = {} as GetOddsReply
@@ -1272,7 +1270,7 @@ export class BetsService {
         else
             oddStatus =  await this.getOutrightsOddsStatus(odds).toPromise()
 
-        this.logger.info(oddStatus)
+        // this.logger.info(oddStatus)
 
         return oddStatus.statusName == 'Active' && oddStatus.active == 1 ? oddStatus.odds  : 0
 

@@ -3,6 +3,7 @@ import { GamingActivityRequest, GamingActivityResponse } from "./interfaces/repo
 import { EntityManager } from "typeorm";
 
 import * as dayjs from 'dayjs';
+import { BET_CANCELLED, BET_VOIDED } from "src/constants";
 var customParseFormat = require('dayjs/plugin/customParseFormat')
 
 dayjs.extend(customParseFormat)
@@ -28,7 +29,7 @@ export class ReportService {
             let group_by;
             const startDate = dayjs(from, 'DD/MM/YYYY HH:mm:ss').format('YYYY-MM-DD HH:mm:ss');
             const endDate = dayjs(to, 'DD/MM/YYYY HH:mm:ss').format('YYYY-MM-DD HH:mm:ss');
-            const voidStatus = `(3,4)`;
+            const voidStatus = `(${BET_CANCELLED},${BET_VOIDED})`;
             let params = [];
             params.push(clientID);
             params.push(startDate)
