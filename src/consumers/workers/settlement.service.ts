@@ -261,7 +261,7 @@ export class SettlementService {
         // get client settings
         var counts = await this.betslipRepository.count({
             where: {
-                event_id: eventID,
+                match_id: eventID,
                 event_type: eventType,
                 event_prefix: eventPrefix,
                 market_id: marketID,
