@@ -63,6 +63,12 @@ export class CronjobService {
             }
         )
 
+        this.betResultingService.taskFixInvalidBetStatus().then(function () {
+
+            vm.logger.info("done running taskFixInvalidBetStatus ")
+
+        })
+
     }
 
     /*

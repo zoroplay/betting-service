@@ -130,6 +130,76 @@ export class BetResultingController {
 
     }
 
+    async taskFixInvalidBetStatus() {
+
+        const taskName = 'bet.resulting.invalid-status'
+
+        // check if similar job is running
+        // get client settings
+        try {
+
+            let cronJob = await this.cronJobRepository.findOne({
+                where: {
+                    name: taskName,
+                    status: 1,
+                }
+            });
+
+            if (cronJob !== null && cronJob.id > 0) {
+
+                //this.logger.info('another ' + taskName + ' job is already running');
+                return
+            }
+
+        }
+        catch (e) {
+
+            this.logger.error("error checking if task is running "+e.toString())
+            return
+        }
+
+        // update status to running
+        // create settlement
+        const task = new Cronjob();
+        task.name = taskName;
+        task.status = 1;
+
+        try {
+
+            await this.cronJobRepository.upsert(task, ['status'])
+        }
+        catch (e) {
+
+            this.logger.error("error updating running task  "+e.toString())
+            return
+        }
+
+
+        try {
+
+            await this.entityManager.query("insert ignore into bet_closure (bet_id,created) select id, now() from bet where won = 1 and status = 0 and id not in (select bet_id from winning) " + id)
+        }
+        catch (e) {
+
+            this.logger.error("error deleting bet closure "+e.toString())
+        }
+
+        task.name = taskName;
+        task.status = 0;
+
+        try {
+
+            await this.cronJobRepository.upsert(task, ['status'])
+        }
+        catch (e) {
+
+            this.logger.error("error updating task as done "+e.toString())
+            return
+        }
+
+    }
+
+
     async closeBet(betID: number): Promise<number> {
 
         let rows : any
