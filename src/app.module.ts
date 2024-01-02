@@ -4,7 +4,7 @@ import {AppService} from './app.service';
 import {BetsModule} from './bets/bets.module';
 import {ConfigModule} from '@nestjs/config';
 import {ConsumerModule} from "./consumers/consumer.module";
-import {CronJobModule} from "./cronjobs/cronjobs.model";
+import {CronJobModule} from "./cronjobs/cronjobs.module";
 import {Bet} from "./entity/bet.entity";
 import {BetStatus} from "./entity/betstatus.entity";
 import {BetSlip} from "./entity/betslip.entity";
