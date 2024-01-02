@@ -26,6 +26,7 @@ import {UpdateBetRequest} from './interfaces/update.bet.request.interface';
 import {UpdateBetResponse} from './interfaces/update.bet.response.interface';
 import {Winning} from 'src/entity/winning.entity';
 import OutrightsService from "./outrights.service.interface";
+import { betTypeDescription, countItem } from 'src/commons/helper';
 
 @Injectable()
 export class BetsService {
@@ -658,6 +659,7 @@ export class BetsService {
             betData.stake = bet.stake;
             betData.currency = clientSettings.currency;
             betData.bet_category = bet.betType;
+            betData.bet_category_desc = betTypeDescription(bet);
             betData.total_odd = totalOdds;
             betData.possible_win = possibleWin;
             betData.tax_on_stake = taxOnStake;
@@ -667,6 +669,13 @@ export class BetsService {
             betData.total_bets = selections.length;
             betData.source = bet.source;
             betData.ip_address = bet.ipAddress;
+            betData.min_bonus = bet.minBonus;
+            betData.max_bonus = bet.maxBonus;
+            betData.sports = countItem(userSelection, 'sport', 'Sports');
+            betData.events = countItem(userSelection, 'eventName', 'Events');
+            betData.tournaments = countItem(userSelection, 'tournament', 'Tournaments');
+            betData.markets = countItem(userSelection, 'marketName', 'Markets');
+            betData.event_type = bet.type;
             betData.probability = overallProbability
 
             //let betResult = await this.saveBetWithTransactions(betData, transactionManager)

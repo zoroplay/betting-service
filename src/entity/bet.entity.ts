@@ -43,6 +43,14 @@ export class Bet {
     bet_category: string;
 
     @Index()
+    @Column({type:"varchar", nullable: true })
+    bet_category_desc: string;
+
+    @Index()
+    @Column({type:"varchar", nullable: true })
+    event_type: string;
+
+    @Index()
     @Column({ type: "decimal", precision: 20, scale: 2, nullable: false })
     total_odd: number;
 
@@ -68,6 +76,12 @@ export class Bet {
     @Index()
     @Column({ type: "decimal", precision: 20, scale: 2, nullable: true, default: 0 })
     winning_after_tax: number;
+
+    @Column({ type: "decimal", precision: 20, scale: 2, nullable: true })
+    min_bonus: number;
+
+    @Column({ type: "decimal", precision: 20, scale: 2, nullable: true })
+    max_bonus: number;
 
     @Index()
     @Column({type:"int", nullable: false })
