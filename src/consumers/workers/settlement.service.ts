@@ -229,7 +229,7 @@ export class SettlementService {
                     {
                         event_type: eventType,
                         event_prefix: eventPrefix,
-                        event_id: eventID,
+                        match_id: eventID,
                         market_id: marketID,
                         specifier: specifier,
                         outcome_id: outcomeID,

@@ -213,7 +213,7 @@ export class SettlementRollbackService {
 
             // count affected slips
             let slipCounts = await this.entityManager.query("SELECT COUNT(id) as total FROM bet_slip " +
-                "WHERE specifier = ? AND market_id = ? AND event_prefix  = ? AND event_type = ? AND event_id = ?  ",
+                "WHERE specifier = ? AND market_id = ? AND event_prefix  = ? AND event_type = ? AND match_id = ?  ",
                 [specifier, marketID, eventPrefix, eventType, eventID])
 
             if (!slipCounts || slipCounts.total == 0) {
@@ -232,13 +232,13 @@ export class SettlementRollbackService {
 
             //2. ############## get all bet_slips that were settled
             let settledSlips = await this.entityManager.query("SELECT id,bet_id,won FROM bet_slip WHERE " +
-                "event_prefix  = ? AND event_type = ? AND event_id = ? AND market_id = ? AND specifier = ? ",
+                "event_prefix  = ? AND event_type = ? AND match_id = ? AND market_id = ? AND specifier = ? ",
                 [eventPrefix, eventType, eventID, marketID, specifier])
 
             // reset all bet slips
             // update bet slip status query
             await this.entityManager.query("UPDATE bet_slip SET status = " + BET_PENDING + ", won = -1,settlement_id = 0  " +
-                " WHERE  event_prefix  = ? AND event_type = ? AND event_id = ? AND market_id = ? AND specifier = ? ",
+                " WHERE  event_prefix  = ? AND event_type = ? AND match_id = ? AND market_id = ? AND specifier = ? ",
                 [eventPrefix, eventType, eventID, marketID, specifier])
 
             let settledData = []

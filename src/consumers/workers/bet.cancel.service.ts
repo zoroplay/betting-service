@@ -201,11 +201,11 @@ export class BetCancelService {
 
             if (startTime.length > 0 && endTime.length > 0) { // if bet cancel has start and end time
 
-                let rows = await this.entityManager.query("SELECT bet_id FROM bet_slip WHERE specifier = ? AND market_id = ? AND event_prefix  = ? AND event_type = ? AND event_id = ? AND status = 0 AND created BETWEEN ? AND ? ",
+                let rows = await this.entityManager.query("SELECT bet_id FROM bet_slip WHERE specifier = ? AND market_id = ? AND event_prefix  = ? AND event_type = ? AND match_id = ? AND status = 0 AND created BETWEEN ? AND ? ",
                     [specifier, marketID, eventPrefix, eventType, eventID, startTime, endTime])
 
                 // update all betslips to be cancelled
-                await this.entityManager.query("UPDATE bet_slip SET status = " + BET_CANCELLED + " WHERE specifier = ? AND market_id = ? AND event_prefix  = ? AND event_type = ? AND event_id = ? AND status = 0 AND created BETWEEN ? AND ? ",
+                await this.entityManager.query("UPDATE bet_slip SET status = " + BET_CANCELLED + " WHERE specifier = ? AND market_id = ? AND event_prefix  = ? AND event_type = ? AND match_id = ? AND status = 0 AND created BETWEEN ? AND ? ",
                     [specifier, marketID, eventPrefix, eventType, eventID, startTime, endTime])
 
                 for (const slip of rows) {
@@ -214,11 +214,11 @@ export class BetCancelService {
                 }
             } else if (startTime.length == 0 && endTime.length > 0) { //  if bet cancel has end time only
 
-                let rows = await this.entityManager.query("SELECT bet_id FROM bet_slip WHERE specifier = ? AND market_id = ? AND event_prefix  = ? AND event_type = ? AND event_id = ? AND status = 0 AND created < ? ",
+                let rows = await this.entityManager.query("SELECT bet_id FROM bet_slip WHERE specifier = ? AND market_id = ? AND event_prefix  = ? AND event_type = ? AND match_id = ? AND status = 0 AND created < ? ",
                     [specifier, marketID, eventPrefix, eventType, eventID, endTime])
 
                 // update all betslips to be cancelled
-                await this.entityManager.query("UPDATE bet_slip SET status =" + BET_CANCELLED + " WHERE specifier = ? AND market_id = ? AND event_prefix  = ? AND event_type = ? AND event_id = ? AND status = 0 AND created < ? ",
+                await this.entityManager.query("UPDATE bet_slip SET status =" + BET_CANCELLED + " WHERE specifier = ? AND market_id = ? AND event_prefix  = ? AND event_type = ? AND match_id = ? AND status = 0 AND created < ? ",
                     [specifier, marketID, eventPrefix, eventType, eventID, endTime])
 
                 for (const slip of rows) {
@@ -227,11 +227,11 @@ export class BetCancelService {
                 }
             } else if (startTime.length > 0 && endTime.length == 0) { //  if bet cancel has start time only
 
-                let rows = await this.entityManager.query("SELECT bet_id FROM bet_slip WHERE specifier = ? AND market_id = ? AND event_prefix  = ? AND event_type = ? AND event_id = ? AND status = 0 AND created > ? ",
+                let rows = await this.entityManager.query("SELECT bet_id FROM bet_slip WHERE specifier = ? AND market_id = ? AND event_prefix  = ? AND event_type = ? AND match_id = ? AND status = 0 AND created > ? ",
                     [specifier, marketID, eventPrefix, eventType, eventID, startTime])
 
                 // update all betslips to be cancelled
-                await this.entityManager.query("UPDATE bet_slip SET status = " + BET_CANCELLED + " WHERE specifier = ? AND market_id = ? AND event_prefix  = ? AND event_type = ? AND event_id = ? AND status = 0 AND created > ? ",
+                await this.entityManager.query("UPDATE bet_slip SET status = " + BET_CANCELLED + " WHERE specifier = ? AND market_id = ? AND event_prefix  = ? AND event_type = ? AND match_id = ? AND status = 0 AND created > ? ",
                     [specifier, marketID, eventPrefix, eventType, eventID, startTime])
 
                 for (const slip of rows) {
@@ -240,11 +240,11 @@ export class BetCancelService {
                 }
             } else { //  if bet cancel has no time
 
-                let rows = await this.entityManager.query("SELECT bet_id FROM bet_slip WHERE specifier = ? AND market_id = ? AND event_prefix  = ? AND event_type = ? AND event_id = ? AND status = 0  ",
+                let rows = await this.entityManager.query("SELECT bet_id FROM bet_slip WHERE specifier = ? AND market_id = ? AND event_prefix  = ? AND event_type = ? AND match_id = ? AND status = 0  ",
                     [specifier, marketID, eventPrefix, eventType, eventID])
 
                 // update all betslips to be cancelled
-                await this.entityManager.query("UPDATE bet_slip SET status = " + BET_CANCELLED + " WHERE specifier = ? AND market_id = ? AND event_prefix  = ? AND event_type = ? AND event_id = ? AND status = 0  ",
+                await this.entityManager.query("UPDATE bet_slip SET status = " + BET_CANCELLED + " WHERE specifier = ? AND market_id = ? AND event_prefix  = ? AND event_type = ? AND match_id = ? AND status = 0  ",
                     [specifier, marketID, eventPrefix, eventType, eventID])
 
                 for (const slip of rows) {
