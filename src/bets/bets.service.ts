@@ -5,7 +5,7 @@ import {Bet} from '../entity/bet.entity';
 import {BetSlip} from '../entity/betslip.entity';
 import {Setting} from '../entity/setting.entity';
 import {JsonLogger, LoggerFactory} from 'json-logger-service';
-import {BET_CANCELLED, BET_PENDING, BET_VOIDED, STATUS_LOST, STATUS_NOT_LOST_OR_WON, STATUS_WON} from "../constants";
+import {BET_CANCELLED, BET_LOST, BET_PENDING, BET_VOIDED, BET_WON, STATUS_LOST, STATUS_NOT_LOST_OR_WON, STATUS_WON} from "../constants";
 import {BetHistoryResponse, FindBetResponse} from "./interfaces/bet.history.response.interface";
 import {PlaceBetResponse} from './interfaces/placebet.response.interface';
 import {BetSlipSelection, Probability, ProbabilityBetSlipSelection} from './interfaces/betslip.interface';
@@ -97,12 +97,11 @@ export class BetsService {
             }
 
             if (status === 'settled') {
-                where.push("b.won != ? ")
-                params.push(-1)
+                where.push("b.status != ? ")
+                params.push(0)
             } else if (status !== '') {
-                where.push(`b.status NOT IN (${BET_CANCELLED},${BET_VOIDED})`)
-                // let param = `(${BET_CANCELLED},${BET_VOIDED})`;
-                // params.push(param)
+                where.push(`b.status = ?`)
+                params.push(status)
             }
 
             if(from && from !== '' ) {
@@ -237,28 +236,34 @@ export class BetsService {
                 continue
             }
 
-            if(bet.won == STATUS_NOT_LOST_OR_WON) {
+            if(bet.status == BET_PENDING) {
 
                 bet.statusDescription = "Pending"
                 bet.status = 0;
             }
 
-            if(bet.won == STATUS_LOST) {
+            if(bet.status == BET_LOST) {
 
                 bet.statusDescription = "Lost"
                 bet.status = 2;
             }
 
-            if(bet.won == STATUS_WON) {
+            if(bet.status == BET_WON) {
 
                 bet.statusDescription = "Won"
                 bet.status = 1;
             }
 
-            if(bet.won == BET_VOIDED) {
+            if(bet.status == BET_VOIDED) {
 
                 bet.statusDescription = "Void"
                 bet.status = 3;
+            }
+
+            if(bet.status == BET_CANCELLED) {
+
+                bet.statusDescription = "Cancelled"
+                bet.status = 4;
             }
 
             bet.selections = [];
