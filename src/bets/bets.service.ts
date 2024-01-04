@@ -353,24 +353,24 @@ export class BetsService {
             let data: any = {}
             data.selections = [];
 
-            if(bet.won == STATUS_NOT_LOST_OR_WON) {
+            if(bet.status == BET_PENDING) {
                 data.statusDescription = "Pending"
-                data.status = 0;
+                data.statusCode = 0;
             }
 
-            if(bet.won == STATUS_LOST) {
+            if(bet.status == BET_LOST) {
                 data.statusDescription = "Lost"
-                data.status = 2;
+                data.statusCode = 2;
             }
 
-            if(bet.won == STATUS_WON) {
+            if(bet.status == BET_WON) {
                 data.statusDescription = "Won"
-                data.status = 1;
+                data.statusCode = 1;
             }
 
-            if(bet.won == BET_VOIDED) {
+            if(bet.status == BET_VOIDED) {
                 data.statusDescription = "Void"
-                data.status = 3;
+                data.statusCode = 3;
             }
 
             if (slips.length > 0 ) {
