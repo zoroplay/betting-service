@@ -239,31 +239,31 @@ export class BetsService {
             if(bet.status == BET_PENDING) {
 
                 bet.statusDescription = "Pending"
-                bet.status = 0;
+                bet.statusCode = 0;
             }
 
             if(bet.status == BET_LOST) {
 
                 bet.statusDescription = "Lost"
-                bet.status = 2;
+                bet.statusCode = 2;
             }
 
             if(bet.status == BET_WON) {
 
                 bet.statusDescription = "Won"
-                bet.status = 1;
+                bet.statusCode = 1;
             }
 
             if(bet.status == BET_VOIDED) {
 
                 bet.statusDescription = "Void"
-                bet.status = 3;
+                bet.statusCode = 3;
             }
 
             if(bet.status == BET_CANCELLED) {
 
                 bet.statusDescription = "Cancelled"
-                bet.status = 4;
+                bet.statusCode = 4;
             }
 
             bet.selections = [];
