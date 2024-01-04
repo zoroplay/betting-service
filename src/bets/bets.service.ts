@@ -206,7 +206,7 @@ export class BetsService {
             let limit = ` LIMIT ${offset},${perPage}`
 
             let queryString = `SELECT b.id,b.user_id,b.username,b.betslip_id,b.stake,b.currency,b.bet_type,b.bet_category,b.total_odd,b.possible_win,b.source,b.total_bets,
-            b.won,b.status,b.created,w.winning_after_tax as winnings 
+            b.won,b.status,b.created,w.winning_after_tax as winnings, b.sports, b.tournaments, b.events, b.markets, b.event_type
             FROM bet b LEFT JOIN winning w ON w.bet_id = b.id WHERE b.client_id = ? AND  ${where.join(' AND ')} ORDER BY b.created DESC ${limit}`
 
             bets = await this.entityManager.query(queryString,params)
@@ -317,7 +317,7 @@ export class BetsService {
             bet.betslipId = bet.betslip_id;
             bet.totalOdd = bet.total_odd;
             bet.possibleWin = bet.possible_win;
-            bet.betType = bet.bet_category;
+            bet.betType = bet.bet_type;
             bet.evenType = bet.event_type;
             bet.betCategory = bet.bet_category;
             bet.totalSelections = bet.total_bets;
