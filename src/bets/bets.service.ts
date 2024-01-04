@@ -317,10 +317,16 @@ export class BetsService {
             bet.betslipId = bet.betslip_id;
             bet.totalOdd = bet.total_odd;
             bet.possibleWin = bet.possible_win;
-            bet.betType = bet.bet_type;
+            bet.betType = bet.bet_category;
+            bet.evenType = bet.event_type;
             bet.betCategory = bet.bet_category;
             bet.totalSelections = bet.total_bets;
             bet.winnings = bet.winnings;
+            bet.sports = bet.sports
+            bet.tournaments = bet.tournaments
+            bet.events = bet.events
+            bet.markets = bet.markets
+            bet.betCategoryDesc = bet.bet_category_desc
 
             myBets.push(bet)
 
