@@ -5,6 +5,8 @@ import {EntityManager, Repository} from "typeorm";
 import {BetSlip} from "../../entity/betslip.entity";
 import {SettlementRollback} from "../../entity/settlementrollback.entity";
 import {BET_LOST, BET_PENDING, BET_WON, TRANSACTION_TYPE_BET_ROLLBACK} from "../../constants";
+import axios from "axios";
+import { Setting } from "src/entity/setting.entity";
 
 @Injectable()
 export class SettlementRollbackService {
@@ -17,6 +19,9 @@ export class SettlementRollbackService {
         private betslipRepository: Repository<BetSlip>,
         @InjectRepository(SettlementRollback)
         private settlementRollbackRepository: Repository<SettlementRollback>,
+        @InjectRepository(Setting)
+        private settingRepository: Repository<Setting>,
+        
         private readonly entityManager: EntityManager,
     ) {
 
@@ -71,7 +76,7 @@ export class SettlementRollbackService {
                 [specifier, marketID, matchID])
 
             // count affected slips
-            let slipCounts = await this.entityManager.query("SELECT COUNT(id) as total FROM bet_slip WHERE specifier = ? AND market_id = ? AND event_id = ?  ",
+            let slipCounts = await this.entityManager.query("SELECT COUNT(id) as total FROM bet_slip WHERE specifier = ? AND market_id = ? AND match_id = ?  ",
                 [specifier, marketID, matchID])
 
             if (!slipCounts || slipCounts.total == 0) {
@@ -87,11 +92,11 @@ export class SettlementRollbackService {
             await this.settlementRollbackRepository.save(settlementRollback)
 
             //2. ############## get all bet_slips that were settled
-            let settledSlips = await this.entityManager.query("SELECT id,bet_id,won FROM bet_slip WHERE  event_id = ? AND market_id = ? AND specifier = ? ", [matchID, marketID, specifier])
+            let settledSlips = await this.entityManager.query("SELECT id,bet_id,won FROM bet_slip WHERE  match_id = ? AND market_id = ? AND specifier = ? ", [matchID, marketID, specifier])
 
             // reset all bet slips
             // update bet slip status query
-            await this.entityManager.query("UPDATE bet_slip SET status = " + BET_PENDING + ", won = -1,settlement_id = 0  WHERE  event_id = ? AND market_id = ? AND specifier = ? ", [matchID, marketID, specifier])
+            await this.entityManager.query("UPDATE bet_slip SET status = " + BET_PENDING + ", won = -1,settlement_id = 0  WHERE  match_id = ? AND market_id = ? AND specifier = ? ", [matchID, marketID, specifier])
 
             let settledData = []
             let betIDs = []
@@ -128,16 +133,23 @@ export class SettlementRollbackService {
                 await this.entityManager.query("DELETE FROM winning WHERE bet_id = " + settledBets.id + " LIMIT 1 ")
 
                 let debitPayload = {
-                    currency: settledBet.currency,
                     amount: settledBet.winning_after_tax,
                     user_id: settledBet.user_id,
-                    client_id: settledBet.client_id,
-                    description: "BetID " + settledBet.id + " was rolled back",
-                    transaction_id: settledBet.id,
-                    transaction_type: TRANSACTION_TYPE_BET_ROLLBACK
+                    description: "BetID " + settledBet.betslip_id + " was rolled back",
+                    bet_id: settledBet.betslip_id,
+                    source: settledBet.source
                 }
 
                 // send debit payload to wallet service
+                 // get client settings
+                var clientSettings = await this.settingRepository.findOne({
+                    where: {
+                        client_id: settledBet.client_id // add client id to bets
+                    }
+                });
+
+
+                axios.post(clientSettings.url + '/api/wallet/credit', debitPayload);
 
             }
 
@@ -145,5 +157,152 @@ export class SettlementRollbackService {
 
         return counts;
     }
+
+    /*
+    {
+      "event_id": "43429091",
+      "event_type": "tournament",
+      "event_prefix": "sr",
+      "timestamp": 0,
+      "markets": [
+        {
+          "id": 156,
+          "specifier": "",
+        }
+      ]
+    }
+     */
+    async createOutrightSettlementRollback(data: any): Promise<number> {
+
+        data = JSON.parse(JSON.stringify(data))
+
+        let eventType = data.event_type;
+        let eventPrefix = data.event_prefix;
+        let eventID = data.event_id;
+
+        let markets = data.markets;
+
+
+        let counts = 0
+
+        for (const market of markets) {
+
+            let marketID = market.id
+            let specifier = market.specifier
+            let settlementIDs = []
+
+            // check if settlement exists
+            let rows = await this.entityManager.query("SELECT id FROM settlement WHERE specifier = ? AND market_id = ? " +
+                "AND event_prefix  = ? AND event_type = ? AND event_id = ?  ",
+                [specifier, marketID, eventPrefix, eventType, eventID])
+
+            for (const row of rows) {
+
+                settlementIDs.push(row.id)
+            }
+
+            if (settlementIDs.length == 0) {
+
+                continue
+            }
+
+            // delete settlement
+            await this.entityManager.query("DELETE FROM settlement WHERE specifier = ? AND market_id = ? " +
+                "AND event_prefix  = ? AND event_type = ? AND event_id = ?   ",
+                [specifier, marketID, eventPrefix, eventType, eventID])
+
+            // count affected slips
+            let slipCounts = await this.entityManager.query("SELECT COUNT(id) as total FROM bet_slip " +
+                "WHERE specifier = ? AND market_id = ? AND event_prefix  = ? AND event_type = ? AND match_id = ?  ",
+                [specifier, marketID, eventPrefix, eventType, eventID])
+
+            if (!slipCounts || slipCounts.total == 0) {
+
+                continue
+            }
+
+
+            let settlementRollback = new SettlementRollback();
+            settlementRollback.event_id = eventID
+            settlementRollback.event_type = eventType
+            settlementRollback.event_prefix = eventPrefix
+            settlementRollback.market_id = marketID
+            settlementRollback.specifier = specifier
+            await this.settlementRollbackRepository.save(settlementRollback)
+
+            //2. ############## get all bet_slips that were settled
+            let settledSlips = await this.entityManager.query("SELECT id,bet_id,won FROM bet_slip WHERE " +
+                "event_prefix  = ? AND event_type = ? AND match_id = ? AND market_id = ? AND specifier = ? ",
+                [eventPrefix, eventType, eventID, marketID, specifier])
+
+            // reset all bet slips
+            // update bet slip status query
+            await this.entityManager.query("UPDATE bet_slip SET status = " + BET_PENDING + ", won = -1,settlement_id = 0  " +
+                " WHERE  event_prefix  = ? AND event_type = ? AND match_id = ? AND market_id = ? AND specifier = ? ",
+                [eventPrefix, eventType, eventID, marketID, specifier])
+
+            let settledData = []
+            let betIDs = []
+
+            for (const slip of settledSlips) {
+
+                let id = slip.id;
+                let betID = slip.bet_id;
+                let won = slip.won;
+
+                settledData.push({
+                    id: id,
+                    bet_id: betID,
+                    won: won
+                })
+
+                betIDs.push(betID)
+            }
+
+            // update bets to pending
+            await this.entityManager.query("UPDATE bet SET status = " + BET_PENDING + ", won = -1  " +
+                "WHERE  bet_id IN (" + betIDs.join(',') + ") " +
+                "AND status IN (" + BET_WON + "," + BET_LOST + ") ")
+
+            // select bets that had already won or lost due to this settlement
+            let settledBets = await this.entityManager.query("SELECT id,user_id,client_id,currency,winning_after_tax,won,status " +
+                "FROM bet WHERE  id IN (" + betIDs.join(',') + ") AND status = " + BET_WON + " ")
+            if (!settledBets || settledBets.length == 0) {
+
+                continue
+            }
+
+            // process settled bets (won and lost)
+            for (const settledBet of settledBets) {
+
+                // delete winner query
+                await this.entityManager.query("DELETE FROM winning WHERE bet_id = " + settledBets.id + " LIMIT 1 ")
+
+                let debitPayload = {
+                    amount: settledBet.winning_after_tax,
+                    user_id: settledBet.user_id,
+                    description: "BetID " + settledBet.betslip_id + " was rolled back",
+                    bet_id: settledBet.betslip_id,
+                    source: settledBet.source
+                }
+
+                // send debit payload to wallet service
+                // get client settings
+                var clientSettings = await this.settingRepository.findOne({
+                    where: {
+                        client_id: settledBet.client_id // add client id to bets
+                    }
+                });
+
+
+                axios.post(clientSettings.url + '/api/wallet/credit', debitPayload);
+
+            }
+
+        }
+
+        return counts;
+    }
+
 
 }

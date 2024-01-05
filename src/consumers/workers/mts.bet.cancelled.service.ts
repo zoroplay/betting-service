@@ -5,6 +5,8 @@ import {EntityManager, Repository} from "typeorm";
 import {BET_CANCELLED, TRANSACTION_TYPE_BET_CANCELLED} from "../../constants";
 import {Bet} from "../../entity/bet.entity";
 import {BetStatus} from "../../entity/betstatus.entity";
+import { Setting } from "src/entity/setting.entity";
+import axios from "axios";
 
 @Injectable()
 export class MtsBetCancelledService {
@@ -17,6 +19,9 @@ export class MtsBetCancelledService {
 
         @InjectRepository(Bet)
         private betRepository: Repository<Bet>,
+
+        @InjectRepository(Setting)
+        private settingRepository: Repository<Setting>,
 
         private readonly entityManager: EntityManager,
 
@@ -64,14 +69,22 @@ export class MtsBetCancelledService {
 
         // revert the stake
         let creditPayload = {
-            currency: bet.currency,
             amount: bet.stake,
             user_id: bet.user_id,
-            client_id: bet.client_id,
-            description: "Bet cancelled betID "+betID,
-            transaction_id: betID,
-            transaction_type: TRANSACTION_TYPE_BET_CANCELLED
+            description: "Bet betID " + bet.betslip_id + " was cancelled",
+            bet_id: bet.betslip_id,
+            source: bet.source
         }
+
+         // get client settings
+        var clientSettings = await this.settingRepository.findOne({
+            where: {
+                client_id: bet.client_id // add client id to bets
+            }
+        });
+
+
+        axios.post(clientSettings.url + '/api/wallet/credit', creditPayload);
 
         return 1
     }

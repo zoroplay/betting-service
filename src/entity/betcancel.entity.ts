@@ -16,6 +16,10 @@ export class BetCancel {
     event_type: string;
 
     @Index()
+    @Column({ type: "varchar", length: 20, nullable: false, default: 'sr' })
+    event_prefix: string;
+
+    @Index()
     @Column({type:"int", nullable: false })
     market_id: number;
 

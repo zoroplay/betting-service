@@ -49,7 +49,6 @@ export class SettlementService {
     async createSettlement(data: any): Promise<number> {
 
         data = JSON.parse(JSON.stringify(data))
-        //this.logger.info("createSettlement match_id "+data.match_id)
 
         let matchID = data.match_id
         let markets = data.markets;
@@ -62,6 +61,7 @@ export class SettlementService {
 
         let producer_id = data.producer_id;
         let event_type = data.event_type;
+        let eventPrefix = data.event_prefix;
 
         let counts = 0
 
@@ -78,7 +78,9 @@ export class SettlementService {
                 let void_factor = outcome.void_factor
                 let dead_heat_factor = outcome.dead_heat_factor
 
-                if (!await this.betExists(matchID, marketID, specifier, outcomeID)) {
+               // this.logger.info("settlement | match_id "+matchID+" | marketID "+marketID+" | specifier "+specifier+" | outcomeID "+outcomeID+" | result "+result)
+
+                if (!await this.betExists(eventPrefix, event_type, matchID, marketID, specifier, outcomeID)) {
 
                     continue
                 }
@@ -109,7 +111,7 @@ export class SettlementService {
 
                 await this.betslipRepository.update(
                     {
-                        event_id: matchID,
+                        match_id: matchID,
                         market_id: marketID,
                         specifier: specifier,
                         outcome_id: outcomeID,
@@ -136,12 +138,132 @@ export class SettlementService {
         return counts;
     }
 
-    async betExists(matchID: number, marketID: number, specifier: string, outcomeID: string): Promise<boolean> {
+    /*
+        {
+         "event_id": 43429091,
+         "event_prefix": "sr",
+         "event_type": "tournament",
+         "timestamp": 0,
+         "markets": [
+           {
+             "id": 156,
+             "specifier": "",
+             "outcome": [
+               {
+                 "id": "58",
+                 "result": 0,
+                 "void_factor": 0,
+                 "dead_heat_factor": 1
+               }
+             ]
+           }
+         ]
+        }
+    */
+    async createOutrightSettlement(data: any): Promise<number> {
+
+        data = JSON.parse(JSON.stringify(data))
+        let urn = data.event_prefix+":"+data.event_type+":"+data.event_id;
+
+        let markets = data.markets;
+        if(markets == undefined) {
+
+            console.log("invalid data "+JSON.stringify(data))
+            return 0;
+
+        }
+
+        let producer_id = data.producer_id;
+        let eventType = data.event_type;
+        let eventPrefix = data.event_prefix;
+        let eventID = data.event_id;
+
+        let counts = 0
+
+        for (const market of markets) {
+
+            let marketID = market.id
+            let specifier = market.specifier
+            let outcomes = market.outcome
+
+            for (const outcome of outcomes) {
+
+                let outcomeID = outcome.id
+                let result = outcome.result
+                let void_factor = outcome.void_factor
+                let dead_heat_factor = outcome.dead_heat_factor
+
+                if (!await this.betExists(eventPrefix,eventType, eventID, marketID, specifier, outcomeID)) {
+
+                    continue
+                }
+
+                // create settlement
+                const settlementData = new Settlement();
+                settlementData.event_id = eventID;
+                settlementData.event_type = eventType;
+                settlementData.event_prefix = eventPrefix;
+                settlementData.market_id = marketID;
+                settlementData.specifier = specifier;
+                settlementData.outcome_id = outcomeID;
+                settlementData.status = result;
+                settlementData.producer_id = producer_id;
+                settlementData.void_factor = void_factor;
+                settlementData.dead_heat_factor = dead_heat_factor;
+                await this.settlementRepository.upsert(settlementData, ['event_type','event_prefix','event_id', 'market_id', 'specifier', 'outcome_id'])
+
+                const settlementResult = await this.settlementRepository.findOne({
+                    where: {
+                        event_type: eventType,
+                        event_prefix: eventPrefix,
+                        event_id: eventID,
+                        market_id: marketID,
+                        specifier: specifier,
+                        outcome_id: outcomeID
+                    }
+                })
+
+                // update slips with this information
+
+                await this.betslipRepository.update(
+                    {
+                        event_type: eventType,
+                        event_prefix: eventPrefix,
+                        match_id: eventID,
+                        market_id: marketID,
+                        specifier: specifier,
+                        outcome_id: outcomeID,
+                        status: BETSLIP_PROCESSING_PENDING,
+                    },
+                    {
+                        settlement_id: settlementResult.id,
+                        won: result,
+                        dead_heat_factor: dead_heat_factor,
+                        void_factor: void_factor,
+                        status: BETSLIP_PROCESSING_SETTLED,
+                    });
+
+                // publish settlements to queue
+                //let queueName = "betting_service.settle_bets"
+                //await this.amqpConnection.publish(queueName, queueName, {settlement_id: settlementData.id});
+                this.logger.info("done processing settlement match | " + urn + " | marketID " + marketID + " | specifier " + specifier + " | outcomeID " + outcomeID + " | settlementID " + settlementResult.id)
+
+                counts++
+            }
+
+        }
+
+        return counts;
+    }
+
+    async betExists(eventPrefix : string,eventType: string, eventID: number, marketID: number, specifier: string, outcomeID: string): Promise<boolean> {
 
         // get client settings
         var counts = await this.betslipRepository.count({
             where: {
-                event_id: matchID,
+                match_id: eventID,
+                event_type: eventType,
+                event_prefix: eventPrefix,
                 market_id: marketID,
                 specifier: specifier,
                 outcome_id: outcomeID

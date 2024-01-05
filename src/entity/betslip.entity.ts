@@ -33,16 +33,40 @@ export class BetSlip {
   user_id: number;
 
   @Index()
+  @Column({ type: 'varchar', length: 200, nullable: false })
+  selection_id: string;
+
+  @Index()
   @Column({ type: 'bigint', nullable: false })
-  event_id: number;
+  match_id: number;
 
   @Index()
   @Column({ type: 'varchar', length: 20, nullable: false, default: 'match' })
   event_type: string;
 
   @Index()
+  @Column({ type: 'varchar', length: 20, nullable: false, default: 'sr' })
+  event_prefix: string;
+
+  @Index()
   @Column({ type: 'varchar', length: 200, nullable: false })
   event_name: string;
+
+  @Index()
+  @Column({ type: 'varchar', length: 100, nullable: false })
+  event_date: string;
+
+  @Index()
+  @Column({ type: 'varchar', length: 200, nullable: false })
+  tournament_name: string;
+
+  @Index()
+  @Column({ type: 'varchar', length: 200, nullable: false })
+  category_name: string;
+
+  @Index()
+  @Column({ type: 'varchar', length: 200, nullable: false })
+  sport_name: string;
 
   @Index()
   @Column({ type: 'int', nullable: false })
@@ -69,16 +93,26 @@ export class BetSlip {
   outcome_name: string;
 
   @Index()
-  @Column({ type: 'decimal', precision: 20, scale: 2, nullable: false })
-  odds: number;
+  @Column({
+    type: 'decimal',
+    precision: 20,
+    scale: 2,
+    nullable: true,
+    default: 1,
+  })
+  probability: number;
 
   @Index()
   @Column({ type: 'int', nullable: false, default: -1 })
   won: number;
 
   @Index()
+  @Column({ type: 'varchar', length: 20, nullable: true })
+  score: string;
+
+  @Index()
   @Column({ type: 'int', nullable: false, default: 0 })
-  status: number;
+  is_live: number;
 
   @Index()
   @Column({ type: 'decimal', precision: 20, scale: 2, nullable: true })

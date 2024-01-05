@@ -60,6 +60,24 @@ for (const name of names) {
     }
 }
 
+
+let outrightQueues = ['bet_cancel','rollback_bet_settlement','bet_settlement']
+
+for (const name of outrightQueues) {
+
+    let newName = 'outright_service.' + name
+
+    exchanges.push({
+        name: newName,
+        type: 'direct'
+    })
+
+    channels[newName] = {
+        prefetchCount: 200,
+    }
+}
+
+
 @Module({
     imports: [
         TypeOrmModule.forFeature([Bet,BetSlip, Settlement,BetCancel,Setting,BetClosure,Winning,SettlementRollback,BetStatus]),

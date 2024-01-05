@@ -28,23 +28,59 @@ export class Bet {
   user_id: number;
 
   @Index()
+  @Column({ type: 'varchar', length: 150, nullable: true })
+  username: string;
+
+  @Index()
+  @Column({ type: 'varchar', length: 20, nullable: false })
+  betslip_id: string;
+
+  @OneToMany(() => BetSlip, (betSlip) => betSlip.bet)
+  betSlips: BetSlip;
+
+  @Index()
   @Column({ type: 'decimal', precision: 20, scale: 2, nullable: false })
   stake: number;
 
-  @OneToMany(() => BetSlip, (betSlip) => betSlip.bet)
-  betSlips: BetSlip[];
+  @Index()
+  @Column({
+    type: 'decimal',
+    precision: 20,
+    scale: 2,
+    nullable: true,
+    default: 0,
+  })
+  min_stake: number;
 
   @Index()
   @Column({ type: 'varchar', length: 20, nullable: false })
   currency: string;
 
   @Index()
-  @Column({ type: 'int', nullable: false, default: BET_TYPE_NORMAL })
-  bet_type: number;
+  @Column({ type: 'varchar', nullable: true, default: BET_TYPE_NORMAL })
+  bet_type: string;
 
   @Index()
-  @Column({ type: 'decimal', precision: 20, scale: 2, nullable: false })
-  total_odd: number;
+  @Column({ type: 'varchar', nullable: true })
+  bet_category: string;
+
+  @Index()
+  @Column({ type: 'varchar', nullable: true })
+  bet_category_desc: string;
+
+  @Index()
+  @Column({ type: 'varchar', nullable: true })
+  event_type: string;
+
+  @Index()
+  @Column({
+    type: 'decimal',
+    precision: 20,
+    scale: 2,
+    nullable: true,
+    default: 0,
+  })
+  min_odd: number;
 
   @Column({ type: 'decimal', precision: 20, scale: 2, nullable: false })
   possible_win: number;
@@ -79,6 +115,20 @@ export class Bet {
   })
   tax_on_winning: number;
 
+  @Column({ type: 'decimal', precision: 20, scale: 2, nullable: true })
+  min_bonus: number;
+
+  @Column({ type: 'decimal', precision: 20, scale: 2, nullable: true })
+  max_bonus: number;
+
+  @Index()
+  @Column({ type: 'int', nullable: false })
+  total_bets: number;
+
+  @Index()
+  @Column({ type: 'decimal', precision: 20, scale: 2, default: 0 })
+  cash_out_amount: number;
+
   @Index()
   @Column({
     type: 'decimal',
@@ -87,19 +137,7 @@ export class Bet {
     nullable: true,
     default: 0,
   })
-  winning_after_tax: number;
-
-  @Index()
-  @Column({ type: 'int', nullable: false })
-  total_bets: number;
-
-  @Index()
-  @Column({ type: 'int', nullable: false, default: BET_PENDING })
-  status: number;
-
-  @Index()
-  @Column({ type: 'decimal', precision: 20, scale: 2, nullable: false })
-  cash_out_amount: number;
+  probability: number;
 
   @Index()
   @Column({ type: 'int', nullable: false, default: CASH_OUT_STATUS_PENDING })
@@ -110,8 +148,20 @@ export class Bet {
   won: number;
 
   @Index()
-  @Column({ type: 'varchar', length: 50, nullable: false })
-  source: string;
+  @Column({ type: 'varchar', length: 50, nullable: true })
+  sports: string;
+
+  @Index()
+  @Column({ type: 'varchar', length: 50, nullable: true })
+  tournaments: string;
+
+  @Index()
+  @Column({ type: 'varchar', length: 50, nullable: true })
+  markets: string;
+
+  @Index()
+  @Column({ type: 'varchar', length: 50, nullable: true })
+  events: string;
 
   @Index()
   @Column({ type: 'varchar', length: 50, nullable: true })

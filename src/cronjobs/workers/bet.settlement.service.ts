@@ -78,6 +78,7 @@ export class BetSettlementService {
       return;
     }
 
+<<<<<<< HEAD
     // update status to running
     // create settlement
     const task = new Cronjob();
@@ -102,6 +103,9 @@ export class BetSettlementService {
     task.status = 0;
     await this.cronJobRepository.upsert(task, ['status']);
   }
+=======
+    async taskProcessBetSettlement() {
+>>>>>>> f973fa23e61b2b4a22fc61e402d3de0b01563ae5
 
   async createBetSettlement(settlementID: number): Promise<number> {
     let rows = await this.entityManager.query(
@@ -116,7 +120,54 @@ export class BetSettlementService {
 
     let bets = new Map();
 
+<<<<<<< HEAD
     let betIds = [];
+=======
+        if(cronJob !== null && cronJob.id > 0 ) {
+
+            this.logger.info('another '+taskName+' job is already running');
+            return
+        }
+
+        // update status to running
+        // create settlement
+        const task = new Cronjob();
+        task.name = taskName;
+        task.status = 1;
+        await this.cronJobRepository.upsert(task,['status'])
+
+        let rows = await this.settlementRepository.find({
+            where: {
+                processed: 0
+            }
+        });
+
+        //this.entityManager.query("SELECT id FROM settlement where processed = 0 ")
+
+        for (const row of rows) {
+
+            let id = row.id;
+            this.logger.info("start processing settlementID "+id)
+
+            await this.createBetSettlement(id)
+
+            await this.settlementRepository.update(
+                {
+                    id: id,
+                },
+                {
+                    processed: 1
+                }
+            )
+
+            this.logger.info("done processing settlementID "+id)
+
+        }
+
+        task.name = taskName;
+        task.status = 0;
+        await this.cronJobRepository.upsert(task,['status'])
+>>>>>>> f973fa23e61b2b4a22fc61e402d3de0b01563ae5
 
     for (let row of rows) {
       let key = 'bet-' + row.id;
@@ -130,9 +181,154 @@ export class BetSettlementService {
       betIds.push(row.id);
     }
 
-    this.logger.info(
-      'settlementID ' + settlementID + ' attached bets ' + bets.size,
-    );
+    async createBetSettlement(settlementID: number): Promise<number> {
+
+        this.logger.info("createBetSettlement | settlementID "+settlementID)
+
+        let rows = await this.entityManager.query("SELECT DISTINCT b.id,b.stake,b.stake_after_tax,b.total_bets,b.total_odd,b.bet_type,b.user_id,b.client_id " +
+            "FROM bet b " +
+            "INNER JOIN bet_slip bs on b.id = bs.bet_id " +
+            "INNER JOIN bet_status bst on b.id = bst.bet_id " +
+            "WHERE bst.status = 1 AND b.status IN (0,1) AND b.won = "+STATUS_NOT_LOST_OR_WON+" AND bs.settlement_id = ?", [settlementID])
+
+        let bets = new Map()
+
+        let betIds = []
+
+        for (let row of rows) {
+
+            let key = "bet-" + row.id;
+            row.Won = 0
+            row.Lost = 0
+            row.Pending = 0
+            row.Cancelled = 0
+            row.Voided = 0
+            row.TotalGames = row.total_bets
+            bets.set(key, row)
+            betIds.push(row.id)
+        }
+
+        this.logger.info("settlementID "+settlementID+" attached bets "+bets.size)
+
+        if (bets.size == 0) {
+
+            return 1;
+        }
+
+        // pull all the bet_slip of the bets we have pulled
+
+        let queryString = "SELECT id,bet_id,status, won, void_factor, dead_heat_factor,odds FROM bet_slip " +
+            "WHERE bet_id IN (" + betIds.join(',') + ")"
+
+       // console.log(queryString)
+
+        let betSlips = await this.entityManager.query(queryString);
+
+        for (const betSlip of betSlips) {
+
+            let void_factor = parseFloat(betSlip.void_factor)
+            let dead_heat_factor = parseFloat(betSlip.dead_heat_factor)
+            let won = parseInt(betSlip.won)
+
+            let lost = 0
+            let pending = 0
+            let win = 0
+            let cancelled = 0
+            let voided = 0
+
+            if (parseInt(betSlip.status) == -1) {
+
+                cancelled = 1
+            }
+
+            if (void_factor > 0) {
+
+                voided = 1
+            }
+
+            if (won == STATUS_NOT_LOST_OR_WON) {
+
+                pending = 1
+
+            } else if (won == STATUS_WON) {
+
+                win = 1
+
+            } else {
+
+                lost = 1
+            }
+
+            let currentBetSlip = {
+                ID: betSlip.id,
+                BetID: betSlip.bet_id,
+                Status: betSlip.status,
+                Won: won,
+                VoidFactor: void_factor,
+                DeadHeatFactor: dead_heat_factor,
+                Odd: betSlip.odds,
+            }
+
+            let keyName = "bet-" + currentBetSlip.BetID
+            let bs = bets.get(keyName)
+            if(bs == undefined ) {
+
+                this.logger.error("could not find "+keyName+" from array ")
+                continue
+            }
+
+            let slips = []
+
+            if (bs.BetSlips !== undefined) {
+
+                slips = bs.BetSlips
+            }
+
+            bs.Won = bs.Won + win
+            bs.Lost = bs.Lost + lost
+            bs.Pending = bs.Pending + pending
+            bs.Cancelled = bs.Cancelled + cancelled
+            bs.Voided = bs.Voided + voided
+
+            slips.push(currentBetSlip)
+
+            bs.BetSlips = slips
+
+            bets[keyName] = bs
+
+        }
+
+        for (const bet of bets.values()) {
+
+            // get client settings
+            var clientSettings = await this.settingRepository.findOne({
+                where: {
+                    client_id: bet.client_id // add client id to bets
+                }
+            });
+
+            let result = await this.resultBet(bet, clientSettings)
+
+            //console.log(bet.id+" | "+JSON.stringify(result,undefined,2))
+
+            if (result.Won) {
+
+                const betClosure = new BetClosure();
+                betClosure.bet_id = result.BetID;
+                await this.betClosureRepository.upsert(betClosure,['bet_id'])
+                this.logger.info("bet ID "+result.BetID+" has won and bet closure created")
+
+                // publish to bonus queue
+
+            } else if (result.Lost) {
+
+                // publish to bonus queue
+
+            }
+
+        }
+
+        return 1
 
     if (bets.size == 0) {
       return 1;

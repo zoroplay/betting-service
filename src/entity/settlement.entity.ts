@@ -15,6 +15,10 @@ export class Settlement {
     event_type: string;
 
     @Index()
+    @Column({ type: "varchar", length: 20, nullable: false, default: 'sr' })
+    event_prefix: string;
+
+    @Index()
     @Column({type:"int", nullable: false, default: 3 })
     producer_id: number;
 

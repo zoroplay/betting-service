@@ -149,9 +149,9 @@ export class BetSettlementService {
       // if no event is won yet use simple cashout i.e event not started
       return this.getCashoutWithFixedProbability(bet, fixedProbability);
     } else {
-      const betState = bet.bet_type;
-      const PRE_MATCH = 0;
-      const LIVE = 1;
+      const betState = bet.event_type;
+      const PRE_MATCH = 'pre-match';
+      const LIVE = 'live';
       switch (betState) {
         case PRE_MATCH:
           return this.getSimpleCashout(bet, currentProbability);

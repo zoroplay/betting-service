@@ -10,6 +10,7 @@ import {Bet} from "../../entity/bet.entity";
 import {Cronjob} from "../../entity/cronjob.entity";
 import {Winning} from "../../entity/winning.entity";
 import any = jasmine.any;
+import axios from "axios";
 
 @Controller('cronjob/bet/resulting')
 export class BetResultingController {
@@ -129,13 +130,27 @@ export class BetResultingController {
 
     }
 
+    async taskFixInvalidBetStatus() {
+
+        try {
+
+            await this.entityManager.query("insert ignore into bet_closure (bet_id,created) select id, now() from bet where won = 1 and status = 0 and id not in (select bet_id from winning) ")
+        }
+        catch (e) {
+
+            this.logger.error("error deleting bet closure "+e.toString())
+        }
+
+    }
+
+
     async closeBet(betID: number): Promise<number> {
 
         let rows : any
 
         try {
 
-            rows = await this.entityManager.query("SELECT possible_win,user_id,tax_on_winning,winning_after_tax,client_id,currency FROM bet WHERE id = " + betID + " AND won = " + STATUS_WON + " AND status IN (" + BET_PENDING + ","+BET_VOIDED+") AND id NOT IN (SELECT bet_id FROM winning) ")
+            rows = await this.entityManager.query("SELECT possible_win,user_id,tax_on_winning,winning_after_tax,client_id,currency,betslip_id,source FROM bet WHERE id = " + betID + " AND won = " + STATUS_WON + " AND status IN (" + BET_PENDING + ","+BET_VOIDED+") AND id NOT IN (SELECT bet_id FROM winning) ")
 
         }
         catch (e) {
@@ -205,18 +220,24 @@ export class BetResultingController {
         }
 
         let creditPayload = {
-            currency: row.currency,
             amount: winning_after_tax,
             user_id: profileID,
-            client_id: row.client_id,
-            description: "Won betID "+betID,
-            transaction_id: betID,
-            transaction_type: TRANSACTION_TYPE_WINNING
+            bet_id: row.betslip_id,
+            description: "Sport Win",
+            source: row.source,
         }
 
         this.logger.info(creditPayload)
 
-        // send credit payload to wallet service
+         // get client settings
+         var clientSettings = await this.settingRepository.findOne({
+            where: {
+                client_id: row.client_id // add client id to bets
+            }
+        });
+
+
+        axios.post(clientSettings.url + '/api/wallet/credit', creditPayload);
 
         return winner.id
 

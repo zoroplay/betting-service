@@ -2,12 +2,10 @@ import {ProducerstatusrequestInterface} from "./interfaces/producerstatusrequest
 import {Observable} from "rxjs";
 import {GetOddsReply, OddsProbability} from "./interfaces/oddsreply.interface";
 import {GetOddsRequest} from "./interfaces/oddsrequest.interface";
-import {ProducerstatusreplyInterface} from "./interfaces/producerstatusreply.interface";
 
-interface Odds {
+interface Outrights {
     GetOdds(data: GetOddsRequest): Observable<GetOddsReply>;
     GetProbability(data: GetOddsRequest): Observable<OddsProbability>;
-    GetProducerStatus(data: ProducerstatusrequestInterface): Observable<ProducerstatusreplyInterface>;
 }
 
-export default Odds;
+export default Outrights;
