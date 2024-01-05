@@ -22,6 +22,8 @@ import { Bet } from '../../entity/bet.entity';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { Cronjob } from '../../entity/cronjob.entity';
 import { BetClosure } from '../../entity/betclosure.entity';
+import { BetsService } from '../../bets/bets.service';
+import { Probability } from 'src/bets/interfaces/betslip.interface';
 
 @Injectable()
 export class BetSettlementService {
@@ -50,6 +52,8 @@ export class BetSettlementService {
     private betClosureRepository: Repository<BetClosure>,
 
     private readonly entityManager: EntityManager,
+
+    private readonly betsService: BetsService,
   ) {}
 
   @Cron(CronExpression.EVERY_5_SECONDS) // run every 2 seconds
@@ -105,6 +109,22 @@ export class BetSettlementService {
     await this.cronJobRepository.upsert(task, ['status']);
   }
 
+  @Cron(CronExpression.EVERY_MINUTE) // run every Minute
+  async getPendingBetsUpdateCashoutAmount() {
+    const pendingBets = await this.betRepository.find({
+      where: {
+        status: BET_PENDING,
+      },
+    });
+    if (pendingBets.length > 0) {
+      pendingBets.forEach(async (bet) => {
+        const amount = await this.calculateBetCashOut(bet.id);
+        bet.cash_out_amount = amount;
+        this.betRepository.save(bet);
+      });
+    }
+  }
+
   async calculateBetCashOut(betID: number): Promise<number> {
     // get client settings
     const bet = await this.betRepository.findOne({
@@ -123,15 +143,18 @@ export class BetSettlementService {
     // Simple Cashout :
     // Bets placed while games are ongoing—> Live Match
     // get probability at ticket time
-    const probabilityAtTicketTime = 94 / 100;
+    const probs: Probability =
+      await this.betsService.getProbabilityFromBetID(betID);
+    const probabilityAtTicketTime = probs.initialProbability / 100;
+    const currentProbability = probs.currentProbability / 100;
     // get current probability
     const fixedProbability = 85 / 100;
     // check if bet event has not started
-    const eventNotStarted = true;
-    if (eventNotStarted == true) {
-      return this.getCashoutWithFixedProbability(bet, fixedProbability);
-    }
-    const currentProbability = 94 / 100;
+    // const eventNotStarted = true;
+    // if (eventNotStarted == true) {
+    //   return this.getCashoutWithFixedProbability(bet, fixedProbability);
+    // }
+    //async getProbabilityFromBetID(betID: number)
     const wonEventOdds = bet.betSlips
       .filter((slip) => slip.won > 0)
       .map((slip) => slip.odds);
@@ -149,10 +172,9 @@ export class BetSettlementService {
       // if no event is won yet use simple cashout i.e event not started
       return this.getCashoutWithFixedProbability(bet, fixedProbability);
     } else {
-      const betState = bet.event_type;
       const PRE_MATCH = 'pre-match';
       const LIVE = 'live';
-      switch (betState) {
+      switch (bet.event_type) {
         case PRE_MATCH:
           return this.getSimpleCashout(bet, currentProbability);
           break;
@@ -373,15 +395,18 @@ export class BetSettlementService {
       Pending: true,
     };
   }
+
   async getCashoutWithFixedProbability(
     bet: Bet,
     fixedProbability: any,
   ): Promise<any> {
     return bet.stake * fixedProbability;
   }
+
   async getSimpleCashout(bet: Bet, probability: any): Promise<any> {
     return bet.stake * bet.total_odd * probability;
   }
+
   async getCashoutWithAdditionalProfit(
     bet: Bet,
     wonEventOdds: Array<number>,
@@ -401,7 +426,7 @@ export class BetSettlementService {
         desiredReductionFactor: 103 / 100,
       },
     };
-    const interpolationWeight = 100 / 100;
+    const interpolationWeight = 84 / 100;
     const ticketValueFactor = currentProbability / probabilityAtTicketTime;
     const lowerFactor =
       ladder.lower.ticketValueFactor / ladder.lower.desiredReductionFactor;
