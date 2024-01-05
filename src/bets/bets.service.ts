@@ -583,9 +583,8 @@ export class BetsService {
 
             // get probability overallProbability
             let selectionProbability = await this.getProbability(selection.producerId, selection.eventPrefix, selection.eventType, selection.matchId, selection.marketId, selection.specifier, selection.outcomeId)
-            overallProbability = overallProbability * selectionProbability
-            this.logger.info('selection probabiliy: '+ selectionProbability)
-            this.logger.info('overal probabiliy: '+ overallProbability)
+            if (selectionProbability) overallProbability = overallProbability * selectionProbability
+            
             // selection.odds = odd
             selections.push({
                 event_name: selection.eventName,
@@ -688,7 +687,7 @@ export class BetsService {
             betData.tournaments = countItem(userSelection, 'tournament', 'Tournaments');
             betData.markets = countItem(userSelection, 'marketName', 'Markets');
             betData.event_type = bet.type;
-            betData.probability = overallProbability;
+            betData.probability = overallProbability || 0;
 
             console.log(JSON.stringify(betData));
 
@@ -733,7 +732,7 @@ export class BetsService {
                 betSlipData.is_live         = selection.is_live;
                 betSlipData.odds            = selection.odds
                 betSlipData.status          = BET_PENDING
-                betSlipData.probability     = selection.probability
+                betSlipData.probability     = selection.probability || 0
 
             console.log(JSON.stringify(betSlipData));
 
