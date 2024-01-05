@@ -689,8 +689,6 @@ export class BetsService {
             betData.event_type = bet.type;
             betData.probability = overallProbability || 0;
 
-            console.log(JSON.stringify(betData));
-
             //let betResult = await this.saveBetWithTransactions(betData, transactionManager)
             betResult = await this.betRepository.save(betData)
 
@@ -733,8 +731,6 @@ export class BetsService {
                 betSlipData.odds            = selection.odds
                 betSlipData.status          = BET_PENDING
                 betSlipData.probability     = selection.probability || 0
-
-            console.log(JSON.stringify(betSlipData));
 
                 //await this.saveBetSlipWithTransactions(betSlipData,transactionManager);
                 await this.betslipRepository.save(betSlipData);
