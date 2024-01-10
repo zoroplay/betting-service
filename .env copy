@@ -1,0 +1,16 @@
+DB_TYPE=mysql
+DB_HOST=sbe-maindb-cluster-do-user-12203797-0.c.db.ondigitalocean.com
+DB_PORT=25060
+DB_PASSWORD=AVNS_e9zCowQnzgi-6XrX_8x
+DB_USERNAME=betting-service
+DB_NAME=betting-service
+
+SYSTEM_PORT=9000
+SYSTEM_HOST=0.0.0.0
+
+GRPC_HOST=0.0.0.0
+GRPC_PORT=5002
+
+DEBUG=1
+RABITTMQ_URI=amqp://bs:betting@137.184.222.24:5672/sportsbook
+FEEDS_SERVICE_GRPC_URI=174.138.50.219:6011

@@ -51,7 +51,7 @@ export class BetsService {
 
         private readonly entityManager: EntityManager,
 
-        private readonly amqpConnection: AmqpConnection,
+        // private readonly amqpConnection: AmqpConnection,
 
         private readonly httpService: HttpService,
 
@@ -785,24 +785,24 @@ export class BetsService {
 
         if (betData) {
             // send bets to MTS
-            let mtsBet = {
-                bet_id: ""+betResult.id,
-                limit_id: clientSettings.mts_limit_id,
-                profile_id: bet.userId,
-                ip_address: bet.ipAddress,
-                stake: stakeAfterTax,
-                source: 1,
-                reply_prefix: 'betting_service',
-                bets: mtsSelection,
-                currency: clientSettings.currency,
-            }
+            // let mtsBet = {
+            //     bet_id: ""+betResult.id,
+            //     limit_id: clientSettings.mts_limit_id,
+            //     profile_id: bet.userId,
+            //     ip_address: bet.ipAddress,
+            //     stake: stakeAfterTax,
+            //     source: 1,
+            //     reply_prefix: 'betting_service',
+            //     bets: mtsSelection,
+            //     currency: clientSettings.currency,
+            // }
 
 
-            let queueName = "mts.bet_pending"
-            await this.amqpConnection.publish(queueName, queueName, mtsBet);
+            // let queueName = "mts.bet_pending"
+            // await this.amqpConnection.publish(queueName, queueName, mtsBet);
 
             // do debit
-            this.logger.info("published to "+queueName)
+            // this.logger.info("published to "+queueName)
 
             return {
                 status: 201, 
