@@ -83,24 +83,28 @@ export class BetSettlementService {
 
         //this.entityManager.query("SELECT id FROM settlement where processed = 0 ")
 
-        for (const row of rows) {
+        try {
+            for (const row of rows) {
 
-            let id = row.id;
-            this.logger.info("start processing settlementID "+id)
+                let id = row.id;
+                this.logger.info("start processing settlementID "+id)
 
-            await this.createBetSettlement(id)
+                await this.createBetSettlement(id)
 
-            await this.settlementRepository.update(
-                {
-                    id: id,
-                },
-                {
-                    processed: 1
-                }
-            )
+                await this.settlementRepository.update(
+                    {
+                        id: id,
+                    },
+                    {
+                        processed: 1
+                    }
+                )
 
-            this.logger.info("done processing settlementID "+id)
+                this.logger.info("done processing settlementID "+id)
 
+            }
+        } catch (e) {
+            this.logger.error("error processiong result: Line 107 "+e.toString())
         }
 
         task.name = taskName;
@@ -266,7 +270,7 @@ export class BetSettlementService {
 
         let processing_status = BET_PENDING
         let hasVoidedSlip = false
-
+        
         // check if any match was voided
         for (const b of bet.BetSlips) {
 
@@ -274,18 +278,21 @@ export class BetSettlementService {
 
                 hasVoidedSlip = true
 
-                // update voided bet_slip
-                await this.betslipRepository.update(
-                    {
-                        id: b.ID,
-                        status: BETSLIP_PROCESSING_SETTLED,
-                    },
-                    {
-                        odds: b.VoidFactor,
-                        won: STATUS_WON,
-                        status: BETSLIP_PROCESSING_VOIDED,
-                    });
-
+                try { 
+                    // update voided bet_slip
+                    await this.betslipRepository.update(
+                        {
+                            id: b.ID,
+                            status: BETSLIP_PROCESSING_SETTLED,
+                        },
+                        {
+                            odds: b.VoidFactor,
+                            won: STATUS_WON,
+                            status: BETSLIP_PROCESSING_VOIDED,
+                        });
+                } catch (e) {
+                    this.logger.error("error updating betslip result: Line 294"+e.toString())
+                }
                 // recalculate odds
                 let newOdds = (bet.total_odd / b.Odd) * b.VoidFactor
 
@@ -311,30 +318,39 @@ export class BetSettlementService {
                     possibleWin = setting.maximum_winning
                 }
 
-                // update bet with new odds and new winning amount
-                await this.betRepository.update(
-                    {
-                        id: bet.id, // confirm if ID is present
-                    },
-                    {
-                        possible_win: possibleWin,
-                        winning_after_tax: netWin,
-                        tax_on_winning: withHoldingTax,
-                        total_odd: newOdds
-                    });
+                try {
+
+                    // update bet with new odds and new winning amount
+                    await this.betRepository.update(
+                        {
+                            id: bet.id, // confirm if ID is present
+                        },
+                        {
+                            possible_win: possibleWin,
+                            winning_after_tax: netWin,
+                            tax_on_winning: withHoldingTax,
+                            total_odd: newOdds
+                        });
+                } catch (e) {
+                    this.logger.error("error updating bet result: Line 335"+e.toString())
+                }
 
             } else {
 
                 console.log('lets update bet slip ID '+b.ID)
+                try {
+                    await this.betslipRepository.update(
+                        {
+                            id: b.ID,
+                            status: BETSLIP_PROCESSING_SETTLED,
+                        },
+                        {
+                            status: BETSLIP_PROCESSING_COMPLETED,
+                        });
 
-                await this.betslipRepository.update(
-                    {
-                        id: b.ID,
-                        status: BETSLIP_PROCESSING_SETTLED,
-                    },
-                    {
-                        status: BETSLIP_PROCESSING_COMPLETED,
-                    });
+                } catch (e) {
+                    this.logger.error("error updating betslip result: Line 352 " +e.toString())
+                }
             }
         }
 
@@ -404,17 +420,21 @@ export class BetSettlementService {
             }
 
             console.log('lets update bet ID '+bet.id)
+            try {
+                //UPDATE bet SET won = ?, status = ?, lost_games = ?, won_games = ?, resulted_bets = ?, processing_status = ?  WHERE id = ?
+                await this.betRepository.update(
+                    {
+                        id: bet.id,
+                    },
+                    {
+                        won: STATUS_WON,
+                        status: processing_status,
+                    });
 
-            //UPDATE bet SET won = ?, status = ?, lost_games = ?, won_games = ?, resulted_bets = ?, processing_status = ?  WHERE id = ?
-            await this.betRepository.update(
-                {
-                    id: bet.id,
-                },
-                {
-                    won: STATUS_WON,
-                    status: processing_status,
-                });
-
+            } catch (e) {
+                this.logger.error("error bet result: Line 435"+e.toString())
+            }
+            
             this.logger.info("Done Processing BET ID " + bet.id+" as won ")
 
             return {
@@ -437,14 +457,18 @@ export class BetSettlementService {
 
             console.log('lets update bet ID '+bet.id)
             //UPDATE bet SET won = ?, status = ?, lost_games = ?, won_games = ?, resulted_bets = ?, processing_status = ?  WHERE id = ?
-            await this.betRepository.update(
-                {
-                    id: bet.id,
-                },
-                {
-                    won: STATUS_LOST,
-                    status: processing_status,
-                });
+            try {
+                await this.betRepository.update(
+                    {
+                        id: bet.id,
+                    },
+                    {
+                        won: STATUS_LOST,
+                        status: processing_status,
+                    });
+            } catch (e) {
+                this.logger.error("error bet result: Line 469"+e.toString())
+            }
 
             this.logger.info("Done Processing BET ID " + bet.id+" as lost")
 

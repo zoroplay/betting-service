@@ -112,62 +112,67 @@ export class MtsTimeoutService {
             let queueName = "mts.bet_cancel"
             // await this.amqpConnection.publish(queueName, queueName, reqPayload);
 
-            // cancel bets
-            let betStatus = new BetStatus()
-            betStatus.status = -1
-            betStatus.bet_id = id
-            betStatus.description = "Bet Cancelled - MTS Timeout"
-            await this.betStatusRepository.save(betStatus)
+            try { 
+                // cancel bets
+                let betStatus = new BetStatus()
+                betStatus.status = -1
+                betStatus.bet_id = id
+                betStatus.description = "Bet Cancelled - MTS Timeout"
+                await this.betStatusRepository.save(betStatus)
 
-            // update bet to cancelled
-            await this.betRepository.update(
-                {
-                    id: id,
-                    status: BET_PENDING,
-                },
-                {
-                    status: BET_CANCELLED,
-                });
+                // update bet to cancelled
+                await this.betRepository.update(
+                    {
+                        id: id,
+                        status: BET_PENDING,
+                    },
+                    {
+                        status: BET_CANCELLED,
+                    });
 
-            // update bet slip to cancelled
-            await this.betslipRepository.update(
-                {
-                    bet_id: id,
-                    status: BET_PENDING,
-                },
-                {
-                    status: BET_CANCELLED,
-                    won: BET_PENDING
-                });
+                // update bet slip to cancelled
+                await this.betslipRepository.update(
+                    {
+                        bet_id: id,
+                        status: BET_PENDING,
+                    },
+                    {
+                        status: BET_CANCELLED,
+                        won: BET_PENDING
+                    });
 
-            let bet = await this.betRepository.findOne({
-                where: {
-                    id: id
+                let bet = await this.betRepository.findOne({
+                    where: {
+                        id: id
+                    }
+                })
+                
+                //@TODO refund use the stake he/she used
+
+                //5. credit user by calling wallet service
+
+                this.logger.info("done processing mts timeout for betID " + id)
+
+                let creditPayload = {
+                    bet_id: bet.betslip_id,
+                    source: bet.source,
+                    amount: bet.stake_after_tax,
+                    user_id: bet.user_id,
+                    description: "Bet Cancelled - MTS Timeout",
                 }
-            })
 
-            //@TODO refund use the stake he/she used
+                // get client settings
+                var clientSettings = await this.settingRepository.findOne({
+                    where: {
+                        client_id: bet.client_id // add client id to bets
+                    }
+                });
 
-            //5. credit user by calling wallet service
-
-            this.logger.info("done processing mts timeout for betID " + id)
-
-            let creditPayload = {
-                bet_id: bet.betslip_id,
-                source: bet.source,
-                amount: bet.stake_after_tax,
-                user_id: bet.user_id,
-                description: "Bet Cancelled - MTS Timeout",
+                axios.post(clientSettings.url + '/api/wallet/credit', creditPayload);
+                
+            } catch (e) {
+                this.logger.error("error with mts update: Line 150"+e.toString())
             }
-
-             // get client settings
-            var clientSettings = await this.settingRepository.findOne({
-                where: {
-                    client_id: bet.client_id // add client id to bets
-                }
-            });
-
-            axios.post(clientSettings.url + '/api/wallet/credit', creditPayload);
 
         }
 
