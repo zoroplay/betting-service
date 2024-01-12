@@ -134,7 +134,7 @@ export class BetResultingController {
 
         try {
 
-            await this.entityManager.query("insert ignore into bet_closure (bet_id,created) select id, now() from bet where won = 1 and status = 0 and id not in (select bet_id from winning) ")
+            await this.entityManager.query("insert ignore into bet_closure (bet_id,created) select IFNULL(id,0) as id, now() from bet where won = 1 and status = 0 and id not in (select bet_id from winning) ")
         }
         catch (e) {
 
