@@ -70,11 +70,14 @@ export class CronjobService {
 
         let vm = this;
 
+        /*
         this.betResultingService.taskFixInvalidBetStatus().then(function () {
 
             vm.logger.info("done running taskFixInvalidBetStatus ")
 
         })
+
+         */
 
     }
 
