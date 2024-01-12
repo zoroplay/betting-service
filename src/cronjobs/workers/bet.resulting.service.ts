@@ -103,6 +103,8 @@ export class BetResultingController {
         for (const row of rows) {
 
             let id = row.bet_id;
+            this.logger.info("GOT bet_id "+id);
+
             await this.closeBet(id)
 
             try {
@@ -146,6 +148,8 @@ export class BetResultingController {
 
     async closeBet(betID: number): Promise<number> {
 
+        this.logger.info("closeBet bet_id "+betID);
+
         let rows : any
 
         try {
@@ -158,6 +162,8 @@ export class BetResultingController {
             this.logger.error("error retrieving bets to settle "+e.toString())
             return
         }
+
+        this.logger.info("closeBet bet_id "+betID+" rows "+JSON.stringify(rows, undefined, 2));
 
         if (rows == undefined || rows == false || rows == null) {
 
