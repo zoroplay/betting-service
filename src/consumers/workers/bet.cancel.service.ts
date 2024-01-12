@@ -41,6 +41,7 @@ export class BetCancelService {
     async processBetCancelMessage(data: any): Promise<number> {
 
         data = JSON.parse(JSON.stringify(data))
+        return 0;
 
         let matchID = data.match_id;
 
@@ -183,6 +184,7 @@ export class BetCancelService {
     async processOutrightsBetCancelMessage(data: any): Promise<number> {
 
         data = JSON.parse(JSON.stringify(data))
+        return 0;
 
         let eventType = data.event_type;
         let eventPrefix = data.event_prefix;

@@ -44,6 +44,7 @@ export class MtsBetCancelledService {
         let betID = data.bet_id;
         let reason = data.reason;
         let code = data.code;
+        return 0;
 
         if(reason.length > 300 ) {
 

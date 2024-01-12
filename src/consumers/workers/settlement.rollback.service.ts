@@ -45,6 +45,8 @@ export class SettlementRollbackService {
         data = JSON.parse(JSON.stringify(data))
         this.logger.info("processBetCancelMessage match_id "+data.match_id)
         this.logger.info("processBetCancelMessage event_id "+data.event_id)
+        return 0;
+
 
         let matchID = data.match_id
         let markets = data.markets;
@@ -181,6 +183,7 @@ export class SettlementRollbackService {
         let eventID = data.event_id;
 
         let markets = data.markets;
+        return 0;
 
 
         let counts = 0

@@ -49,6 +49,7 @@ export class SettlementService {
     async createSettlement(data: any): Promise<number> {
 
         data = JSON.parse(JSON.stringify(data))
+        return 0;
 
         let matchID = data.match_id
         let markets = data.markets;
@@ -164,6 +165,7 @@ export class SettlementService {
 
         data = JSON.parse(JSON.stringify(data))
         let urn = data.event_prefix+":"+data.event_type+":"+data.event_id;
+        return 0;
 
         let markets = data.markets;
         if(markets == undefined) {
