@@ -27,11 +27,14 @@ export class CronjobService {
 
         let vm = this;
 
+        /*
         this.betResultingService.taskProcessBetResulting().then(function () {
 
             //vm.logger.info("done running taskProcessBetResulting ")
 
         })
+
+         */
 
     }
 
@@ -40,11 +43,13 @@ export class CronjobService {
 
         let vm = this;
 
+        /*
         this.betSettlementService.taskProcessBetSettlement().then(function () {
 
             //vm.logger.info("done running processBetSettlement ")
 
         })
+        */
     }
 
     @Cron(new Date(Date.now() + 10 * 1000),{
