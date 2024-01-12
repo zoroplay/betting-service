@@ -86,6 +86,11 @@ export class BetSettlementService {
         try {
             for (const row of rows) {
 
+                if(row == undefined || row.id === undefined) {
+
+                    continue
+                }
+
                 let id = row.id;
                 this.logger.info("start processing settlementID "+id)
 
