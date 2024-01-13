@@ -3,7 +3,7 @@ import {AppController} from './app.controller';
 import {AppService} from './app.service';
 import {BetsModule} from './bets/bets.module';
 import {ConfigModule} from '@nestjs/config';
-import {ConsumerModule} from "./consumers/consumer.module";
+// import {ConsumerModule} from "./consumers/consumer.module";
 import {CronJobModule} from "./cronjobs/cronjobs.module";
 import {Bet} from "./entity/bet.entity";
 import {BetStatus} from "./entity/betstatus.entity";
@@ -17,7 +17,7 @@ import {BetClosure} from "./entity/betclosure.entity";
 import {Winning} from "./entity/winning.entity";
 import {Cronjob} from "./entity/cronjob.entity";
 import {TypeOrmModule} from "@nestjs/typeorm";
-import {RabbitmqModule} from "./rabbitmq.module";
+// import {RabbitmqModule} from "./rabbitmq.module";
 import 'dotenv/config'
 import { Booking } from './entity/booking.entity';
 import { BookingSelection } from './entity/booking.selection.entity';
@@ -31,9 +31,9 @@ import {SettingsModule} from "./settings/settings.module";
             isGlobal: true,
         }),
         BetsModule,
-        ConsumerModule,
+        // ConsumerModule,
         CronJobModule,
-        RabbitmqModule,
+        // RabbitmqModule,
         SettingsModule,
         TypeOrmModule.forRoot({
           type: process.env.DB_TYPE as any,
