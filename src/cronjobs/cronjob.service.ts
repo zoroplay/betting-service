@@ -22,7 +22,7 @@ export class CronjobService {
     ) {
     }
 
-    @Cron(CronExpression.EVERY_5_SECONDS) // run every 5 seconds
+    // @Cron(CronExpression.EVERY_5_SECONDS) // run every 5 seconds
     processBetResulting() {
 
         let vm = this;
@@ -37,7 +37,7 @@ export class CronjobService {
 
     }
 
-    @Cron(CronExpression.EVERY_5_SECONDS) // run every 5 seconds
+    // @Cron(CronExpression.EVERY_5_SECONDS) // run every 5 seconds
     processBetSettlement() {
 
         let vm = this;
@@ -51,10 +51,10 @@ export class CronjobService {
 
     }
 
-    @Cron(new Date(Date.now() + 10 * 1000),{
-        name: 'startUp',
-        timeZone: 'Africa/Lagos',
-    })
+    // @Cron(new Date(Date.now() + 10 * 1000),{
+    //     name: 'startUp',
+    //     timeZone: 'Africa/Lagos',
+    // })
     async startUp(){
 
         // reset all cron jobs when the application starts
