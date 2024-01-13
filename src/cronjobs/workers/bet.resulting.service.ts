@@ -93,42 +93,42 @@ export class BetResultingController {
 
             rows = await this.entityManager.query("SELECT bet_id FROM bet_closure ")
             this.logger.info('bet closure ' + JSON.stringify(rows));
-            if (!rows.length)
-                return;
+            
+            if (rows.length) {
+                for (const row of rows) {
+
+                    let id = row.bet_id;
+                    this.logger.info("GOT bet_id "+id);
+        
+                    await this.closeBet(id)
+        
+                    try {
+        
+                        await this.entityManager.query("DELETE FROM bet_closure WHERE bet_id = " + id)
+                    }
+                    catch (e) {
+        
+                        this.logger.error("error deleting bet closure "+e.toString())
+                    }
+                }
+        
+                task.name = taskName;
+                task.status = 0;
+        
+                try {
+        
+                    await this.cronJobRepository.upsert(task, ['status'])
+                }
+                catch (e) {
+        
+                    this.logger.error("error updating task as done "+e.toString())
+                    return
+                }
+            }
         }
         catch (e) {
 
             this.logger.error("error retrieving bet_closure "+e.toString())
-            return
-        }
-
-        for (const row of rows) {
-
-            let id = row.bet_id;
-            this.logger.info("GOT bet_id "+id);
-
-            await this.closeBet(id)
-
-            try {
-
-                await this.entityManager.query("DELETE FROM bet_closure WHERE bet_id = " + id)
-            }
-            catch (e) {
-
-                this.logger.error("error deleting bet closure "+e.toString())
-            }
-        }
-
-        task.name = taskName;
-        task.status = 0;
-
-        try {
-
-            await this.cronJobRepository.upsert(task, ['status'])
-        }
-        catch (e) {
-
-            this.logger.error("error updating task as done "+e.toString())
             return
         }
 
