@@ -92,7 +92,9 @@ export class BetResultingController {
         try {
 
             rows = await this.entityManager.query("SELECT bet_id FROM bet_closure ")
-
+            this.logger.info('bet closure ' + JSON.stringify(rows));
+            if (!rows.length)
+                return;
         }
         catch (e) {
 
