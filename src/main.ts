@@ -6,12 +6,7 @@ import {join} from "path";
 
 async function bootstrap() {
 
-  const app = await NestFactory.create(AppModule);
-
-  app.useLogger(new JsonLoggerService('Betting service'));
-
-// microservice #1
-  const microserviceGrpc = app.connectMicroservice<MicroserviceOptions>({
+  const app = await NestFactory.createMicroservice(AppModule, {
     transport: Transport.GRPC,
     options: {
       url: `${process.env.GRPC_HOST}:${process.env.GRPC_PORT}`,
@@ -20,8 +15,20 @@ async function bootstrap() {
     }
   });
 
-  await app.startAllMicroservices();
+  app.useLogger(new JsonLoggerService('Betting service'));
 
-  await app.listen(5004);
+// microservice #1
+  // const microserviceGrpc = app.connectMicroservice<MicroserviceOptions>({
+  //   transport: Transport.GRPC,
+  //   options: {
+  //     url: `${process.env.GRPC_HOST}:${process.env.GRPC_PORT}`,
+  //     package: 'betting',
+  //     protoPath: join(__dirname, './proto/betting-service.proto'),
+  //   }
+  // });
+
+  // await app.startAllMicroservices();
+
+  await app.listen();
 }
 bootstrap();
