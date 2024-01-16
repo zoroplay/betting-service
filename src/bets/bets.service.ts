@@ -933,8 +933,8 @@ export class BetsService {
                 if (slips.length) {
 
                     for (const selection of slips) {
-                        let odd = await this.getOdds(selection.producer_id, selection.event_prefix, selection.event_type, selection.event_id, selection.market_id, selection.specifier, selection.outcome_id)
-
+                        let odd = await this.getOdds(selection.producer_id, selection.event_prefix, selection.event_type, selection.match_id, selection.market_id, selection.specifier, selection.outcome_id)
+                        
                         if (odd > 0 ) { // || odd.active == 0 || odd.status !== 0 ) {
                         
                             selections.push({
