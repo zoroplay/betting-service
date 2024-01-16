@@ -929,7 +929,7 @@ export class BetsService {
             if (booking) {
                 const slips = await this.betslipRepository.find({where: {bet_id : booking.id}})
                 const selections = [];
-                JSON.stringify(slips)
+
                 if (slips.length) {
 
                     for (const selection of slips) {
