@@ -715,7 +715,7 @@ export class BetsService {
                 let betSlipData = new BetSlip()
                 betSlipData.bet_id          = betResult.id;
                 betSlipData.client_id       = bet.clientId;
-                betSlipData.user_id         = bet.userId;
+                betSlipData.user_id         = bet.userId || 0;
                 betSlipData.event_type      = selection.event_type;
                 betSlipData.event_prefix    = selection.event_prefix;
                 betSlipData.event_date      = selection.event_date;
