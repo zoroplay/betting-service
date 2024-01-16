@@ -920,7 +920,7 @@ export class BetsService {
     
 
     async findCoupon({betslipId, clientId}: FindBetRequest): Promise<FindBetResponse> {
-        console.log(betslipId, clientId)
+        
         try {
             const booking = await this.betRepository.findOne({
                 where: {betslip_id: betslipId, client_id: clientId},
@@ -929,7 +929,7 @@ export class BetsService {
             if (booking) {
                 const slips = await this.betslipRepository.find({where: {bet_id : booking.id}})
                 const selections = [];
-
+                JSON.stringify(slips)
                 if (slips.length) {
 
                     for (const selection of slips) {
