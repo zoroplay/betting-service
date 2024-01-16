@@ -919,10 +919,11 @@ export class BetsService {
 
     
 
-    async findCoupon({code, clientId}: BookingCode): Promise<FindBetResponse> {
+    async findCoupon({betslipId, clientId}: FindBetRequest): Promise<FindBetResponse> {
+        console.log(betslipId, clientId)
         try {
             const booking = await this.betRepository.findOne({
-                where: {betslip_id: code, client_id: clientId},
+                where: {betslip_id: betslipId, client_id: clientId},
             });
 
             if (booking) {

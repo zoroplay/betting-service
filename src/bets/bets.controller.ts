@@ -42,7 +42,7 @@ export class BetsController {
     // }
 
     @GrpcMethod('BettingService', 'GetCoupon')
-    getBooking(data: BookingCode): Promise<FindBetResponse> {
+    getBooking(data: FindBetRequest): Promise<FindBetResponse> {
         return this.betsService.findCoupon(data);
     }
 
