@@ -41,10 +41,10 @@ export class BetsController {
     //     return this.betsService.bookBet(data);
     // }
 
-    // @GrpcMethod('BettingService', 'GetBooking')
-    // getBooking(data: BookingCode): Promise<PlaceBetResponse> {
-    //     return this.betsService.getBooking(data);
-    // }
+    @GrpcMethod('BettingService', 'GetCoupon')
+    getBooking(data: BookingCode): Promise<FindBetResponse> {
+        return this.betsService.findCoupon(data);
+    }
 
     @GrpcMethod('BettingService', 'BetHistory')
     BetHistory(data: BetHistoryRequest): Promise<BetHistoryResponse> {

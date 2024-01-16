@@ -27,6 +27,7 @@ import {UpdateBetResponse} from './interfaces/update.bet.response.interface';
 import {Winning} from 'src/entity/winning.entity';
 import OutrightsService from "./outrights.service.interface";
 import { betTypeDescription, countItem } from 'src/commons/helper';
+import { BookingCode } from './interfaces/booking.code.interface';
 
 @Injectable()
 export class BetsService {
@@ -566,24 +567,24 @@ export class BetsService {
                 return {status: 400, message: "missing odds in your selection ", success: false};
 
             // get odds
-            // let odd = await this.getOdds(selection.producerId, selection.eventPrefix, selection.eventType, selection.matchId, selection.marketId, selection.specifier, selection.outcomeId)
+            let odd = await this.getOdds(selection.producerId, selection.eventPrefix, selection.eventType, selection.matchId, selection.marketId, selection.specifier, selection.outcomeId)
 
-            // if (odd === 0 ) { // || odd.active == 0 || odd.status !== 0 ) {
+            if (odd === 0 ) { // || odd.active == 0 || odd.status !== 0 ) {
 
-            //     this.logger.info("selection suspended " + JSON.stringify(selection))
+                this.logger.info("selection suspended " + JSON.stringify(selection))
 
-            //     return {
-            //         message: "Your selection " + selection.eventName + " - " + selection.marketName + " is suspended",
-            //         status: 400,
-            //         success: false
-            //     };
+                return {
+                    message: "Your selection " + selection.eventName + " - " + selection.marketName + " is suspended",
+                    status: 400,
+                    success: false
+                };
 
-            // } else {
+            } else {
 
-            //     this.logger.info("Got Odds " + odd)
+                this.logger.info("Got Odds " + odd)
 
-            // }
-            let odd = selection.odds;
+            }
+            // let odd = selection.odds;
 
             // get probability overallProbability
             let selectionProbability = await this.getProbability(selection.producerId, selection.eventPrefix, selection.eventType, selection.matchId, selection.marketId, selection.specifier, selection.outcomeId)
@@ -915,6 +916,68 @@ export class BetsService {
             return {status: 500, success: false, message: 'Unable to carry out operations'};
         }
     }
+
+    
+
+    async findCoupon({code, clientId}: BookingCode): Promise<FindBetResponse> {
+        try {
+            const booking = await this.betRepository.findOne({
+                where: {betslip_id: code, client_id: clientId},
+            });
+
+            if (booking) {
+                const slips = await this.betslipRepository.find({where: {bet_id : booking.id}})
+                const selections = [];
+
+                if (slips.length) {
+
+                    for (const selection of slips) {
+                        let odd = await this.getOdds(selection.producer_id, selection.event_prefix, selection.event_type, selection.event_id, selection.market_id, selection.specifier, selection.outcome_id)
+
+                        if (odd > 0 ) { // || odd.active == 0 || odd.status !== 0 ) {
+                        
+                            selections.push({
+                                eventName: selection.event_name,
+                                eventId: selection.event_id,
+                                eventPrefix: selection.event_prefix,
+                                eventDate: selection.event_date,
+                                eventType: selection.event_type,
+                                matchId: selection.match_id,
+                                producerId: selection.producer_id,
+                                marketId: selection.market_id,
+                                marketName: selection.market_name,
+                                specifier: selection.specifier,
+                                outcomeId: selection.outcome_id,
+                                outcomeName: selection.outcome_name,
+                                odds: selection.odds,
+                                sport: selection.sport_name,
+                                category: selection.category_name,
+                                tournament: selection.tournament_name,
+                                selectionId: selection.selection_id,
+                            })
+                        }
+                    }
+                } 
+
+                const data = {
+                    stake: booking.stake,
+                    betslipId: booking.betslip_id,
+                    totalOdd: booking.total_odd,
+                    possibleWin: booking.possible_win,
+                    source: 'mobile',
+                    selections
+                }
+
+                return {status: true, message: 'Booking code found', bet: data };
+            } else {
+                return {status: false, message: 'Booking code not found'};
+            }
+        } catch (e) {
+            return {status: false, message: 'Unable to fetch booking code'};
+        }
+
+    }
+
 
     async getOdds(producerId: number,  eventPrefix : string, eventType: string, eventId: number,marketId: number, specifier: string, outcomeId: string): Promise<number> {
 
