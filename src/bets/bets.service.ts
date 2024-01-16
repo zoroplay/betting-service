@@ -441,7 +441,7 @@ export class BetsService {
     }
 
     async placeBet(bet): Promise<PlaceBetResponse> {
-        console.log(bet);
+        // console.log(bet);
         
         if (bet.clientId == 0)
             return {status: 400, message: "missing client id", success: false};
