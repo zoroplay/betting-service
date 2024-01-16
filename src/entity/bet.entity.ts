@@ -11,11 +11,11 @@ export class Bet {
     client_id: number;
 
     @Index()
-    @Column({ type: "bigint"})
+    @Column({ type: "bigint", nullable: true, default: 0})
     user_id: number;
 
     @Index()
-    @Column({ type: "varchar", length: 150, nullable: true})
+    @Column({ type: "varchar", length: 150, nullable: true, default: null})
     username: string;
 
     @Index()
@@ -126,6 +126,10 @@ export class Bet {
     @Index()
     @Column({ type: "varchar", length: 50, nullable: true })
     events: string;
+
+    @Index()
+    @Column({ type: "int", nullable: true, default: 0 })
+    is_booked: string;
 
     @Index()
     @Column({ type: "varchar", length: 50, nullable: true })

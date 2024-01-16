@@ -1,14 +1,21 @@
 
 export interface PlaceBet {
-    betslip: BetSlip[];
+    selections: BetSlip[];
     clientId: number;
-    userId: number;
+    userId?: number | undefined;
     stake: number;
     source: string;
     ipAddress: string;
     betType: string;
-    username: string;
-}
+    username?: string | undefined;
+    minBonus: number;
+    maxBonus: number;
+    minOdds: number;
+    maxOdds: number;
+    type: string;
+    combos: Combo[];
+    isBooking: number;
+  }
 
 export interface BetSlip {
     eventName: string;
@@ -33,4 +40,7 @@ export interface BetSlip {
     fixed: boolean;
     selectionId: string;
     eventDate: string;
+}
+
+export interface Combo {
 }

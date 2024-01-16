@@ -36,15 +36,15 @@ export class BetsController {
         return this.betsService.updateBet(data);
     }
 
-    @GrpcMethod('BettingService', 'BookBet')
-    bookBet(data: PlaceBet): Promise<PlaceBetResponse> {
-        return this.betsService.bookBet(data);
-    }
+    // @GrpcMethod('BettingService', 'BookBet')
+    // bookBet(data: PlaceBet): Promise<PlaceBetResponse> {
+    //     return this.betsService.bookBet(data);
+    // }
 
-    @GrpcMethod('BettingService', 'GetBooking')
-    getBooking(data: BookingCode): Promise<PlaceBetResponse> {
-        return this.betsService.getBooking(data);
-    }
+    // @GrpcMethod('BettingService', 'GetBooking')
+    // getBooking(data: BookingCode): Promise<PlaceBetResponse> {
+    //     return this.betsService.getBooking(data);
+    // }
 
     @GrpcMethod('BettingService', 'BetHistory')
     BetHistory(data: BetHistoryRequest): Promise<BetHistoryResponse> {
