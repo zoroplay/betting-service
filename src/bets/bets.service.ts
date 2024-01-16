@@ -1016,7 +1016,8 @@ export class BetsService {
 
             this.logger.info(oddStatus)
 
-            return oddStatus.probability
+            // if oddStatus is undefined or there no probability we use a probability of 1
+            return oddStatus && oddStatus.probability ? oddStatus.probability : 1;
 
         }catch (e) {
 
