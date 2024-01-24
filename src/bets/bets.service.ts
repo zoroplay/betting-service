@@ -82,6 +82,7 @@ export class BetsService {
         let left_records = 0;
         let totalStake = 0;
         let current_page = page - 1
+        let noPerPage = perPage || 50
 
         try {
             
@@ -147,15 +148,15 @@ export class BetsService {
             }
             // calculate offset
 
-            if (total <= perPage) {
+            if (total <= noPerPage) {
 
                 last_page = 1
 
             } else {
 
-                let totalPages = Math.ceil(total / perPage)
+                let totalPages = Math.ceil(total / noPerPage)
 
-                if (total > perPage && total % perPage > 0) {
+                if (total > noPerPage && total % noPerPage > 0) {
 
                     totalPages++
                 }
@@ -168,7 +169,7 @@ export class BetsService {
 
             if (current_page > 0) {
 
-                offset = perPage * current_page
+                offset = noPerPage * current_page
 
             } else {
 
@@ -178,11 +179,11 @@ export class BetsService {
 
             if (offset > total) {
 
-                let a = current_page * perPage
+                let a = current_page * noPerPage
 
                 if (a > total) {
 
-                    offset = (current_page - 1) * perPage
+                    offset = (current_page - 1) * noPerPage
 
                 } else {
 
@@ -201,7 +202,7 @@ export class BetsService {
                 offset = off
             }
 
-            let limit = ` LIMIT ${offset},${perPage}`
+            let limit = ` LIMIT ${offset},${noPerPage}`
 
             let queryString = `SELECT b.id,b.user_id,b.username,b.betslip_id,b.stake,b.currency,b.bet_type,b.bet_category,b.total_odd,b.possible_win,b.source,b.total_bets,
             b.won,b.status,b.created,w.winning_after_tax as winnings, b.sports, b.tournaments, b.events, b.markets, b.event_type, b.bet_category_desc
@@ -488,6 +489,9 @@ export class BetsService {
 
             if (user.available_balance < bet.stake)
                 return {status: 400, message: "Insufficient balance ", success: false};
+
+            if (user.status !== 1)
+                return {status: 401, message: "Your account has been disabled", success: false};
         }
 
         let userSelection =  bet.selections
