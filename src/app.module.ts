@@ -31,9 +31,9 @@ import {SettingsModule} from "./settings/settings.module";
             isGlobal: true,
         }),
         BetsModule,
-        ConsumerModule,
+        // ConsumerModule,
         CronJobModule,
-        RabbitmqModule,
+        // RabbitmqModule,
         SettingsModule,
         TypeOrmModule.forRoot({
           type: process.env.DB_TYPE as any,
