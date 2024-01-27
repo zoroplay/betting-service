@@ -536,13 +536,13 @@ export class BetsService {
             if (!selection.eventPrefix)
                 selection.eventPrefix = "sr";
 
-            if(selection.eventId === 0 && selection.matchId > 0) {
+            // if(selection.eventId === 0 && selection.matchId > 0) {
 
-                selection.eventId = selection.matchId
-            }
+            //     selection.eventId = selection.matchId
+            // }
 
-            if (selection.eventId === 0 )
-                return {status: 400, message: "missing event ID in your selection ", success: false};
+            // if (selection.eventId === 0 )
+            //     return {status: 400, message: "missing event ID in your selection ", success: false};
 
             if (selection.producerId === 0 )
                 return {status: 400, message: "missing producer id in your selection ", success: false};
@@ -812,6 +812,7 @@ export class BetsService {
                     bets: mtsSelection,
                     currency: clientSettings.currency,
                 }
+                console.log(mtsBet)
 
                 let queueName = "mts.bet_pending"
                 await this.amqpConnection.publish(queueName, queueName, mtsBet);
@@ -920,8 +921,6 @@ export class BetsService {
             return {status: 500, success: false, message: 'Unable to carry out operations'};
         }
     }
-
-    
 
     async findCoupon({betslipId, clientId}: FindBetRequest): Promise<FindBetResponse> {
         
