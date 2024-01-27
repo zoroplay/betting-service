@@ -59,6 +59,10 @@ export class BetSlip {
     sport_name: string;
 
     @Index()
+    @Column({ type: "bigint", nullable: true })
+    sport_id: number;
+
+    @Index()
     @Column({type:"int", nullable: false })
     producer_id: number;
 
