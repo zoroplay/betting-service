@@ -186,7 +186,7 @@ message BetSlipHistory {
   string outcomeId = 8;
   string outcomeName = 9;
   float odds = 10;
-  int64 sportId = 11;
+  int32 sportId = 11;
   string status = 12;
   string statusDescription = 13;
   int32 won = 14;
