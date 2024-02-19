@@ -12,10 +12,14 @@ import { HttpModule } from '@nestjs/axios';
 import { Booking } from 'src/entity/booking.entity';
 import { BookingSelection } from 'src/entity/booking.selection.entity';
 import { ReportService } from './report.service';
+import { BonusModule } from 'src/bonus/bonus.module';
+import { WalletModule } from 'src/wallet/wallet.module';
 
 @Module({
   imports: [
     HttpModule,
+    BonusModule,
+    WalletModule,
     TypeOrmModule.forFeature([Bet,BetSlip,Booking,BookingSelection,Mts,Setting]),
     ClientsModule.register([
       {
@@ -37,6 +41,7 @@ import { ReportService } from './report.service';
         },
       },
     ]),
+
   ],
   controllers: [BetsController],
   providers: [BetsService, ReportService]

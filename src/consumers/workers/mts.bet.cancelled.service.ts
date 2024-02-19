@@ -7,6 +7,7 @@ import {Bet} from "../../entity/bet.entity";
 import {BetStatus} from "../../entity/betstatus.entity";
 import { Setting } from "src/entity/setting.entity";
 import axios from "axios";
+import { WalletService } from "src/wallet/wallet.service";
 
 @Injectable()
 export class MtsBetCancelledService {
@@ -25,7 +26,7 @@ export class MtsBetCancelledService {
 
         private readonly entityManager: EntityManager,
 
-
+        private readonly walletService: WalletService
     ) {
 
     }
@@ -70,21 +71,29 @@ export class MtsBetCancelledService {
         // revert the stake
         let creditPayload = {
             amount: bet.stake,
-            user_id: bet.user_id,
+            userId: bet.user_id,
+            username: bet.username,
+            clientId: bet.client_id,
             description: "Bet betID " + bet.betslip_id + " was cancelled",
             bet_id: bet.betslip_id,
-            source: bet.source
+            source: bet.source,
+            wallet: 'sport',
+            channel: 'Internal'
         }
+        if(bet.bonus_id)
+            creditPayload.wallet= 'sport-bonus'
 
+
+        await this.walletService.credit(creditPayload).toPromise();
          // get client settings
-        var clientSettings = await this.settingRepository.findOne({
-            where: {
-                client_id: bet.client_id // add client id to bets
-            }
-        });
+        // var clientSettings = await this.settingRepository.findOne({
+        //     where: {
+        //         client_id: bet.client_id // add client id to bets
+        //     }
+        // });
 
 
-        axios.post(clientSettings.url + '/api/wallet/credit', creditPayload);
+        // axios.post(clientSettings.url + '/api/wallet/credit', creditPayload);
 
         return 1
     }

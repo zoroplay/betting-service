@@ -27,7 +27,8 @@ import {UpdateBetResponse} from './interfaces/update.bet.response.interface';
 import {Winning} from 'src/entity/winning.entity';
 import OutrightsService from "./outrights.service.interface";
 import { betTypeDescription, countItem } from 'src/commons/helper';
-import { BookingCode } from './interfaces/booking.code.interface';
+import { BonusService } from 'src/bonus/bonus.service';
+import { WalletService } from 'src/wallet/wallet.service';
 
 @Injectable()
 export class BetsService {
@@ -57,8 +58,11 @@ export class BetsService {
         private readonly client: ClientGrpc,
 
         @Inject('OUTRIGHTS_PACKAGE')
-        private readonly outrightsClient: ClientGrpc
+        private readonly outrightsClient: ClientGrpc,
 
+        private readonly bonusService: BonusService,
+
+        private readonly walletService: WalletService,
 
     ) {
 
@@ -461,6 +465,7 @@ export class BetsService {
             return {status: 400, message: "missing selections", success: false};
 
         
+        
         // get client settings
         var clientSettings = await this.settingRepository.findOne({
             where: {
@@ -471,27 +476,35 @@ export class BetsService {
         let user;
 
         if (bet.isBooking === 0) { // check if bet placement is not booking 
+            // To-Do: Get User Details and Settings
 
-            const {data: userRes} = await axios.get(clientSettings.url + '/api/wallet/balance/' +bet.userId)
-                                    .catch(() => {
-                                        throw new ForbiddenException('API not available');
-                                    });
-                                    
+            // get user wallet
+            const wallet = await this.walletService.getWallet({userId: bet.userId, clientId: bet.clientId}).toPromise();
+                   
 
-            if (userRes.status) {
-                user = userRes.data;
+            if (wallet.success) {
+                user = wallet.data;
             }
         
             if(!user) 
                 return {status: 400, message: "please login to procceed", success: false};
 
-            
-
-            if (user.available_balance < bet.stake)
+            if (!bet.isbonus && user.availableBalance < bet.stake)// if not bonus bet, use real balance
                 return {status: 400, message: "Insufficient balance ", success: false};
 
-            if (user.status !== 1)
-                return {status: 401, message: "Your account has been disabled", success: false};
+            if (bet.isbonus && user.sportBonusBalance < bet.stake)// if bonus bet, use bonus balance
+                return {status: 400, message: "Insufficient balance ", success: false};
+
+            // if (user.status !== 1)
+            //     return {status: 401, message: "Your account has been disabled", success: false};
+        }
+
+        let bonusId = null;
+
+        if (bet.isBonus) {//check if bonus is till valid
+            const bonusRes = await this.bonusService.validateSelection(bet).toPromise();
+
+            if (bonusRes.success) bonusId = bonusRes.id;
         }
 
         let userSelection =  bet.selections
@@ -549,8 +562,6 @@ export class BetsService {
 
             if (selection.sportId === 0 )
                 return {status: 400, message: "missing sport id in your selection ", success: false};
-
-            this.logger.info("got sportId "+selection.sportId)
 
             if (selection.marketId === 0 )
                 return {status: 400, message: "missing market id in your selection ", success: false};
@@ -767,16 +778,29 @@ export class BetsService {
                 let debitPayload = {
                     // currency: clientSettings.currency,
                     amount: stake,
-                    user_id: bet.userId,
-                    client_id: bet.clientId,
+                    userId: bet.userId,
+                    username: bet.username,
+                    clientId: bet.clientId,
                     description: "Bet Deposit (Sport)",
-                    bet_id: betResult.betslip_id,
+                    subject: betResult.betslip_id,
                     source: betResult.source,
-                    type: 'Sport'
+                    wallet: 'sport',
+                    channel: 'Internal'
                     // transaction_type: TRANSACTION_TYPE_PLACE_BET
                 }
+
+                if (bet.isBonus) {
+                    debitPayload.description = 'Bonus Bet (Sport)';
+                    debitPayload.wallet= 'sport-bonus'
+                    bet.bonusId = bonusId;
+                    
+                    this.bonusService.placeBet(bet);
+                }
+
+
+                await this.walletService.debit(debitPayload).toPromise();
             
-                axios.post(clientSettings.url + '/api/wallet/debit', debitPayload);
+                // axios.post(clientSettings.url + '/api/wallet/debit', debitPayload);
                 // committing transaction
                 // await transactionRunner.commitTransaction();
             }
@@ -796,7 +820,7 @@ export class BetsService {
             //if (transactionRunner) await transactionRunner.releaseTransaction();
         }
 
-        this.logger.info("bet created with id "+betResult.id)
+        // this.logger.info("bet created with id "+betResult.id)
 
         if (betData) {
             if (bet.isBooking === 0) { // if it's not booking, submit to mts
@@ -859,20 +883,30 @@ export class BetsService {
                         // revert the stake
                         let creditPayload = {
                             amount: bet.stake,
-                            user_id: bet.user_id,
+                            userId: bet.user_id,
+                            clientId: bet.client_id,
                             description: "Bet betID " + bet.betslip_id + " was cancelled",
-                            bet_id: bet.betslip_id,
-                            source: bet.source
+                            subject: bet.betslip_id,
+                            source: bet.source,
+                            wallet: 'sport',
+                            channel: 'Internal',
+                            username: bet.username
                         }
 
-                        // get client settings
-                        var clientSettings = await this.settingRepository.findOne({
-                            where: {
-                                client_id: bet.client_id // add client id to bets
-                            }
-                        });
+                        if(bet.bonus_id)
+                            creditPayload.wallet= 'sport-bonus'
 
-                        axios.post(clientSettings.url + '/api/wallet/credit', creditPayload);
+
+                        await this.walletService.credit(creditPayload).toPromise();
+
+                        // get client settings
+                        // var clientSettings = await this.settingRepository.findOne({
+                        //     where: {
+                        //         client_id: bet.client_id // add client id to bets
+                        //     }
+                        // });
+
+                        // axios.post(clientSettings.url + '/api/wallet/credit', creditPayload);
                         break;
                     default:
                         updateStatus = STATUS_NOT_LOST_OR_WON;

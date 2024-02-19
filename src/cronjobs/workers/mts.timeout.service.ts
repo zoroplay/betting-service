@@ -10,7 +10,7 @@ import {Cronjob} from "../../entity/cronjob.entity";
 import {AmqpConnection} from "@golevelup/nestjs-rabbitmq";
 import {BetStatus} from "../../entity/betstatus.entity";
 import { Setting } from "src/entity/setting.entity";
-import axios from "axios";
+import { WalletService } from "src/wallet/wallet.service";
 
 @Injectable()
 export class MtsTimeoutService {
@@ -32,6 +32,8 @@ export class MtsTimeoutService {
 
         private readonly entityManager: EntityManager,
         private readonly amqpConnection: AmqpConnection,
+
+        private readonly walletService: WalletService
     ) {
 
     }
@@ -153,21 +155,31 @@ export class MtsTimeoutService {
             this.logger.info("done processing mts timeout for betID " + id)
 
             let creditPayload = {
-                bet_id: bet.betslip_id,
+                subject: bet.betslip_id,
                 source: bet.source,
                 amount: bet.stake_after_tax,
-                user_id: bet.user_id,
+                userId: bet.user_id,
+                username: bet.username,
+                clientId: bet.client_id,
                 description: "Bet Cancelled - MTS Timeout",
+                wallet: 'sport',
+                channel: 'Internal'
             }
 
-             // get client settings
-            var clientSettings = await this.settingRepository.findOne({
-                where: {
-                    client_id: bet.client_id // add client id to bets
-                }
-            });
+            if(bet.bonus_id)
+                creditPayload.wallet= 'sport-bonus'
 
-            axios.post(clientSettings.url + '/api/wallet/credit', creditPayload);
+
+            await this.walletService.credit(creditPayload).toPromise();
+
+             // get client settings
+            // var clientSettings = await this.settingRepository.findOne({
+            //     where: {
+            //         client_id: bet.client_id // add client id to bets
+            //     }
+            // });
+
+            // axios.post(clientSettings.url + '/api/wallet/credit', creditPayload);
 
         }
 

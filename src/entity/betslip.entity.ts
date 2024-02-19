@@ -107,6 +107,10 @@ export class BetSlip {
     score: string;
 
     @Index()
+    @Column({type:"varchar", length: 20, nullable: true })
+    ht_score: string;
+
+    @Index()
     @Column({type:"int", nullable: false, default: 0 })
     is_live: number;
 

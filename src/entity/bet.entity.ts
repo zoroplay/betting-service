@@ -15,6 +15,10 @@ export class Bet {
     user_id: number;
 
     @Index()
+    @Column({ type: "bigint", nullable: true, default: 0})
+    bonus_id: number;
+
+    @Index()
     @Column({ type: "varchar", length: 150, nullable: true, default: null})
     username: string;
 

@@ -35,6 +35,14 @@ export class Settlement {
     outcome_id: string;
 
     @Index()
+    @Column({ type: "varchar", length: 20, nullable: true })
+    ft_score: string;
+
+    @Index()
+    @Column({ type: "varchar", length: 20, nullable: true })
+    ht_score: string;
+
+    @Index()
     @Column({type:"int", nullable: false })
     status: number;
 

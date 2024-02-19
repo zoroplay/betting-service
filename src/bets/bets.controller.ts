@@ -6,7 +6,6 @@ import {PlaceBet} from "./interfaces/placebet.interface";
 import {PlaceBetResponse} from "./interfaces/placebet.response.interface";
 import {BetHistoryRequest, FindBetRequest} from "./interfaces/bet.history.request.interface";
 import {BetHistoryResponse, FindBetResponse} from "./interfaces/bet.history.response.interface";
-import {BookingCode} from './interfaces/booking.code.interface';
 import {UpdateBetRequest} from './interfaces/update.bet.request.interface';
 import {UpdateBetResponse} from './interfaces/update.bet.response.interface';
 import {BetID} from "./interfaces/betid.interface";
@@ -48,7 +47,6 @@ export class BetsController {
 
     @GrpcMethod('BettingService', 'BetHistory')
     BetHistory(data: BetHistoryRequest): Promise<BetHistoryResponse> {
-
         return this.betsService.findAll(data)
     }
 

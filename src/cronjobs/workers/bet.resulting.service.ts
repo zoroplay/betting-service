@@ -1,16 +1,18 @@
-import {Controller, Get, Injectable} from "@nestjs/common";
+import {Controller} from "@nestjs/common";
 import {JsonLogger, LoggerFactory} from "json-logger-service";
 import {InjectRepository} from "@nestjs/typeorm";
-import {EntityManager, Repository} from "typeorm";
+import {EntityManager, In, Repository} from "typeorm";
 import {Settlement} from "../../entity/settlement.entity";
 import {BetSlip} from "../../entity/betslip.entity";
 import {Setting} from "../../entity/setting.entity";
-import {BET_PENDING, BET_VOIDED, BET_WON, STATUS_WON, TRANSACTION_TYPE_WINNING} from "../../constants";
+import {BET_PENDING, BET_VOIDED, BET_WON, STATUS_NOT_LOST_OR_WON, STATUS_WON, TRANSACTION_TYPE_WINNING} from "../../constants";
 import {Bet} from "../../entity/bet.entity";
 import {Cronjob} from "../../entity/cronjob.entity";
 import {Winning} from "../../entity/winning.entity";
-import any = jasmine.any;
 import axios from "axios";
+import { BetClosure } from "src/entity/betclosure.entity";
+import { BetSettlementService } from "./bet.settlement.service";
+import { WalletService } from "src/wallet/wallet.service";
 
 @Controller('cronjob/bet/resulting')
 export class BetResultingController {
@@ -37,13 +39,21 @@ export class BetResultingController {
         @InjectRepository(Winning)
         private winningRepository: Repository<Winning>,
 
+        @InjectRepository(BetClosure)
+        private betClosureRepository: Repository<BetClosure>,
+
+        private betSettlementService: BetSettlementService,
+
         private readonly entityManager: EntityManager,
+
+        private readonly walletService: WalletService
 
     ) {
 
     }
 
     async taskProcessBetResulting() {
+        console.log('task processing bet')
 
         const taskName = 'bet.resulting'
 
@@ -59,7 +69,7 @@ export class BetResultingController {
             });
 
             if (cronJob !== null && cronJob.id > 0) {
-
+                console.log('stopping cron job')
                 //this.logger.info('another ' + taskName + ' job is already running');
                 return
             }
@@ -78,11 +88,8 @@ export class BetResultingController {
         task.status = 1;
 
         try {
-
             await this.cronJobRepository.upsert(task, ['status'])
-        }
-        catch (e) {
-
+        } catch (e) {
             this.logger.error("error updating running task  "+e.toString())
             return
         }
@@ -90,16 +97,13 @@ export class BetResultingController {
         let rows : any;
 
         try {
-
             rows = await this.entityManager.query("SELECT bet_id FROM bet_closure ")
-
         }
         catch (e) {
-
             this.logger.error("error retrieving bet_closure "+e.toString())
             return
         }
-
+        console.log ('rows', rows);
         for (const row of rows) {
 
             let id = row.bet_id;
@@ -119,7 +123,7 @@ export class BetResultingController {
         task.status = 0;
 
         try {
-
+            console.log('second upsert ', task)
             await this.cronJobRepository.upsert(task, ['status'])
         }
         catch (e) {
@@ -131,6 +135,7 @@ export class BetResultingController {
     }
 
     async taskFixInvalidBetStatus() {
+        console.log('task fix for invalid')
 
         try {
 
@@ -145,6 +150,7 @@ export class BetResultingController {
 
 
     async closeBet(betID: number): Promise<number> {
+        console.log('close bet')
 
         let rows : any
 
@@ -160,9 +166,7 @@ export class BetResultingController {
         }
 
         if (rows == undefined || rows == false || rows == null) {
-
             return 0
-
         }
 
         let row = rows[0]
@@ -183,10 +187,7 @@ export class BetResultingController {
                     status: BET_WON,
                 }
             );
-
-        }
-        catch (e) {
-
+        } catch (e) {
             this.logger.error("error updating bet to won "+e.toString())
             return
         }
@@ -221,32 +222,187 @@ export class BetResultingController {
 
         let creditPayload = {
             amount: winning_after_tax,
-            user_id: profileID,
-            bet_id: row.betslip_id,
+            userId: profileID,
+            username: row.username,
+            clientId: row.client_id,
+            subject: row.betslip_id,
             description: "Sport Win",
             source: row.source,
+            wallet: 'sport',
+            channel: 'Internal'
         }
 
-        this.logger.info(creditPayload)
-
-         // get client settings
-         var clientSettings = await this.settingRepository.findOne({
-            where: {
-                client_id: row.client_id // add client id to bets
-            }
-        });
+        if(row.bonus_id)
+            creditPayload.wallet= 'sport-bonus'
 
 
-        axios.post(clientSettings.url + '/api/wallet/credit', creditPayload);
+        await this.walletService.credit(creditPayload).toPromise();
+
+        // this.logger.info(creditPayload)
+
+        //  // get client settings
+        //  var clientSettings = await this.settingRepository.findOne({
+        //     where: {
+        //         client_id: row.client_id // add client id to bets
+        //     }
+        // });
+
+
+        // axios.post(clientSettings.url + '/api/wallet/credit', creditPayload);
 
         return winner.id
 
     }
 
-    @Get()
-    async status() {
+    async settlePendingBets() {
+        const betss: any = await this.betRepository.find({
+            select: {
+                id: true, 
+                total_odd: true,
+                stake: true, 
+                stake_after_tax: true,
+                client_id: true,
+                total_bets: true,
+                user_id: true,
+                bet_type: true,
+            },
+            where: {
+                status: BET_PENDING,
+                won: STATUS_NOT_LOST_OR_WON,
+            }
+        });
+        let bets = new Map()
 
-        return {status: 200, message: 'Ok'}
+        let betIds = []
+
+        // console.log(bets);
+        for (const row of betss) {
+            const betSlips: any = await this.betslipRepository.find({
+                where: {bet_id: row.id}
+            });
+            console.log('total odds ', row.total_odd)
+            let key = "bet-" + row.id;
+            row.Won = 0
+            row.Lost = 0
+            row.Pending = 0
+            row.Cancelled = 0
+            row.Voided = 0
+            row.TotalGames = betSlips.length,
+            row.total_odd = row.total_odd;
+            bets.set(key, row)
+            betIds.push(row.id)
+
+            for (const betSlip of betSlips) {
+
+                let void_factor = parseFloat(betSlip.void_factor)
+                let dead_heat_factor = parseFloat(betSlip.dead_heat_factor)
+                let won = parseInt(betSlip.won)
+    
+                let lost = 0
+                let pending = 0
+                let win = 0
+                let cancelled = 0
+                let voided = 0
+    
+                if (parseInt(betSlip.status) == -1) {
+    
+                    cancelled = 1
+                }
+    
+                if (void_factor > 0) {
+    
+                    voided = 1
+                }
+    
+                if (won == STATUS_NOT_LOST_OR_WON) {
+    
+                    pending = 1
+    
+                } else if (won == STATUS_WON) {
+    
+                    win = 1
+    
+                } else {
+    
+                    lost = 1
+                }
+    
+                let currentBetSlip = {
+                    ID: betSlip.id,
+                    BetID: betSlip.bet_id,
+                    Status: betSlip.status,
+                    Won: won,
+                    VoidFactor: void_factor,
+                    DeadHeatFactor: dead_heat_factor,
+                    Odd: betSlip.odds,
+                }
+    
+                let keyName = "bet-" + currentBetSlip.BetID
+                let bs = bets.get(keyName)
+                
+                if(bs == undefined ) {
+    
+                    this.logger.error("could not find "+keyName+" from array ")
+                    continue
+                }
+    
+                let slips = []
+    
+                if (bs.BetSlips !== undefined) {
+    
+                    slips = bs.BetSlips
+                }
+    
+                bs.Won = bs.Won + win
+                bs.Lost = bs.Lost + lost
+                bs.Pending = bs.Pending + pending
+                bs.Cancelled = bs.Cancelled + cancelled
+                bs.Voided = bs.Voided + voided
+    
+                slips.push(currentBetSlip)
+    
+                bs.BetSlips = slips
+    
+                bets[keyName] = bs
+    
+            }
+        }
+
+        for (const bet of bets.values()) {
+            // console.log(bet, 'resulting')
+            // get client settings
+            var clientSettings = await this.settingRepository.findOne({
+                where: {
+                    client_id: bet.client_id // add client id to bets
+                }
+            });
+
+            if (bet.BetSlips) {
+                let result = await this.betSettlementService.resultBet(bet, clientSettings, {ftScore: '', htScore: ''})
+
+                //console.log(bet.id+" | "+JSON.stringify(result,undefined,2))
+
+                if (result.Won) {
+
+                    const betClosure = new BetClosure();
+                    betClosure.bet_id = result.BetID;
+                    await this.betClosureRepository.upsert(betClosure,['bet_id'])
+                    this.logger.info("bet ID "+result.BetID+" has won and bet closure created")
+
+                    // publish to bonus queue
+
+                } else if (result.Lost) {
+
+                    // publish to bonus queue
+
+                }
+            }
+
+        }
+    }
+
+    async settleCancelledBets() {
+
     }
 
 }

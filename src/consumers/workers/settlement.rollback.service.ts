@@ -7,6 +7,7 @@ import {SettlementRollback} from "../../entity/settlementrollback.entity";
 import {BET_LOST, BET_PENDING, BET_WON, TRANSACTION_TYPE_BET_ROLLBACK} from "../../constants";
 import axios from "axios";
 import { Setting } from "src/entity/setting.entity";
+import { WalletService } from "src/wallet/wallet.service";
 
 @Injectable()
 export class SettlementRollbackService {
@@ -23,6 +24,8 @@ export class SettlementRollbackService {
         private settingRepository: Repository<Setting>,
         
         private readonly entityManager: EntityManager,
+
+        private readonly walletService: WalletService
     ) {
 
     }
@@ -132,24 +135,34 @@ export class SettlementRollbackService {
                 // delete winner query
                 await this.entityManager.query("DELETE FROM winning WHERE bet_id = " + settledBets.id + " LIMIT 1 ")
 
-                let debitPayload = {
+                let creditPayload = {
                     amount: settledBet.winning_after_tax,
-                    user_id: settledBet.user_id,
+                    userId: settledBet.user_id,
+                    clientId: settledBet.client_id,
+                    username: settledBet.username,
                     description: "BetID " + settledBet.betslip_id + " was rolled back",
                     bet_id: settledBet.betslip_id,
-                    source: settledBet.source
+                    source: settledBet.source,
+                    wallet: 'sport',
+                    channel: 'Internal'
                 }
+
+                if(settledBet.bonus_id)
+                    creditPayload.wallet= 'sport-bonus'
+
+
+                await this.walletService.credit(creditPayload).toPromise();
 
                 // send debit payload to wallet service
                  // get client settings
-                var clientSettings = await this.settingRepository.findOne({
-                    where: {
-                        client_id: settledBet.client_id // add client id to bets
-                    }
-                });
+                // var clientSettings = await this.settingRepository.findOne({
+                //     where: {
+                //         client_id: settledBet.client_id // add client id to bets
+                //     }
+                // });
 
 
-                axios.post(clientSettings.url + '/api/wallet/credit', debitPayload);
+                // axios.post(clientSettings.url + '/api/wallet/credit', debitPayload);
 
             }
 
@@ -278,24 +291,33 @@ export class SettlementRollbackService {
                 // delete winner query
                 await this.entityManager.query("DELETE FROM winning WHERE bet_id = " + settledBets.id + " LIMIT 1 ")
 
-                let debitPayload = {
+                let creditPayload = {
                     amount: settledBet.winning_after_tax,
-                    user_id: settledBet.user_id,
+                    userId: settledBet.user_id,
+                    username: settledBet.username,
+                    clientId: settledBet.client_id,
                     description: "BetID " + settledBet.betslip_id + " was rolled back",
-                    bet_id: settledBet.betslip_id,
-                    source: settledBet.source
+                    subject: settledBet.betslip_id,
+                    source: settledBet.source,
+                    wallet: 'sport',
+                    channel: 'Internal'
                 }
+
+                if(settledBet.bonus_id)
+                    creditPayload.wallet= 'sport-bonus'
+
+                await this.walletService.credit(creditPayload).toPromise();
 
                 // send debit payload to wallet service
                 // get client settings
-                var clientSettings = await this.settingRepository.findOne({
-                    where: {
-                        client_id: settledBet.client_id // add client id to bets
-                    }
-                });
+                // var clientSettings = await this.settingRepository.findOne({
+                //     where: {
+                //         client_id: settledBet.client_id // add client id to bets
+                //     }
+                // });
 
 
-                axios.post(clientSettings.url + '/api/wallet/credit', debitPayload);
+                // axios.post(clientSettings.url + '/api/wallet/credit', debitPayload);
 
             }
 
