@@ -17,7 +17,7 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
-    "proto:install": "yarn add git+https://github.com/zoroplay/sbe-service-proto.git",
+    "proto:install": "npm i git+https://github.com/zoroplay/sbe-service-proto.git",
     "proto:betting": "protoc --plugin=node_modules/.bin/protoc-gen-ts_proto -I=./node_modules/sbe-service-proto/proto --ts_proto_out=src/proto/ node_modules/sbe-service-proto/proto/betting.proto --ts_proto_opt=nestJs=true --ts_proto_opt=fileSuffix=.pb",
     "proto:bonus": "protoc --plugin=node_modules/.bin/protoc-gen-ts_proto -I=./node_modules/sbe-service-proto/proto --ts_proto_out=src/proto/ node_modules/sbe-service-proto/proto/bonus.proto --ts_proto_opt=nestJs=true --ts_proto_opt=fileSuffix=.pb"
   },
