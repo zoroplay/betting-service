@@ -18,6 +18,7 @@ import {BetStatus} from "../entity/betstatus.entity";
 import {MtsBetCancelledService} from "./workers/mts.bet.cancelled.service";
 import {MtsBetAcceptedService} from "./workers/mts.bet.accepted.service";
 import {Bet} from "../entity/bet.entity";
+import { WalletModule } from 'src/wallet/wallet.module';
 
 let maxSettlementChannels = 5
 let exchanges = [];
@@ -90,7 +91,7 @@ for (const name of outrightQueues) {
                 timeout: 50000
             }
         }),
-        ConsumerModule,
+        WalletModule,
     ],
     providers: [ConsumerService, SettlementService, BetCancelService,SettlementRollbackService,MtsBetCancelledService,MtsBetAcceptedService, ConsumerController],
     controllers: [ConsumerController],

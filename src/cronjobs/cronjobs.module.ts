@@ -20,7 +20,6 @@ import { WalletModule } from "src/wallet/wallet.module";
     imports: [
         TypeOrmModule.forFeature([Bet, BetSlip, Settlement, Setting, BetClosure, Winning, Cronjob,BetStatus]),
         ScheduleModule.forRoot(),
-        CronJobModule,
         WalletModule,
     ],
     providers: [BetResultingController, BetSettlementService,MtsTimeoutService,CronjobService],
