@@ -14,7 +14,6 @@ import {
     BETSLIP_PROCESSING_SETTLED, BETSLIP_PROCESSING_VOIDED, STATUS_LOST, STATUS_NOT_LOST_OR_WON, STATUS_WON
 } from "../../constants";
 import {Bet} from "../../entity/bet.entity";
-import {Cron, CronExpression} from "@nestjs/schedule";
 import {Cronjob} from "../../entity/cronjob.entity";
 import {BetClosure} from "../../entity/betclosure.entity";
 
@@ -50,6 +49,7 @@ export class BetSettlementService {
     }
 
     async taskProcessBetSettlement() {
+        console.log('task for processing bet settlement')
 
         const taskName = 'bet.settlement'
 
@@ -73,6 +73,7 @@ export class BetSettlementService {
         const task = new Cronjob();
         task.name = taskName;
         task.status = 1;
+
         await this.cronJobRepository.upsert(task,['status'])
 
         let rows = await this.settlementRepository.find({
@@ -88,7 +89,7 @@ export class BetSettlementService {
             let id = row.id;
             this.logger.info("start processing settlementID "+id)
 
-            await this.createBetSettlement(id)
+            await this.createBetSettlement(row)
 
             await this.settlementRepository.update(
                 {
@@ -109,15 +110,16 @@ export class BetSettlementService {
 
     }
 
-    async createBetSettlement(settlementID: number): Promise<number> {
+    async createBetSettlement(settlement: Settlement): Promise<number> {
+        console.log('starting create bet settlement')
 
-        this.logger.info("createBetSettlement | settlementID "+settlementID)
+        this.logger.info("createBetSettlement | settlementID "+settlement.id)
 
         let rows = await this.entityManager.query("SELECT DISTINCT b.id,b.stake,b.stake_after_tax,b.total_bets,b.total_odd,b.bet_type,b.user_id,b.client_id " +
             "FROM bet b " +
             "INNER JOIN bet_slip bs on b.id = bs.bet_id " +
             "INNER JOIN bet_status bst on b.id = bst.bet_id " +
-            "WHERE bst.status = 1 AND b.status IN (0,1) AND b.won = "+STATUS_NOT_LOST_OR_WON+" AND bs.settlement_id = ?", [settlementID])
+            "WHERE bst.status = 1 AND b.status IN (0,1) AND b.won = "+STATUS_NOT_LOST_OR_WON+" AND bs.settlement_id = ?", [settlement.id])
 
         let bets = new Map()
 
@@ -136,7 +138,7 @@ export class BetSettlementService {
             betIds.push(row.id)
         }
 
-        this.logger.info("settlementID "+settlementID+" attached bets "+bets.size)
+        this.logger.info("settlementID "+settlement.id+" attached bets "+bets.size)
 
         if (bets.size == 0) {
 
@@ -235,7 +237,7 @@ export class BetSettlementService {
                 }
             });
 
-            let result = await this.resultBet(bet, clientSettings)
+            let result = await this.resultBet(bet, clientSettings, {ftScore: settlement.ft_score, htScore: settlement.ht_score})
 
             //console.log(bet.id+" | "+JSON.stringify(result,undefined,2))
 
@@ -260,9 +262,10 @@ export class BetSettlementService {
 
     }
 
-    async resultBet(bet: any, setting: Setting): Promise<any> {
+    async resultBet(bet: any, setting: Setting, scores: any): Promise<any> {
+        console.log('starting  result bet')
 
-       console.log(JSON.stringify(bet,undefined,2))
+    //    console.log(JSON.stringify(bet,undefined,2))
 
         let processing_status = BET_PENDING
         let hasVoidedSlip = false
@@ -284,6 +287,8 @@ export class BetSettlementService {
                         odds: b.VoidFactor,
                         won: STATUS_WON,
                         status: BETSLIP_PROCESSING_VOIDED,
+                        score: scores.ftScore,
+                        ht_score: scores.htScores
                     });
 
                 // recalculate odds
@@ -311,6 +316,8 @@ export class BetSettlementService {
                     possibleWin = setting.maximum_winning
                 }
 
+                // console.log(possibleWin, netWin, withHoldingTax, newOdds)
+
                 // update bet with new odds and new winning amount
                 await this.betRepository.update(
                     {
@@ -325,7 +332,7 @@ export class BetSettlementService {
 
             } else {
 
-                console.log('lets update bet slip ID '+b.ID)
+                // console.log('lets update bet slip ID '+b.ID)
 
                 await this.betslipRepository.update(
                     {
@@ -334,6 +341,8 @@ export class BetSettlementService {
                     },
                     {
                         status: BETSLIP_PROCESSING_COMPLETED,
+                        score: scores.ftScore,
+                        ht_score: scores.htScores
                     });
             }
         }
@@ -391,6 +400,7 @@ export class BetSettlementService {
         }
 
         // lets start resulting here
+        console.log(bet.id)
 
         // bet won
         if (bet.Lost == 0 && bet.Pending == 0 && bet.TotalGames == bet.Won) {
@@ -403,7 +413,7 @@ export class BetSettlementService {
 
             }
 
-            console.log('lets update bet ID '+bet.id)
+            // console.log('lets update bet ID '+bet.id)
 
             //UPDATE bet SET won = ?, status = ?, lost_games = ?, won_games = ?, resulted_bets = ?, processing_status = ?  WHERE id = ?
             await this.betRepository.update(
@@ -435,7 +445,7 @@ export class BetSettlementService {
                 processing_status = BET_VOIDED
             }
 
-            console.log('lets update bet ID '+bet.id)
+            // console.log('lets update bet ID '+bet.id)
             //UPDATE bet SET won = ?, status = ?, lost_games = ?, won_games = ?, resulted_bets = ?, processing_status = ?  WHERE id = ?
             await this.betRepository.update(
                 {
@@ -446,7 +456,7 @@ export class BetSettlementService {
                     status: processing_status,
                 });
 
-            this.logger.info("Done Processing BET ID " + bet.id+" as lost")
+            // this.logger.info("Done Processing BET ID " + bet.id+" as lost")
 
             return {
                 BetID: bet.id,
@@ -456,7 +466,7 @@ export class BetSettlementService {
             }
         }
 
-        this.logger.info("Done Processing BET ID " + bet.id+" as pending ")
+        // this.logger.info("Done Processing BET ID " + bet.id+" as pending ")
 
         return {
             BetID: bet.id,
