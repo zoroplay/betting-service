@@ -502,7 +502,12 @@ export class BetsService {
         if (bet.useBonus) {//check if bonus is till valid
             const bonusRes = await this.bonusService.validateSelection(bet).toPromise();
 
-            if (bonusRes.success) bonusId = bonusRes.id;
+            console.log(bonusRes)
+            if (bonusRes.success) {
+                bonusId = bonusRes.id;
+            } else {
+                return {status: 400, message: bonusRes.message, success: false};
+            }
         }
 
         let userSelection =  bet.selections
