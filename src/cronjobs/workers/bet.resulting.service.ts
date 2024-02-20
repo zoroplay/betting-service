@@ -123,7 +123,7 @@ export class BetResultingController {
         task.status = 0;
 
         try {
-            console.log('second upsert ', task)
+            // console.log('second upsert ', task)
             await this.cronJobRepository.upsert(task, ['status'])
         }
         catch (e) {

@@ -447,7 +447,7 @@ export class BetsService {
     }
 
     async placeBet(bet): Promise<PlaceBetResponse> {
-        // console.log(bet);
+        // console.log(bet.useBonus);
         
         if (bet.clientId == 0)
             return {status: 400, message: "missing client id", success: false};
@@ -463,8 +463,6 @@ export class BetsService {
 
         if (bet.selections == undefined )
             return {status: 400, message: "missing selections", success: false};
-
-        
         
         // get client settings
         var clientSettings = await this.settingRepository.findOne({
@@ -489,10 +487,10 @@ export class BetsService {
             if(!user) 
                 return {status: 400, message: "please login to procceed", success: false};
 
-            if (!bet.isbonus && user.availableBalance < bet.stake)// if not bonus bet, use real balance
+            if (!bet.useBonus && user.availableBalance < bet.stake)// if not bonus bet, use real balance
                 return {status: 400, message: "Insufficient balance ", success: false};
 
-            if (bet.isbonus && user.sportBonusBalance < bet.stake)// if bonus bet, use bonus balance
+            if (bet.useBonus && user.sportBonusBalance < bet.stake)// if bonus bet, use bonus balance
                 return {status: 400, message: "Insufficient balance ", success: false};
 
             // if (user.status !== 1)
@@ -501,7 +499,7 @@ export class BetsService {
 
         let bonusId = null;
 
-        if (bet.isBonus) {//check if bonus is till valid
+        if (bet.useBonus) {//check if bonus is till valid
             const bonusRes = await this.bonusService.validateSelection(bet).toPromise();
 
             if (bonusRes.success) bonusId = bonusRes.id;
@@ -789,14 +787,13 @@ export class BetsService {
                     // transaction_type: TRANSACTION_TYPE_PLACE_BET
                 }
 
-                if (bet.isBonus) {
+                if (bet.useBonus) {
                     debitPayload.description = 'Bonus Bet (Sport)';
                     debitPayload.wallet= 'sport-bonus'
                     bet.bonusId = bonusId;
-                    
-                    this.bonusService.placeBet(bet);
+                    bet.betId = betResult.id;
+                    await this.bonusService.placeBet(bet).toPromise();
                 }
-
 
                 await this.walletService.debit(debitPayload).toPromise();
             

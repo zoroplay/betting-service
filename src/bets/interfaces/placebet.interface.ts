@@ -15,6 +15,7 @@ export interface PlaceBet {
     type: string;
     combos: Combo[];
     isBooking: number;
+    useBonus: boolean;
   }
 
 export interface BetSlip {

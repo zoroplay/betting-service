@@ -31,7 +31,6 @@ export class BetsController {
 
     @GrpcMethod('BettingService', 'UpdateBet')
     UpdateBet(data: UpdateBetRequest): Promise<UpdateBetResponse> {
-
         return this.betsService.updateBet(data);
     }
 

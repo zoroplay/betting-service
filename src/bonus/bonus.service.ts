@@ -18,7 +18,7 @@ export class BonusService {
     }
 
     public placeBet(data: UserBet) {
-        console.log('Place Bonus bet', data);
+        // console.log('Place Bonus bet', data);
         return this.svc.placeBonusBet(data);
     }
 }
