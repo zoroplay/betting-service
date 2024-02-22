@@ -502,7 +502,6 @@ export class BetsService {
         if (bet.useBonus) {//check if bonus is till valid
             const bonusRes = await this.bonusService.validateSelection(bet).toPromise();
 
-            console.log(bonusRes)
             if (bonusRes.success) {
                 bonusId = bonusRes.id;
             } else {
@@ -589,7 +588,7 @@ export class BetsService {
 
             if (odd === 0 ) { // || odd.active == 0 || odd.status !== 0 ) {
 
-                this.logger.info("selection suspended " + JSON.stringify(selection))
+                // this.logger.info("selection suspended " + JSON.stringify(selection))
 
                 return {
                     message: "Your selection " + selection.eventName + " - " + selection.marketName + " is suspended",
@@ -712,6 +711,7 @@ export class BetsService {
             betData.event_type = bet.type;
             betData.probability = overallProbability || 0;
             betData.is_booked = bet.isBooking
+            betData.bonus_id = bonusId;
 
             //let betResult = await this.saveBetWithTransactions(betData, transactionManager)
             betResult = await this.betRepository.save(betData)
