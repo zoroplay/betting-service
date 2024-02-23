@@ -4,7 +4,7 @@ import {InjectRepository} from "@nestjs/typeorm";
 import {Repository} from "typeorm";
 import {Settlement} from "../../entity/settlement.entity";
 import {BetSlip} from "../../entity/betslip.entity";
-import {AmqpConnection} from "@golevelup/nestjs-rabbitmq";
+// import {AmqpConnection} from "@golevelup/nestjs-rabbitmq";
 import {BETSLIP_PROCESSING_PENDING, BETSLIP_PROCESSING_SETTLED} from "../../constants";
 
 @Injectable()

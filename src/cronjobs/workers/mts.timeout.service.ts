@@ -7,7 +7,7 @@ import {BET_CANCELLED, BET_PENDING} from "../../constants";
 import {Bet} from "../../entity/bet.entity";
 import {Cron} from "@nestjs/schedule";
 import {Cronjob} from "../../entity/cronjob.entity";
-import {AmqpConnection} from "@golevelup/nestjs-rabbitmq";
+// import {AmqpConnection} from "@golevelup/nestjs-rabbitmq";
 import {BetStatus} from "../../entity/betstatus.entity";
 import { Setting } from "src/entity/setting.entity";
 import { WalletService } from "src/wallet/wallet.service";
@@ -31,7 +31,7 @@ export class MtsTimeoutService {
         private settingRepository: Repository<Setting>,
 
         private readonly entityManager: EntityManager,
-        private readonly amqpConnection: AmqpConnection,
+        // private readonly amqpConnection: AmqpConnection,
 
         private readonly walletService: WalletService
     ) {
@@ -112,7 +112,7 @@ export class MtsTimeoutService {
             }
 
             let queueName = "mts.bet_cancel"
-            await this.amqpConnection.publish(queueName, queueName, reqPayload);
+            // await this.amqpConnection.publish(queueName, queueName, reqPayload);
 
             // cancel bets
             let betStatus = new BetStatus()
