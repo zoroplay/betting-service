@@ -1308,7 +1308,6 @@ export class BetsService {
   }
 
   // Casino Area
-
   async placeCasinoBet(placeCasinoBet: PlaceCasinoBet) {
     // get wallet balance
     const wallet = await this.walletService
