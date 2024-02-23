@@ -1310,6 +1310,29 @@ export class BetsService {
   // Casino Area
 
   async placeCasinoBet(placeCasinoBet: PlaceCasinoBet) {
+    // get wallet balance
+    const wallet = await this.walletService
+      .getWallet({
+        userId: placeCasinoBet.userId,
+        clientId: placeCasinoBet.clientId,
+      })
+      .toPromise();
+
+    if (wallet.success) {
+      if (wallet.data.availableBalance < placeCasinoBet.stake)
+        return {
+          status: 400,
+          message: 'Insufficient balance ',
+          success: false,
+        };
+    } else {
+      return {
+        status: 500,
+        message: 'Cannot Access this user wallet ',
+        success: false,
+      };
+    }
+
     let casino = await this.casinoBetRepository.findOne({
       where: {
         transactionId: placeCasinoBet.transactionId,
