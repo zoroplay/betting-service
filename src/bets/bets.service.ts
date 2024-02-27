@@ -310,8 +310,7 @@ export class BetsService {
                         statusDescription: slipStatusDesc,
                         status: slipStatus
                     })
-                }
-                
+                }   
             }
 
             bet.id = bet.id;
@@ -479,7 +478,6 @@ export class BetsService {
             // get user wallet
             const wallet = await this.walletService.getWallet({userId: bet.userId, clientId: bet.clientId}).toPromise();
                    
-
             if (wallet.success) {
                 user = wallet.data;
             }
@@ -784,8 +782,8 @@ export class BetsService {
                     userId: bet.userId,
                     username: bet.username,
                     clientId: bet.clientId,
-                    description: "Bet Deposit (Sport)",
-                    subject: betResult.betslip_id,
+                    subject: "Bet Deposit (Sport)",
+                    description: betResult.betslip_id,
                     source: betResult.source,
                     wallet: 'sport',
                     channel: 'Internal'
@@ -793,7 +791,7 @@ export class BetsService {
                 }
 
                 if (bet.useBonus) {
-                    debitPayload.description = 'Bonus Bet (Sport)';
+                    debitPayload.subject = 'Bonus Bet (Sport)';
                     debitPayload.wallet= 'sport-bonus'
                     bet.bonusId = bonusId;
                     bet.betId = betResult.id;
