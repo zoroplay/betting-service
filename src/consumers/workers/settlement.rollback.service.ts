@@ -141,17 +141,17 @@ export class SettlementRollbackService {
                     clientId: settledBet.client_id,
                     username: settledBet.username,
                     description: "BetID " + settledBet.betslip_id + " was rolled back",
-                    bet_id: settledBet.betslip_id,
                     source: settledBet.source,
                     wallet: 'sport',
-                    channel: 'Internal'
+                    channel: 'Internal',
+                    subject: 'Rollback Winnings'
                 }
 
                 if(settledBet.bonus_id)
                     creditPayload.wallet= 'sport-bonus'
 
 
-                await this.walletService.credit(creditPayload).toPromise();
+                await this.walletService.debit(creditPayload).toPromise();
 
                 // send debit payload to wallet service
                  // get client settings
@@ -297,7 +297,7 @@ export class SettlementRollbackService {
                     username: settledBet.username,
                     clientId: settledBet.client_id,
                     description: "BetID " + settledBet.betslip_id + " was rolled back",
-                    subject: settledBet.betslip_id,
+                    subject: 'Rollback Winnings',
                     source: settledBet.source,
                     wallet: 'sport',
                     channel: 'Internal'
@@ -306,7 +306,7 @@ export class SettlementRollbackService {
                 if(settledBet.bonus_id)
                     creditPayload.wallet= 'sport-bonus'
 
-                await this.walletService.credit(creditPayload).toPromise();
+                await this.walletService.debit(creditPayload).toPromise();
 
                 // send debit payload to wallet service
                 // get client settings

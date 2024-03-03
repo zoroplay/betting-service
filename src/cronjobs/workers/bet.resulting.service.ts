@@ -225,8 +225,8 @@ export class BetResultingController {
             userId: profileID,
             username: row.username,
             clientId: row.client_id,
-            subject: row.betslip_id,
-            description: "Sport Win",
+            subject:  'Sport Win',
+            description: "Bet betID " + row.betslip_id ,
             source: row.source,
             wallet: 'sport',
             channel: 'Internal'

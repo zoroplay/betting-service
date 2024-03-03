@@ -155,13 +155,13 @@ export class MtsTimeoutService {
             this.logger.info("done processing mts timeout for betID " + id)
 
             let creditPayload = {
-                subject: bet.betslip_id,
+                subject: "Bet Cancelled - MTS Timeout",
                 source: bet.source,
                 amount: bet.stake_after_tax,
                 userId: bet.user_id,
                 username: bet.username,
                 clientId: bet.client_id,
-                description: "Bet Cancelled - MTS Timeout",
+                description: "Bet betID " + bet.betslip_id + " was cancelled by MTS",
                 wallet: 'sport',
                 channel: 'Internal'
             }

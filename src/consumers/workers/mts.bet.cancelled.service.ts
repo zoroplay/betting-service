@@ -75,10 +75,10 @@ export class MtsBetCancelledService {
             username: bet.username,
             clientId: bet.client_id,
             description: "Bet betID " + bet.betslip_id + " was cancelled",
-            bet_id: bet.betslip_id,
             source: bet.source,
             wallet: 'sport',
-            channel: 'Internal'
+            channel: 'Internal',
+            subject: 'Bet Rejected - MTS'
         }
         if(bet.bonus_id)
             creditPayload.wallet= 'sport-bonus'

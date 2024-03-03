@@ -4,8 +4,10 @@ import {InjectRepository} from "@nestjs/typeorm";
 import {Repository} from "typeorm";
 import {Settlement} from "../../entity/settlement.entity";
 import {BetSlip} from "../../entity/betslip.entity";
-import {AmqpConnection} from "@golevelup/nestjs-rabbitmq";
+// import {AmqpConnection} from "@golevelup/nestjs-rabbitmq";
 import {BETSLIP_PROCESSING_PENDING, BETSLIP_PROCESSING_SETTLED} from "../../constants";
+import axios from "axios";
+import { xml2js } from 'xml-js';
 
 @Injectable()
 export class SettlementService {
@@ -52,17 +54,25 @@ export class SettlementService {
 
         let matchID = data.match_id
         let markets = data.markets;
+        
         if(markets == undefined) {
-
             console.log("invalid data "+JSON.stringify(data))
             return 0;
-
         }
 
         let producer_id = data.producer_id;
         let event_type = data.event_type;
         let eventPrefix = data.event_prefix;
 
+        //To-Do: Get Event Scores
+        const scores: any = await this.getMatchInfo(`${eventPrefix}:${event_type}:${matchID}`);
+        let ft_score = '-';
+        let ht_score = '-';
+
+        if (scores.success) {
+            ft_score = scores.scores.ft_score;
+            ht_score = scores.scores.ht_score;
+        }
         let counts = 0
 
         for (const market of markets) {
@@ -85,6 +95,7 @@ export class SettlementService {
                     continue
                 }
 
+
                 // create settlement
                 const settlementData = new Settlement();
                 settlementData.event_id = matchID;
@@ -96,6 +107,9 @@ export class SettlementService {
                 settlementData.producer_id = producer_id;
                 settlementData.void_factor = void_factor;
                 settlementData.dead_heat_factor = dead_heat_factor;
+                settlementData.ft_score = ft_score;
+                settlementData.ht_score = ht_score;
+
                 await this.settlementRepository.upsert(settlementData, ['event_id', 'market_id', 'specifier', 'outcome_id'])
 
                 const settlementResult = await this.settlementRepository.findOne({
@@ -271,6 +285,24 @@ export class SettlementService {
         });
 
         return counts > 0
+
+    }
+
+    async getMatchInfo(matchId) {
+        return await axios.get(`https://api.betradar.com/v1/sports/en/sport_events/${matchId}/summary.xml`, {
+            headers: {
+                'x-access-token': process.env.BETRADAR_API_TOKEN
+            }
+        }).then(res => {
+            const json: any = xml2js(res.data, { compact: true});
+            const periodScore: any = json.match_summary.sport_event_status.period_scores.period_score[0]._attributes;
+            const eventStatus = json.match_summary.sport_event_status;
+            const ft_score = `${eventStatus._attributes.home_score}:${eventStatus._attributes.away_score}`;
+            const ht_score = `${periodScore.home_score}:${periodScore.away_score}`;
+            return {success: true, scores: {ft_score, ht_score} };
+        }).catch(err => {
+            return {success: false, scores: {}}
+        });
 
     }
 

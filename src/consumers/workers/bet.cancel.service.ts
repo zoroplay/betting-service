@@ -141,7 +141,7 @@ export class BetCancelService {
             for (const cancelledBet of cancelledBets) {
 
                 let creditPayload = {
-                    subject: cancelledBet.betslip_id,
+                    subject: 'Bet Cancelled',
                     source: cancelledBet.source,
                     amount: cancelledBet.stake_after_tax,
                     userId: cancelledBet.user_id,
@@ -295,7 +295,7 @@ export class BetCancelService {
             for (const cancelledBet of cancelledBets) {
 
                 let creditPayload = {
-                    subject: cancelledBet.betslip_id,
+                    subject:'Bet Cancelled',
                     source: cancelledBet.source,
                     amount: cancelledBet.stake_after_tax,
                     userId: cancelledBet.user_id,
