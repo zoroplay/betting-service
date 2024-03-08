@@ -863,7 +863,7 @@ export class BetsService {
 
     async updateBet({betId, status, entityType, clientId }: UpdateBetRequest): Promise<UpdateBetResponse> {
         try {
-            let updateStatus;
+            let wonStatus, status;
 
             const bet = await this.betRepository.findOne({where: {id: betId}});
 
@@ -871,7 +871,8 @@ export class BetsService {
 
                 switch (status) {
                     case 'won':
-                       updateStatus = STATUS_WON;
+                       wonStatus = STATUS_WON;
+                       status = BET_WON;
                        // to-DO: credit user
                        let winCreditPayload = {
                             amount: bet.winning_after_tax,
@@ -893,11 +894,13 @@ export class BetsService {
 
                         break;
                     case 'lost':
-                        updateStatus = STATUS_LOST;
+                        wonStatus = STATUS_LOST;
+                        status = BET_LOST;
                         // TO-DO: check if ticket was won
                         break;
                     case 'void': 
-                        updateStatus = BET_VOIDED;
+                        wonStatus = BET_VOIDED;
+                        status = BET_VOIDED;
                         // revert the stake
                         let voidCreditPayload = {
                             amount: bet.stake,
@@ -919,7 +922,8 @@ export class BetsService {
 
                         break;
                     default:
-                        updateStatus = STATUS_NOT_LOST_OR_WON;
+                        wonStatus = STATUS_NOT_LOST_OR_WON;
+                        status = BET_PENDING;
                         break;
                 }
                 // update bet status
@@ -928,24 +932,29 @@ export class BetsService {
                         id: betId,
                     },
                     {
-                        won: updateStatus,
+                        won: wonStatus,
+                        status
                     }
                 );
             } else {
 
                 switch (status) {
                     case 'won':
-                       updateStatus = STATUS_WON;
+                       wonStatus = STATUS_WON;
+                        status = BET_WON;
                         break;
                     case 'lost':
-                        updateStatus = STATUS_LOST;
+                        wonStatus = STATUS_LOST;
+                        status = BET_LOST;
                         break;
                     case 'void': 
-                        updateStatus = BET_VOIDED;
+                        wonStatus = BET_VOIDED;
+                        status = BET_VOIDED
                         // TO-DO: recalculate odds
                         break;
                     default:
-                        updateStatus = STATUS_NOT_LOST_OR_WON;
+                        wonStatus = STATUS_NOT_LOST_OR_WON;
+                        status = BET_PENDING;
                         break;
                 }
                 // update selection status
@@ -954,7 +963,8 @@ export class BetsService {
                         id: betId,
                     },
                     {
-                        won: updateStatus,
+                        won: wonStatus,
+                        status
                     }
                 );
             }
