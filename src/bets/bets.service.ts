@@ -50,7 +50,7 @@ export class BetsService {
         
         private readonly entityManager: EntityManager,
 
-        // private readonly amqpConnection: AmqpConnection,
+        private readonly amqpConnection: AmqpConnection,
 
         private readonly httpService: HttpService,
 
@@ -917,14 +917,6 @@ export class BetsService {
 
                         await this.walletService.credit(voidCreditPayload).toPromise();
 
-                        // get client settings
-                        // var clientSettings = await this.settingRepository.findOne({
-                        //     where: {
-                        //         client_id: bet.client_id // add client id to bets
-                        //     }
-                        // });
-
-                        // axios.post(clientSettings.url + '/api/wallet/credit', creditPayload);
                         break;
                     default:
                         updateStatus = STATUS_NOT_LOST_OR_WON;
