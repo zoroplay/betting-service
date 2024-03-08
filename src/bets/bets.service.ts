@@ -50,7 +50,7 @@ export class BetsService {
         
         private readonly entityManager: EntityManager,
 
-        private readonly amqpConnection: AmqpConnection,
+        // private readonly amqpConnection: AmqpConnection,
 
         private readonly httpService: HttpService,
 
@@ -873,6 +873,24 @@ export class BetsService {
                     case 'won':
                        updateStatus = STATUS_WON;
                        // to-DO: credit user
+                       let winCreditPayload = {
+                            amount: bet.winning_after_tax,
+                            userId: bet.user_id,
+                            username: bet.username,
+                            clientId: bet.client_id,
+                            subject:  'Sport Win',
+                            description: "Bet betID " + bet.betslip_id ,
+                            source: bet.source,
+                            wallet: 'sport',
+                            channel: 'Internal'
+                        }
+                
+                        if(bet.bonus_id)
+                            winCreditPayload.wallet= 'sport-bonus'
+                
+                
+                        await this.walletService.credit(winCreditPayload).toPromise();
+
                         break;
                     case 'lost':
                         updateStatus = STATUS_LOST;
@@ -881,12 +899,12 @@ export class BetsService {
                     case 'void': 
                         updateStatus = BET_VOIDED;
                         // revert the stake
-                        let creditPayload = {
+                        let voidCreditPayload = {
                             amount: bet.stake,
                             userId: bet.user_id,
                             clientId: bet.client_id,
                             description: "Bet betID " + bet.betslip_id + " was cancelled",
-                            subject: bet.betslip_id,
+                            subject: 'Bet Cancelled',
                             source: bet.source,
                             wallet: 'sport',
                             channel: 'Internal',
@@ -894,10 +912,10 @@ export class BetsService {
                         }
 
                         if(bet.bonus_id)
-                            creditPayload.wallet= 'sport-bonus'
+                            voidCreditPayload.wallet= 'sport-bonus'
 
 
-                        await this.walletService.credit(creditPayload).toPromise();
+                        await this.walletService.credit(voidCreditPayload).toPromise();
 
                         // get client settings
                         // var clientSettings = await this.settingRepository.findOne({
