@@ -22,8 +22,9 @@ export class CronjobService {
     ) {
     }
 
-    @Cron(CronExpression.EVERY_5_SECONDS) // run every 5 seconds
+    @Cron(CronExpression.EVERY_10_SECONDS) // run every 5 seconds
     processBetResulting() {
+        console.log('cronjob for bet resulting')
 
         let vm = this;
 
@@ -37,7 +38,7 @@ export class CronjobService {
 
     @Cron(CronExpression.EVERY_5_SECONDS) // run every 5 seconds
     processBetSettlement() {
-
+        console.log('cronjob for bet settlement')
         let vm = this;
 
         this.betSettlementService.taskProcessBetSettlement().then(function () {
@@ -47,11 +48,12 @@ export class CronjobService {
         })
     }
 
-    @Cron(new Date(Date.now() + 10 * 1000),{
-        name: 'startUp',
-        timeZone: 'Africa/Lagos',
-    })
+    // @Cron(new Date(Date.now() + 10 * 1000),{
+    //     name: 'startUp',
+    //     timeZone: 'Africa/Lagos',
+    // })
     async startUp(){
+        console.log('start up script')
 
         // reset all cron jobs when the application starts
         await this.cronjobRepository.update(
@@ -73,19 +75,31 @@ export class CronjobService {
 
     }
 
-    /*
+    
     @Cron(CronExpression.EVERY_5_SECONDS) // run every 5 seconds
-    processBetSettlement() {
+    processPendingBets() {
 
         let vm = this;
 
-        this.betSettlementService.taskProcessBetSettlement().then(function () {
+        this.betResultingService.settlePendingBets().then(function () {
 
             //vm.logger.info("done running processBetSettlement ")
 
         })
 
     }
-    */
+
+    // @Cron(CronExpression.EVERY_5_SECONDS) // run every 5 seconds
+    processCancelledBets() {
+
+        let vm = this;
+
+        this.betResultingService.settleCancelledBets().then(function () {
+
+            //vm.logger.info("done running processBetSettlement ")
+
+        })
+
+    }
 
 }

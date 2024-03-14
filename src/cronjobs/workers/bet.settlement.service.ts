@@ -16,6 +16,7 @@ import {
 import {Bet} from "../../entity/bet.entity";
 import {Cronjob} from "../../entity/cronjob.entity";
 import {BetClosure} from "../../entity/betclosure.entity";
+import { BonusService } from "src/bonus/bonus.service";
 
 @Injectable()
 export class BetSettlementService {
@@ -43,6 +44,8 @@ export class BetSettlementService {
         private betClosureRepository: Repository<BetClosure>,
 
         private readonly entityManager: EntityManager,
+
+        private readonly bonusService: BonusService,
 
     ) {
 
@@ -455,6 +458,13 @@ export class BetSettlementService {
                     won: STATUS_LOST,
                     status: processing_status,
                 });
+
+            await this.bonusService.settleBet({
+                clientId: bet.client_id,
+                betId: bet.id,
+                amount: 0,
+                status: BET_LOST
+            })
 
             // this.logger.info("Done Processing BET ID " + bet.id+" as lost")
 

@@ -476,7 +476,7 @@ export class BetsService {
             // To-Do: Get User Details and Settings
 
             // get user wallet
-            const wallet = await this.walletService.getWallet({userId: bet.userId, clientId: bet.clientId}).toPromise();
+            const wallet = await this.walletService.getWallet({userId: bet.userId, clientId: bet.clientId});
                    
             if (wallet.success) {
                 user = wallet.data;
@@ -795,10 +795,10 @@ export class BetsService {
                     debitPayload.wallet= 'sport-bonus'
                     bet.bonusId = bonusId;
                     bet.betId = betResult.id;
-                    await this.bonusService.placeBet(bet).toPromise();
+                    await this.bonusService.placeBet(bet);
                 }
 
-                await this.walletService.debit(debitPayload).toPromise();
+                await this.walletService.debit(debitPayload);
             
                 // axios.post(clientSettings.url + '/api/wallet/debit', debitPayload);
                 // committing transaction
@@ -885,16 +885,32 @@ export class BetsService {
                             channel: 'Internal'
                         }
                 
-                        if(bet.bonus_id)
+                        if(bet.bonus_id) {
                             winCreditPayload.wallet= 'sport-bonus'
+                            await this.bonusService.settleBet({
+                                clientId: bet.client_id,
+                                betId: bet.id,
+                                amount: bet.winning_after_tax,
+                                status: BET_WON
+                            })
+                        }
                 
-                
-                        await this.walletService.credit(winCreditPayload).toPromise();
+                        // credit user wallet
+                        await this.walletService.credit(winCreditPayload);
 
                         break;
                     case 'lost':
                         updateStatus = STATUS_LOST;
                         // TO-DO: check if ticket was won
+
+                        if(bet.bonus_id) {
+                            await this.bonusService.settleBet({
+                                clientId: bet.client_id,
+                                betId: bet.id,
+                                amount: 0,
+                                status: BET_LOST
+                            })
+                        }
                         break;
                     case 'void': 
                         updateStatus = BET_VOIDED;
@@ -911,11 +927,17 @@ export class BetsService {
                             username: bet.username
                         }
 
-                        if(bet.bonus_id)
-                            voidCreditPayload.wallet= 'sport-bonus'
+                        if(bet.bonus_id) {
+                            voidCreditPayload.wallet= 'sport-bonus';
+                            await this.bonusService.settleBet({
+                                clientId: bet.client_id,
+                                betId: bet.id,
+                                amount: 0,
+                                status: BET_VOIDED
+                            })
+                        }
 
-
-                        await this.walletService.credit(voidCreditPayload).toPromise();
+                        await this.walletService.credit(voidCreditPayload);
 
                         break;
                     default:

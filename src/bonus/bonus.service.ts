@@ -1,6 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { BONUS_SERVICE_NAME, BonusServiceClient, UserBet, protobufPackage } from './bonus.pb';
+import { BONUS_SERVICE_NAME, BonusServiceClient, SettleBetRequest, UserBet, protobufPackage } from './bonus.pb';
 import { ClientGrpc } from '@nestjs/microservices';
+import { firstValueFrom } from 'rxjs';
 
 @Injectable()
 export class BonusService {
@@ -17,8 +18,13 @@ export class BonusService {
         return this.svc.validateBetSelections(data);
     }
 
-    public placeBet(data: UserBet) {
+    public async placeBet(data: UserBet) {
         // console.log('Place Bonus bet', data);
-        return this.svc.placeBonusBet(data);
+        return await firstValueFrom(this.svc.placeBonusBet(data));
+    }
+
+    public async settleBet(data: SettleBetRequest) {
+        // console.log('Place Bonus bet', data);
+        return await firstValueFrom(this.svc.settleBet(data));
     }
 }
