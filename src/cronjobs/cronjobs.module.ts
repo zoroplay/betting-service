@@ -15,12 +15,14 @@ import {Cronjob} from "../entity/cronjob.entity";
 import {BetStatus} from "../entity/betstatus.entity";
 import {MtsTimeoutService} from "./workers/mts.timeout.service";
 import { WalletModule } from "src/wallet/wallet.module";
+import { BonusModule } from "src/bonus/bonus.module";
 
 @Module({
     imports: [
         TypeOrmModule.forFeature([Bet, BetSlip, Settlement, Setting, BetClosure, Winning, Cronjob,BetStatus]),
         ScheduleModule.forRoot(),
         WalletModule,
+        BonusModule,
     ],
     providers: [BetResultingController, BetSettlementService,MtsTimeoutService,CronjobService],
     controllers: [CronjobController],
