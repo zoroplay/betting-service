@@ -863,7 +863,7 @@ export class BetsService {
 
     async updateBet({betId, status, entityType, clientId }: UpdateBetRequest): Promise<UpdateBetResponse> {
         try {
-            let updateStatus;
+            let updateStatus, betStatus;
 
             const bet = await this.betRepository.findOne({where: {id: betId}});
 
@@ -872,6 +872,7 @@ export class BetsService {
                 switch (status) {
                     case 'won':
                        updateStatus = STATUS_WON;
+                       betStatus = BET_WON;
                        // to-DO: credit user
                        let winCreditPayload = {
                             amount: bet.winning_after_tax,
@@ -901,6 +902,7 @@ export class BetsService {
                         break;
                     case 'lost':
                         updateStatus = STATUS_LOST;
+                        betStatus = BET_LOST;
                         // TO-DO: check if ticket was won
 
                         if(bet.bonus_id) {
@@ -914,6 +916,7 @@ export class BetsService {
                         break;
                     case 'void': 
                         updateStatus = BET_VOIDED;
+                        betStatus = BET_VOIDED;
                         // revert the stake
                         let voidCreditPayload = {
                             amount: bet.stake,
@@ -942,6 +945,7 @@ export class BetsService {
                         break;
                     default:
                         updateStatus = STATUS_NOT_LOST_OR_WON;
+                        betStatus = BET_PENDING;
                         break;
                 }
                 // update bet status
@@ -951,6 +955,7 @@ export class BetsService {
                     },
                     {
                         won: updateStatus,
+                        status: betStatus
                     }
                 );
             } else {
@@ -984,6 +989,7 @@ export class BetsService {
             return {status: 200, success: true, message: `${entityType} updated successfully` };
 
         } catch(e) {
+            console.log('error', e.message);
             return {status: 500, success: false, message: 'Unable to carry out operations'};
         }
     }
