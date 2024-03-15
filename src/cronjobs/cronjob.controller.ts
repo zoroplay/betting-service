@@ -1,14 +1,11 @@
-import {Controller, Get} from "@nestjs/common";
+import { Controller, Get } from '@nestjs/common';
 
 @Controller('cronjob')
 export class CronjobController {
+  constructor() {}
 
-    constructor() {
-    }
-
-    @Get()
-    async status() {
-
-        return {status: 200, message: 'Ok'}
-    }
+  @Get()
+  async status() {
+    return { status: 200, message: 'Ok' };
+  }
 }
