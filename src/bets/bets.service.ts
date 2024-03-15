@@ -1,4 +1,4 @@
-import { ForbiddenException, Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EntityManager, Repository } from 'typeorm';
 import { Bet } from '../entity/bet.entity';
@@ -27,7 +27,7 @@ import {
 } from './interfaces/betslip.interface';
 import { Observable } from 'rxjs';
 import { ProducerstatusreplyInterface } from './interfaces/producerstatusreply.interface';
-// import { AmqpConnection } from '@golevelup/nestjs-rabbitmq';
+import { AmqpConnection } from '@golevelup/nestjs-rabbitmq';
 import { ClientGrpc } from '@nestjs/microservices';
 import OddsService from './odds.service.interface';
 import { HttpService } from '@nestjs/axios';
@@ -36,7 +36,7 @@ import {
   OddsProbability,
 } from './interfaces/oddsreply.interface';
 import { GetOddsRequest } from './interfaces/oddsrequest.interface';
-// import axios from 'axios';
+import axios from 'axios';
 import {
   BetHistoryRequest,
   FindBetRequest,
@@ -51,12 +51,6 @@ import OutrightsService from './outrights.service.interface';
 import { betTypeDescription, countItem } from 'src/commons/helper';
 import { BonusService } from 'src/bonus/bonus.service';
 import { WalletService } from 'src/wallet/wallet.service';
-import { CasinoBet, CasinoBetStatus } from 'src/entity/casino-bet.entity';
-import {
-  CreditCasinoBet,
-  PlaceCasinoBet,
-  RollbackCasinoBet,
-} from './interfaces/casinobet.interface';
 
 @Injectable()
 export class BetsService {
@@ -72,9 +66,6 @@ export class BetsService {
     @InjectRepository(Bet)
     private betRepository: Repository<Bet>,
 
-    @InjectRepository(CasinoBet)
-    private casinoBetRepository: Repository<CasinoBet>,
-
     @InjectRepository(BetSlip)
     private betslipRepository: Repository<BetSlip>,
     @InjectRepository(Setting)
@@ -82,7 +73,7 @@ export class BetsService {
 
     private readonly entityManager: EntityManager,
 
-    // private readonly amqpConnection: AmqpConnection,
+    private readonly amqpConnection: AmqpConnection,
 
     private readonly httpService: HttpService,
 
@@ -114,7 +105,7 @@ export class BetsService {
     betslipId,
     username,
   }: BetHistoryRequest): Promise<BetHistoryResponse> {
-    const response = {} as BetHistoryResponse;
+    let response = {} as BetHistoryResponse;
 
     let bets: any = [];
     let total = 0;
@@ -123,12 +114,12 @@ export class BetsService {
     let left_records = 0;
     let totalStake = 0;
     let current_page = page - 1;
-    const noPerPage = perPage || 50;
+    let noPerPage = perPage || 50;
 
     try {
-      const params = [];
+      let params = [];
       params.push(clientId);
-      const where = [];
+      let where = [];
 
       if (userId > 0) {
         where.push('b.user_id = ? ');
@@ -165,27 +156,27 @@ export class BetsService {
 
       // count games
 
-      const queryCount = `SELECT count(id) as total FROM bet b WHERE is_booked = 0 AND client_id = ? AND ${where.join(
+      let queryCount = `SELECT count(id) as total FROM bet b WHERE is_booked = 0 AND client_id = ? AND ${where.join(
         ' AND ',
       )} `;
 
-      const res = await this.entityManager.query(queryCount, params);
+      let res = await this.entityManager.query(queryCount, params);
 
       if (res) {
-        const result = res[0];
+        let result = res[0];
         total = result.total;
       }
 
       console.log('total | ' + total);
 
-      const sumQuery = `SELECT SUM(stake) as total_stake FROM bet b WHERE is_booked = 0 AND client_id = ? AND ${where.join(
+      let sumQuery = `SELECT SUM(stake) as total_stake FROM bet b WHERE is_booked = 0 AND client_id = ? AND ${where.join(
         ' AND ',
       )} `;
 
-      const resSum = await this.entityManager.query(sumQuery, params);
+      let resSum = await this.entityManager.query(sumQuery, params);
 
       if (resSum) {
-        const result = resSum[0];
+        let result = resSum[0];
         totalStake = result.total_stake;
       }
       // calculate offset
@@ -212,7 +203,7 @@ export class BetsService {
       }
 
       if (offset > total) {
-        const a = current_page * noPerPage;
+        let a = current_page * noPerPage;
 
         if (a > total) {
           offset = (current_page - 1) * noPerPage;
@@ -225,15 +216,15 @@ export class BetsService {
 
       current_page++;
       left_records = total - offset;
-      const off = offset - 1;
+      let off = offset - 1;
 
       if (off > 0) {
         offset = off;
       }
 
-      const limit = ` LIMIT ${offset},${noPerPage}`;
+      let limit = ` LIMIT ${offset},${noPerPage}`;
 
-      const queryString = `SELECT b.id,b.user_id,b.username,b.betslip_id,b.stake,b.currency,b.bet_type,b.bet_category,b.total_odd,b.possible_win,b.source,b.total_bets,
+      let queryString = `SELECT b.id,b.user_id,b.username,b.betslip_id,b.stake,b.currency,b.bet_type,b.bet_category,b.total_odd,b.possible_win,b.source,b.total_bets,
             b.won,b.status,b.created,w.winning_after_tax as winnings, b.sports, b.tournaments, b.events, b.markets, b.event_type, b.bet_category_desc
             FROM bet b LEFT JOIN winning w ON w.bet_id = b.id WHERE is_booked = 0 AND b.client_id = ? AND  ${where.join(
               ' AND ',
@@ -245,9 +236,9 @@ export class BetsService {
       throw e;
     }
 
-    const myBets = [];
+    let myBets = [];
 
-    for (const bet of bets) {
+    for (let bet of bets) {
       let slips: any;
 
       try {
@@ -362,7 +353,7 @@ export class BetsService {
     clientId,
     betslipId,
   }: FindBetRequest): Promise<FindBetResponse> {
-    const bet = await this.betRepository
+    let bet = await this.betRepository
       .createQueryBuilder('bet')
       .select(
         'bet.id,bet.user_id,bet.username,bet.betslip_id,bet.stake,bet.currency,bet.bet_type,bet.bet_category,bet.total_odd,bet.possible_win,bet.source,bet.total_bets,bet.won,bet.status,bet.created,winning.winning_after_tax',
@@ -374,11 +365,11 @@ export class BetsService {
 
     if (bet) {
       // get bet items
-      const slips = await this.betslipRepository.find({
+      let slips = await this.betslipRepository.find({
         where: { bet_id: bet.id },
       });
 
-      const data: any = {};
+      let data: any = {};
       data.selections = [];
 
       if (bet.status == BET_PENDING) {
@@ -483,7 +474,7 @@ export class BetsService {
       return { status: 400, message: 'missing selections', success: false };
 
     // get client settings
-    let clientSettings = await this.settingRepository.findOne({
+    var clientSettings = await this.settingRepository.findOne({
       where: {
         client_id: bet.clientId,
       },
@@ -496,9 +487,10 @@ export class BetsService {
       // To-Do: Get User Details and Settings
 
       // get user wallet
-      const wallet = await this.walletService
-        .getWallet({ userId: bet.userId, clientId: bet.clientId })
-        .toPromise();
+      const wallet = await this.walletService.getWallet({
+        userId: bet.userId,
+        clientId: bet.clientId,
+      });
 
       if (wallet.success) {
         user = wallet.data;
@@ -539,7 +531,6 @@ export class BetsService {
         .validateSelection(bet)
         .toPromise();
 
-      console.log(bonusRes);
       if (bonusRes.success) {
         bonusId = bonusRes.id;
       } else {
@@ -547,7 +538,7 @@ export class BetsService {
       }
     }
 
-    const userSelection = bet.selections;
+    let userSelection = bet.selections;
 
     if (clientSettings.id == undefined || clientSettings.id == 0) {
       clientSettings = new Setting();
@@ -573,7 +564,7 @@ export class BetsService {
       bet.stake = clientSettings.maximum_stake;
 
     //2. odds validation
-    const selections = [];
+    let selections = [];
     let totalOdds = 1;
 
     let overallProbability = 1;
@@ -657,7 +648,7 @@ export class BetsService {
         };
 
       // get odds
-      const odd = await this.getOdds(
+      let odd = await this.getOdds(
         selection.producerId,
         selection.eventPrefix,
         selection.eventType,
@@ -670,7 +661,7 @@ export class BetsService {
       if (odd === 0) {
         // || odd.active == 0 || odd.status !== 0 ) {
 
-        this.logger.info('selection suspended ' + JSON.stringify(selection));
+        // this.logger.info("selection suspended " + JSON.stringify(selection))
 
         return {
           message:
@@ -688,7 +679,7 @@ export class BetsService {
       // let odd = selection.odds;
 
       // get probability overallProbability
-      const selectionProbability = await this.getProbability(
+      let selectionProbability = await this.getProbability(
         selection.producerId,
         selection.eventPrefix,
         selection.eventType,
@@ -742,7 +733,7 @@ export class BetsService {
 
     let taxOnStake = 0;
     let taxOnWinning = 0;
-    const stake = bet.stake;
+    let stake = bet.stake;
     let stakeAfterTax = stake;
 
     if (clientSettings.tax_on_stake > 0) {
@@ -750,7 +741,7 @@ export class BetsService {
       stakeAfterTax = stake - taxOnStake;
     }
 
-    const possibleWin = stakeAfterTax * totalOdds;
+    let possibleWin = stakeAfterTax * totalOdds;
     let payout = possibleWin;
 
     if (clientSettings.tax_on_winning > 0) {
@@ -765,7 +756,7 @@ export class BetsService {
     //let transactionRunner = null;
     const betData = new Bet();
     let betResult = null;
-    const mtsSelection = [];
+    let mtsSelection = [];
 
     try {
       // creating transaction
@@ -808,6 +799,7 @@ export class BetsService {
       betData.event_type = bet.type;
       betData.probability = overallProbability || 0;
       betData.is_booked = bet.isBooking;
+      betData.bonus_id = bonusId;
 
       //let betResult = await this.saveBetWithTransactions(betData, transactionManager)
       betResult = await this.betRepository.save(betData);
@@ -824,7 +816,7 @@ export class BetsService {
 
         // console.log(JSON.stringify(selection));
 
-        const betSlipData = new BetSlip();
+        let betSlipData = new BetSlip();
         betSlipData.bet_id = betResult.id;
         betSlipData.client_id = bet.clientId;
         betSlipData.user_id = bet.userId || 0;
@@ -873,14 +865,14 @@ export class BetsService {
         // if it's not booking, debit user
 
         //5. debit user by calling wallet service
-        const debitPayload = {
+        let debitPayload = {
           // currency: clientSettings.currency,
           amount: stake,
           userId: bet.userId,
           username: bet.username,
           clientId: bet.clientId,
-          description: 'Bet Deposit (Sport)',
-          subject: betResult.betslip_id,
+          subject: 'Bet Deposit (Sport)',
+          description: betResult.betslip_id,
           source: betResult.source,
           wallet: 'sport',
           channel: 'Internal',
@@ -888,14 +880,14 @@ export class BetsService {
         };
 
         if (bet.useBonus) {
-          debitPayload.description = 'Bonus Bet (Sport)';
+          debitPayload.subject = 'Bonus Bet (Sport)';
           debitPayload.wallet = 'sport-bonus';
           bet.bonusId = bonusId;
           bet.betId = betResult.id;
-          await this.bonusService.placeBet(bet).toPromise();
+          await this.bonusService.placeBet(bet);
         }
 
-        await this.walletService.debit(debitPayload).toPromise();
+        await this.walletService.debit(debitPayload);
 
         // axios.post(clientSettings.url + '/api/wallet/debit', debitPayload);
         // committing transaction
@@ -920,7 +912,7 @@ export class BetsService {
         // if it's not booking, submit to mts
 
         // send bets to MTS
-        const mtsBet = {
+        let mtsBet = {
           bet_id: '' + betResult.id,
           limit_id: clientSettings.mts_limit_id,
           profile_id: bet.userId,
@@ -932,8 +924,8 @@ export class BetsService {
           currency: clientSettings.currency,
         };
 
-        const queueName = 'mts.bet_pending';
-        // await this.amqpConnection.publish(queueName, queueName, mtsBet);
+        let queueName = 'mts.bet_pending';
+        await this.amqpConnection.publish(queueName, queueName, mtsBet);
         this.logger.info('published to ' + queueName);
       }
 
@@ -965,7 +957,7 @@ export class BetsService {
     clientId,
   }: UpdateBetRequest): Promise<UpdateBetResponse> {
     try {
-      let updateStatus;
+      let updateStatus, betStatus;
 
       const bet = await this.betRepository.findOne({ where: { id: betId } });
 
@@ -973,42 +965,80 @@ export class BetsService {
         switch (status) {
           case 'won':
             updateStatus = STATUS_WON;
+            betStatus = BET_WON;
             // to-DO: credit user
+            let winCreditPayload = {
+              amount: bet.winning_after_tax,
+              userId: bet.user_id,
+              username: bet.username,
+              clientId: bet.client_id,
+              subject: 'Sport Win',
+              description: 'Bet betID ' + bet.betslip_id,
+              source: bet.source,
+              wallet: 'sport',
+              channel: 'Internal',
+            };
+
+            if (bet.bonus_id) {
+              winCreditPayload.wallet = 'sport-bonus';
+              await this.bonusService.settleBet({
+                clientId: bet.client_id,
+                betId: bet.id,
+                amount: bet.winning_after_tax,
+                status: BET_WON,
+              });
+            }
+
+            // credit user wallet
+            await this.walletService.credit(winCreditPayload);
+
             break;
           case 'lost':
             updateStatus = STATUS_LOST;
+            betStatus = BET_LOST;
             // TO-DO: check if ticket was won
+
+            if (bet.bonus_id) {
+              await this.bonusService.settleBet({
+                clientId: bet.client_id,
+                betId: bet.id,
+                amount: 0,
+                status: BET_LOST,
+              });
+            }
             break;
           case 'void':
             updateStatus = BET_VOIDED;
+            betStatus = BET_VOIDED;
             // revert the stake
-            const creditPayload = {
+            let voidCreditPayload = {
               amount: bet.stake,
               userId: bet.user_id,
               clientId: bet.client_id,
               description: 'Bet betID ' + bet.betslip_id + ' was cancelled',
-              subject: bet.betslip_id,
+              subject: 'Bet Cancelled',
               source: bet.source,
               wallet: 'sport',
               channel: 'Internal',
               username: bet.username,
             };
 
-            if (bet.bonus_id) creditPayload.wallet = 'sport-bonus';
+            if (bet.bonus_id) {
+              voidCreditPayload.wallet = 'sport-bonus';
+              await this.bonusService.settleBet({
+                clientId: bet.client_id,
+                betId: bet.id,
+                amount: 0,
+                status: BET_VOIDED,
+              });
+            }
 
-            await this.walletService.credit(creditPayload).toPromise();
+            await this.walletService.credit(voidCreditPayload);
 
-            // get client settings
-            // var clientSettings = await this.settingRepository.findOne({
-            //     where: {
-            //         client_id: bet.client_id // add client id to bets
-            //     }
-            // });
-
-            // axios.post(clientSettings.url + '/api/wallet/credit', creditPayload);
             break;
           default:
             updateStatus = STATUS_NOT_LOST_OR_WON;
+            betStatus = BET_PENDING;
             break;
         }
         // update bet status
@@ -1018,6 +1048,7 @@ export class BetsService {
           },
           {
             won: updateStatus,
+            status: betStatus,
           },
         );
       } else {
@@ -1053,6 +1084,7 @@ export class BetsService {
         message: `${entityType} updated successfully`,
       };
     } catch (e) {
+      console.log('error', e.message);
       return {
         status: 500,
         success: false,
@@ -1078,7 +1110,7 @@ export class BetsService {
 
         if (slips.length) {
           for (const selection of slips) {
-            const odd = await this.getOdds(
+            let odd = await this.getOdds(
               selection.producer_id,
               selection.event_prefix,
               selection.event_type,
@@ -1144,8 +1176,7 @@ export class BetsService {
   ): Promise<number> {
     if (producerId !== 3) {
       // check producer id
-      const producerStatus =
-        await this.getProducerStatus(producerId).toPromise();
+      let producerStatus = await this.getProducerStatus(producerId).toPromise();
 
       if (producerStatus.status === 0) {
         this.logger.error(
@@ -1155,7 +1186,7 @@ export class BetsService {
       }
     }
 
-    const odds = {
+    let odds = {
       eventType: eventType,
       eventPrefix: eventPrefix,
       eventID: eventId,
@@ -1165,7 +1196,7 @@ export class BetsService {
       specifier: specifier,
     };
 
-    const vm = this;
+    let vm = this;
 
     let oddStatus = {} as GetOddsReply;
 
@@ -1224,7 +1255,7 @@ export class BetsService {
     specifier: string,
     outcomeId: string,
   ): Promise<number> {
-    const odds = {
+    let odds = {
       eventType: eventType,
       eventPrefix: eventPrefix,
       eventID: eventId,
@@ -1267,12 +1298,12 @@ export class BetsService {
 
       let probability = 1;
 
-      const probabilityBetSlipSelection = [];
+      let probabilityBetSlipSelection = [];
 
-      for (const slip of slips) {
-        const selectionProbability = {} as ProbabilityBetSlipSelection;
+      for (let slip of slips) {
+        let selectionProbability = {} as ProbabilityBetSlipSelection;
 
-        const pro = await this.getProbability(
+        let pro = await this.getProbability(
           slip.producer_id,
           slip.event_prefix,
           slip.event_type,
@@ -1304,177 +1335,6 @@ export class BetsService {
     } catch (e) {
       this.logger.error(' error retrieving all settings ' + e.toString());
       throw e;
-    }
-  }
-
-  // Casino Area
-  async placeCasinoBet(placeCasinoBet: PlaceCasinoBet) {
-    // get wallet balance
-    const wallet = await this.walletService
-      .getWallet({
-        userId: placeCasinoBet.userId,
-        clientId: placeCasinoBet.clientId,
-      })
-      .toPromise();
-
-    if (wallet.success) {
-      if (wallet.data.availableBalance < placeCasinoBet.stake)
-        return {
-          status: 400,
-          message: 'Insufficient balance ',
-          success: false,
-        };
-    } else {
-      return {
-        status: 500,
-        message: 'Cannot Access this user wallet ',
-        success: false,
-      };
-    }
-
-    let casino = await this.casinoBetRepository.findOne({
-      where: {
-        transactionId: placeCasinoBet.transactionId,
-      },
-    });
-    if (casino) {
-      return {
-        status: 400,
-        success: false,
-        data: casino,
-        message: 'A casino bet with this transaction id already exists',
-      };
-    } else {
-      casino = new CasinoBet();
-      casino.gameId = placeCasinoBet.gameId;
-      casino.clientId = placeCasinoBet.clientId;
-      casino.userId = placeCasinoBet.userId;
-      casino.stake = placeCasinoBet.stake;
-      casino.roundId = placeCasinoBet.roundId;
-      casino.winnings = 0;
-      const debitPayload = {
-        // currency: clientSettings.currency,
-        amount: placeCasinoBet.stake,
-        userId: placeCasinoBet.userId,
-        username: `user:${placeCasinoBet.userId}`,
-        clientId: placeCasinoBet.clientId,
-        description: 'Bet Deposit (Casino)',
-        subject: placeCasinoBet.transactionId,
-        source: 'sport',
-        wallet: 'sport',
-        channel: 'Internal',
-      };
-
-      await this.walletService.debit(debitPayload).toPromise();
-      await this.casinoBetRepository.save(casino);
-      return {
-        status: 201,
-        success: true,
-        message: 'Casino Bet has been placed successfully',
-      };
-    }
-  }
-
-  async settleCasinoBet(casinoBet: CreditCasinoBet) {
-    const casino = await this.casinoBetRepository.findOne({
-      where: {
-        transactionId: casinoBet.transactionId,
-      },
-    });
-    if (casino) {
-      casino.winnings = casinoBet.winnings;
-      if (casinoBet.winnings > 0) {
-        casino.status = CasinoBetStatus.WON;
-        const creditPayload = {
-          amount: casino.winnings,
-          userId: casino.userId,
-          clientId: casino.clientId,
-          description:
-            'Casino Bet Transaction ID ' +
-            casino.transactionId +
-            ' Was Credited',
-          subject: casino.transactionId,
-          source: 'credit',
-          wallet: 'casino',
-          channel: 'Internal',
-          username: `user:${casino.userId}`,
-        };
-        await this.walletService.credit(creditPayload).toPromise();
-      } else {
-        casino.status = CasinoBetStatus.LOST;
-      }
-      await this.casinoBetRepository.save(casino);
-      return {
-        status: 201,
-        success: true,
-        message: 'Casino Bet has been credited successfully',
-      };
-    } else {
-      return {
-        status: 400,
-        success: false,
-        message: 'A casino bet with this transaction id does not exist',
-      };
-    }
-  }
-
-  async cancelCasinoBet(casinoBet: RollbackCasinoBet) {
-    const casino = await this.casinoBetRepository.findOne({
-      where: {
-        transactionId: casinoBet.transactionId,
-      },
-    });
-    if (casino) {
-      //revert stake
-      casino.status = CasinoBetStatus.CANCELLED;
-      const creditPayload = {
-        amount: casino.stake,
-        userId: casino.userId,
-        clientId: casino.clientId,
-        description:
-          'Casino Bet Stake Transaction ID ' +
-          casino.transactionId +
-          ' Was Reverted',
-        subject: casino.transactionId,
-        source: 'credit',
-        wallet: 'casino',
-        channel: 'Internal',
-        username: `user:${casino.userId}`,
-      };
-      await this.walletService.credit(creditPayload).toPromise();
-
-      //revert winnings
-      if (casino.winnings > 0) {
-        const debitPayload = {
-          // currency: clientSettings.currency,
-          amount: casino.winnings,
-          userId: casino.userId,
-          username: `user:${casino.userId}`,
-          clientId: casino.clientId,
-          description:
-            'Casino Bet Winning Transaction ID ' +
-            casino.transactionId +
-            ' Was Cancelled',
-          subject: casino.transactionId,
-          source: 'casino',
-          wallet: 'casino',
-          channel: 'Internal',
-          // transaction_type: TRANSACTION_TYPE_PLACE_BET
-        };
-        await this.walletService.debit(debitPayload).toPromise();
-      }
-      await this.casinoBetRepository.save(casino);
-      return {
-        status: 201,
-        success: true,
-        message: 'Casino Bet has been reverted successfully',
-      };
-    } else {
-      return {
-        status: 400,
-        success: false,
-        message: 'A casino bet with this transaction id does not exist',
-      };
     }
   }
 }

@@ -7,6 +7,7 @@ import {
   protobufPackage,
 } from './wallet.pb';
 import { ClientGrpc } from '@nestjs/microservices';
+import { firstValueFrom } from 'rxjs';
 
 @Injectable()
 export class WalletService {
@@ -19,15 +20,15 @@ export class WalletService {
     this.svc = this.client.getService<WalletServiceClient>(WALLET_SERVICE_NAME);
   }
 
-  public getWallet(param: GetBalanceRequest) {
-    return this.svc.getBalance(param);
+  public async getWallet(param: GetBalanceRequest) {
+    return await firstValueFrom(this.svc.getBalance(param));
   }
 
-  public debit(data: DebitUserRequest) {
-    return this.svc.debitUser(data);
+  public async debit(data: DebitUserRequest) {
+    return await firstValueFrom(this.svc.debitUser(data));
   }
 
-  public credit(data) {
-    return this.svc.creditUser(data);
+  public async credit(data) {
+    return await firstValueFrom(this.svc.creditUser(data));
   }
 }

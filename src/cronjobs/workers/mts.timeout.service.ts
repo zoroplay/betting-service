@@ -7,10 +7,11 @@ import { BET_CANCELLED, BET_PENDING } from '../../constants';
 import { Bet } from '../../entity/bet.entity';
 import { Cron } from '@nestjs/schedule';
 import { Cronjob } from '../../entity/cronjob.entity';
-// import {AmqpConnection} from "@golevelup/nestjs-rabbitmq";
+import { AmqpConnection } from '@golevelup/nestjs-rabbitmq';
 import { BetStatus } from '../../entity/betstatus.entity';
 import { Setting } from 'src/entity/setting.entity';
 import { WalletService } from 'src/wallet/wallet.service';
+import { BonusService } from 'src/bonus/bonus.service';
 
 @Injectable()
 export class MtsTimeoutService {
@@ -32,14 +33,16 @@ export class MtsTimeoutService {
     private settingRepository: Repository<Setting>,
 
     private readonly entityManager: EntityManager,
-    // private readonly amqpConnection: AmqpConnection,
+    private readonly amqpConnection: AmqpConnection,
 
     private readonly walletService: WalletService,
+
+    private readonly bonusService: BonusService,
   ) {}
 
   @Cron('*/2 * * * * *') // run every 2 seconds
   processMtsTimeoutBetCancelation() {
-    const vm = this;
+    let vm = this;
 
     this.taskProcessMtsTimeoutBetCancelation().then(function () {
       // vm.logger.info("done running taskProcessMtsTimeoutBetCancelation ")
@@ -48,7 +51,7 @@ export class MtsTimeoutService {
 
   // any bet that we have not received MTS response with 2s of bet placement, we cancel the bet and send notification to MTS, for live bets we wait for 16s before we cancel any bet
   async taskProcessMtsTimeoutBetCancelation() {
-    const vm = this;
+    let vm = this;
 
     const taskName = 'mts.timeout';
 
@@ -78,15 +81,15 @@ export class MtsTimeoutService {
     queryString =
       'SELECT b.id,TIMESTAMPDIFF(SECOND,b.created,now()) as difference FROM bet b LEFT JOIN bet_status bs ON b.id=bs.bet_id WHERE bs.id IS NULL AND TIMESTAMPDIFF(SECOND,b.created,now()) > 10 AND b.created BETWEEN date_sub(now(), INTERVAL 3 MINUTE ) AND NOW()';
 
-    const rows = await this.entityManager.query(queryString);
+    let rows = await this.entityManager.query(queryString);
     for (const row of rows) {
-      const id = row.id;
-      const difference = row.difference;
+      let id = row.id;
+      let difference = row.difference;
 
       let live = 0;
 
       // check betID has any live events
-      const betslipsRows = await this.entityManager.query(
+      let betslipsRows = await this.entityManager.query(
         'SELECT count(id) as counts FROM bet_slip WHERE bet_id = ' +
           id +
           ' AND producer_id IN (1,4) ',
@@ -101,17 +104,17 @@ export class MtsTimeoutService {
         continue;
       }
 
-      const reqPayload = {
+      let reqPayload = {
         bet_id: id,
         code: '102',
         reply_prefix: 'betting_service',
       };
 
-      const queueName = 'mts.bet_cancel';
-      // await this.amqpConnection.publish(queueName, queueName, reqPayload);
+      let queueName = 'mts.bet_cancel';
+      await this.amqpConnection.publish(queueName, queueName, reqPayload);
 
       // cancel bets
-      const betStatus = new BetStatus();
+      let betStatus = new BetStatus();
       betStatus.status = -1;
       betStatus.bet_id = id;
       betStatus.description = 'Bet Cancelled - MTS Timeout';
@@ -140,7 +143,7 @@ export class MtsTimeoutService {
         },
       );
 
-      const bet = await this.betRepository.findOne({
+      let bet = await this.betRepository.findOne({
         where: {
           id: id,
         },
@@ -152,30 +155,30 @@ export class MtsTimeoutService {
 
       this.logger.info('done processing mts timeout for betID ' + id);
 
-      const creditPayload = {
-        subject: bet.betslip_id,
+      let creditPayload = {
+        subject: 'Bet Cancelled - MTS Timeout',
         source: bet.source,
         amount: bet.stake_after_tax,
         userId: bet.user_id,
         username: bet.username,
         clientId: bet.client_id,
-        description: 'Bet Cancelled - MTS Timeout',
+        description: 'Bet betID ' + bet.betslip_id + ' was cancelled by MTS',
         wallet: 'sport',
         channel: 'Internal',
       };
 
-      if (bet.bonus_id) creditPayload.wallet = 'sport-bonus';
+      if (bet.bonus_id) {
+        creditPayload.wallet = 'sport-bonus';
 
-      await this.walletService.credit(creditPayload).toPromise();
+        await this.bonusService.settleBet({
+          clientId: bet.client_id,
+          betId: bet.id,
+          status: BET_CANCELLED,
+          amount: 0,
+        });
+      }
 
-      // get client settings
-      // var clientSettings = await this.settingRepository.findOne({
-      //     where: {
-      //         client_id: bet.client_id // add client id to bets
-      //     }
-      // });
-
-      // axios.post(clientSettings.url + '/api/wallet/credit', creditPayload);
+      await this.walletService.credit(creditPayload);
     }
 
     task.name = taskName;

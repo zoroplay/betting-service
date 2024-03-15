@@ -16,10 +16,10 @@ import {
 import { Bet } from '../../entity/bet.entity';
 import { Cronjob } from '../../entity/cronjob.entity';
 import { Winning } from '../../entity/winning.entity';
-import axios from 'axios';
 import { BetClosure } from 'src/entity/betclosure.entity';
 import { BetSettlementService } from './bet.settlement.service';
 import { WalletService } from 'src/wallet/wallet.service';
+import { BonusService } from 'src/bonus/bonus.service';
 
 @Controller('cronjob/bet/resulting')
 export class BetResultingController {
@@ -55,6 +55,8 @@ export class BetResultingController {
     private readonly entityManager: EntityManager,
 
     private readonly walletService: WalletService,
+
+    private readonly bonusService: BonusService,
   ) {}
 
   async taskProcessBetResulting() {
@@ -218,16 +220,25 @@ export class BetResultingController {
       userId: profileID,
       username: row.username,
       clientId: row.client_id,
-      subject: row.betslip_id,
-      description: 'Sport Win',
+      subject: 'Sport Win',
+      description: 'Bet betID ' + row.betslip_id,
       source: row.source,
       wallet: 'sport',
       channel: 'Internal',
     };
 
-    if (row.bonus_id) creditPayload.wallet = 'sport-bonus';
+    if (row.bonus_id) {
+      creditPayload.wallet = 'sport-bonus';
 
-    await this.walletService.credit(creditPayload).toPromise();
+      await this.bonusService.settleBet({
+        clientId: row.client_id,
+        betId: row.id,
+        amount: winning_after_tax,
+        status: BET_WON,
+      });
+    }
+
+    await this.walletService.credit(creditPayload);
 
     // this.logger.info(creditPayload)
 

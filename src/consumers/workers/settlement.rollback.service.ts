@@ -8,6 +8,7 @@ import {BET_LOST, BET_PENDING, BET_WON, TRANSACTION_TYPE_BET_ROLLBACK} from "../
 import axios from "axios";
 import { Setting } from "src/entity/setting.entity";
 import { WalletService } from "src/wallet/wallet.service";
+import { BonusService } from "src/bonus/bonus.service";
 
 @Injectable()
 export class SettlementRollbackService {
@@ -25,7 +26,9 @@ export class SettlementRollbackService {
         
         private readonly entityManager: EntityManager,
 
-        private readonly walletService: WalletService
+        private readonly walletService: WalletService,
+
+        private readonly bonusService: BonusService,
     ) {
 
     }
@@ -141,28 +144,24 @@ export class SettlementRollbackService {
                     clientId: settledBet.client_id,
                     username: settledBet.username,
                     description: "BetID " + settledBet.betslip_id + " was rolled back",
-                    bet_id: settledBet.betslip_id,
                     source: settledBet.source,
                     wallet: 'sport',
-                    channel: 'Internal'
+                    channel: 'Internal',
+                    subject: 'Rollback Winnings'
                 }
 
-                if(settledBet.bonus_id)
-                    creditPayload.wallet= 'sport-bonus'
+                if(settledBet.bonus_id) {
+                    creditPayload.wallet= 'sport-bonus';
 
+                    await this.bonusService.settleBet({
+                        clientId: settledBet.client_id,
+                        betId: settledBet.id,
+                        status: 5,
+                        amount: settledBet.winning_after_tax,
+                    })
+                }
 
-                await this.walletService.credit(creditPayload).toPromise();
-
-                // send debit payload to wallet service
-                 // get client settings
-                // var clientSettings = await this.settingRepository.findOne({
-                //     where: {
-                //         client_id: settledBet.client_id // add client id to bets
-                //     }
-                // });
-
-
-                // axios.post(clientSettings.url + '/api/wallet/credit', debitPayload);
+                await this.walletService.debit(creditPayload);
 
             }
 
@@ -297,28 +296,25 @@ export class SettlementRollbackService {
                     username: settledBet.username,
                     clientId: settledBet.client_id,
                     description: "BetID " + settledBet.betslip_id + " was rolled back",
-                    subject: settledBet.betslip_id,
+                    subject: 'Rollback Winnings',
                     source: settledBet.source,
                     wallet: 'sport',
                     channel: 'Internal'
                 }
 
-                if(settledBet.bonus_id)
-                    creditPayload.wallet= 'sport-bonus'
+                if(settledBet.bonus_id) {
+                    creditPayload.wallet= 'sport-bonus';
 
-                await this.walletService.credit(creditPayload).toPromise();
+                    await this.bonusService.settleBet({
+                        clientId: settledBet.client_id,
+                        betId: settledBet.id,
+                        status: 5,
+                        amount: settledBet.winning_after_tax,
+                    })
+                }
 
                 // send debit payload to wallet service
-                // get client settings
-                // var clientSettings = await this.settingRepository.findOne({
-                //     where: {
-                //         client_id: settledBet.client_id // add client id to bets
-                //     }
-                // });
-
-
-                // axios.post(clientSettings.url + '/api/wallet/credit', debitPayload);
-
+                await this.walletService.debit(creditPayload);
             }
 
         }

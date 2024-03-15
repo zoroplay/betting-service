@@ -7,6 +7,7 @@ import {BET_CANCELLED, BET_PENDING, TRANSACTION_TYPE_BET_CANCEL} from "../../con
 import { Setting } from "src/entity/setting.entity";
 import axios from "axios";
 import { WalletService } from "src/wallet/wallet.service";
+import { BonusService } from "src/bonus/bonus.service";
 
 @Injectable()
 export class BetCancelService {
@@ -21,7 +22,9 @@ export class BetCancelService {
 
         private readonly entityManager: EntityManager,
 
-        private readonly walletService: WalletService
+        private readonly walletService: WalletService,
+
+        private readonly bonusService: BonusService
     ) {
 
     }
@@ -141,7 +144,7 @@ export class BetCancelService {
             for (const cancelledBet of cancelledBets) {
 
                 let creditPayload = {
-                    subject: cancelledBet.betslip_id,
+                    subject: 'Bet Cancelled',
                     source: cancelledBet.source,
                     amount: cancelledBet.stake_after_tax,
                     userId: cancelledBet.user_id,
@@ -152,23 +155,19 @@ export class BetCancelService {
                     channel: 'Internal'
                 }
 
-                if(cancelledBet.bonus_id)
+                if(cancelledBet.bonus_id) {
                     creditPayload.wallet= 'sport-bonus'
 
-
-                await this.walletService.credit(creditPayload).toPromise();
-
-                 // get client settings
-                // var clientSettings = await this.settingRepository.findOne({
-                //     where: {
-                //         client_id: cancelledBet.client_id // add client id to bets
-                //     }
-                // });
-
-
-                // axios.post(clientSettings.url + '/api/wallet/credit', creditPayload);
+                    await this.bonusService.settleBet({
+                        clientId: cancelledBet.client_id,
+                        betId: cancelledBet.id,
+                        status: BET_CANCELLED,
+                        amount: 0,
+                    })
+                }
 
                 // send credit payload to wallet service
+                await this.walletService.credit(creditPayload);
             }
 
         }
@@ -295,7 +294,7 @@ export class BetCancelService {
             for (const cancelledBet of cancelledBets) {
 
                 let creditPayload = {
-                    subject: cancelledBet.betslip_id,
+                    subject:'Bet Cancelled',
                     source: cancelledBet.source,
                     amount: cancelledBet.stake_after_tax,
                     userId: cancelledBet.user_id,
@@ -306,24 +305,18 @@ export class BetCancelService {
                     username: cancelledBet.username
                 }
 
-                if(cancelledBet.bonus_id)
-                    creditPayload.wallet= 'sport-bonus'
+                if(cancelledBet.bonus_id) {
+                    creditPayload.wallet= 'sport-bonus'; 
 
-
-                await this.walletService.credit(creditPayload).toPromise();
-
-
-                // get client settings
-                // var clientSettings = await this.settingRepository.findOne({
-                //     where: {
-                //         client_id: cancelledBet.client_id // add client id to bets
-                //     }
-                // });
-
-
-                // axios.post(clientSettings.url + '/api/wallet/credit', creditPayload);
-
+                    await this.bonusService.settleBet({
+                        clientId: cancelledBet.client_id,
+                        betId: cancelledBet.id,
+                        status: BET_CANCELLED,
+                        amount: 0,
+                    })
+                }
                 // send credit payload to wallet service
+                await this.walletService.credit(creditPayload);
             }
 
         }

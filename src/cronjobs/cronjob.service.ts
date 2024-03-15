@@ -24,6 +24,8 @@ export class CronjobService {
 
   @Cron(CronExpression.EVERY_5_SECONDS) // run every 5 seconds
   processBetResulting() {
+    console.log('cronjob for bet resulting');
+
     let vm = this;
 
     this.betResultingService.taskProcessBetResulting().then(function () {
@@ -45,6 +47,8 @@ export class CronjobService {
     timeZone: 'Africa/Lagos',
   })
   async startUp() {
+    console.log('start up script');
+
     // reset all cron jobs when the application starts
     await this.cronjobRepository.update(
       {
@@ -75,5 +79,5 @@ export class CronjobService {
         })
 
     }
-    */
+*/
 }

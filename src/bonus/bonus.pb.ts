@@ -4,12 +4,12 @@ import { Observable } from "rxjs";
 
 export const protobufPackage = "bonus";
 
-export interface CheckFirstDepositRequest {
+export interface CheckDepositBonusRequest {
   clientId: number;
   userId: number;
 }
 
-export interface CheckFirstDepositResponse {
+export interface CheckDepositBonusResponse {
   success: boolean;
   value: number;
   data?: FirstDepositBonus | undefined;
@@ -71,7 +71,7 @@ export interface CreateBonusRequest {
   created: string;
   updated: string;
   id: number;
-  bonusAmountMultiplier: number;
+  minimumLostGames: number;
   rolloverCount: number;
   name: string;
   minimumEntryAmount: number;
@@ -171,7 +171,7 @@ export interface UserBet {
   clientId: number;
   userId: number;
   stake: number;
-  maxOdds: number;
+  totalOdds: number;
   bonusId: number;
   betId?: number | undefined;
 }
@@ -228,6 +228,8 @@ export interface UpdateCampaignBonusDto {
   bonusId: number;
   expiryDate: string;
   id: number;
+  affiliateIds?: string | undefined;
+  trackierCampaignId?: string | undefined;
 }
 
 export interface RedeemCampaignBonusDto {
@@ -277,9 +279,55 @@ export interface ValidateBetResponse {
   message: string;
 }
 
+export interface FetchReportRequest {
+  bonusType: string;
+  from: string;
+  to: string;
+}
+
+export interface PlayerBonusData {
+  id: number;
+  userId: number;
+  clientId: number;
+  username: string;
+  wageringRequirement: number;
+  bonusId: string;
+  bonusType: string;
+  name: string;
+  expiryDate: string;
+  status: number;
+  amount: number;
+  balance: number;
+  usedAmount: number;
+  rolledAmount: number;
+  wageringRequirementRemaining: number;
+  wageringRequirementAchieved: number;
+  promoCode: string;
+  created: string;
+  updated: string;
+}
+
+export interface FetchReportResponse {
+  message: string;
+  status: boolean;
+  data: PlayerBonusData[];
+}
+
+export interface SettleBetRequest {
+  clientId: number;
+  betId: number;
+  status: number;
+  amount?: number | undefined;
+}
+
+export interface EmptyResponse {
+}
+
 export const BONUS_PACKAGE_NAME = "bonus";
 
 export interface BonusServiceClient {
+  fetchBonusReport(request: FetchReportRequest): Observable<FetchReportResponse>;
+
   createBonus(request: CreateBonusRequest): Observable<CreateBonusResponse>;
 
   updateBonus(request: CreateBonusRequest): Observable<CreateBonusResponse>;
@@ -288,7 +336,9 @@ export interface BonusServiceClient {
 
   validateBetSelections(request: UserBet): Observable<ValidateBetResponse>;
 
-  checkFirstDeposit(request: CheckFirstDepositRequest): Observable<CheckFirstDepositResponse>;
+  checkDepositBonus(request: CheckDepositBonusRequest): Observable<CheckDepositBonusResponse>;
+
+  settleBet(request: SettleBetRequest): Observable<EmptyResponse>;
 
   getBonus(request: GetBonusRequest): Observable<GetBonusResponse>;
 
@@ -314,6 +364,10 @@ export interface BonusServiceClient {
 }
 
 export interface BonusServiceController {
+  fetchBonusReport(
+    request: FetchReportRequest,
+  ): Promise<FetchReportResponse> | Observable<FetchReportResponse> | FetchReportResponse;
+
   createBonus(
     request: CreateBonusRequest,
   ): Promise<CreateBonusResponse> | Observable<CreateBonusResponse> | CreateBonusResponse;
@@ -330,9 +384,11 @@ export interface BonusServiceController {
     request: UserBet,
   ): Promise<ValidateBetResponse> | Observable<ValidateBetResponse> | ValidateBetResponse;
 
-  checkFirstDeposit(
-    request: CheckFirstDepositRequest,
-  ): Promise<CheckFirstDepositResponse> | Observable<CheckFirstDepositResponse> | CheckFirstDepositResponse;
+  checkDepositBonus(
+    request: CheckDepositBonusRequest,
+  ): Promise<CheckDepositBonusResponse> | Observable<CheckDepositBonusResponse> | CheckDepositBonusResponse;
+
+  settleBet(request: SettleBetRequest): Promise<EmptyResponse> | Observable<EmptyResponse> | EmptyResponse;
 
   getBonus(request: GetBonusRequest): Promise<GetBonusResponse> | Observable<GetBonusResponse> | GetBonusResponse;
 
@@ -376,11 +432,13 @@ export interface BonusServiceController {
 export function BonusServiceControllerMethods() {
   return function (constructor: Function) {
     const grpcMethods: string[] = [
+      "fetchBonusReport",
       "createBonus",
       "updateBonus",
       "getCampaign",
       "validateBetSelections",
-      "checkFirstDeposit",
+      "checkDepositBonus",
+      "settleBet",
       "getBonus",
       "deleteBonus",
       "getUserBonus",
