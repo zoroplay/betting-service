@@ -51,6 +51,12 @@ import OutrightsService from './outrights.service.interface';
 import { betTypeDescription, countItem } from 'src/commons/helper';
 import { BonusService } from 'src/bonus/bonus.service';
 import { WalletService } from 'src/wallet/wallet.service';
+import { CasinoBet, CasinoBetStatus } from 'src/entity/casino-bet.entity';
+import {
+  CreditCasinoBet,
+  PlaceCasinoBet,
+  RollbackCasinoBet,
+} from './interfaces/casinobet.interface';
 
 @Injectable()
 export class BetsService {
@@ -65,6 +71,8 @@ export class BetsService {
     //private transactionRunner: DbTransactionFactory,
     @InjectRepository(Bet)
     private betRepository: Repository<Bet>,
+    @InjectRepository(CasinoBet)
+    private casinoBetRepository: Repository<CasinoBet>,
 
     @InjectRepository(BetSlip)
     private betslipRepository: Repository<BetSlip>,
@@ -1335,6 +1343,177 @@ export class BetsService {
     } catch (e) {
       this.logger.error(' error retrieving all settings ' + e.toString());
       throw e;
+    }
+  }
+
+  // Casino Area
+  async placeCasinoBet(placeCasinoBet: PlaceCasinoBet) {
+    // get wallet balance
+    const wallet = await this.walletService
+      .getWallet({
+        userId: placeCasinoBet.userId,
+        clientId: placeCasinoBet.clientId,
+      })
+      .toPromise();
+
+    if (wallet.success) {
+      if (wallet.data.availableBalance < placeCasinoBet.stake)
+        return {
+          status: 400,
+          message: 'Insufficient balance ',
+          success: false,
+        };
+    } else {
+      return {
+        status: 500,
+        message: 'Cannot Access this user wallet ',
+        success: false,
+      };
+    }
+
+    let casino = await this.casinoBetRepository.findOne({
+      where: {
+        transactionId: placeCasinoBet.transactionId,
+      },
+    });
+    if (casino) {
+      return {
+        status: 400,
+        success: false,
+        data: casino,
+        message: 'A casino bet with this transaction id already exists',
+      };
+    } else {
+      casino = new CasinoBet();
+      casino.gameId = placeCasinoBet.gameId;
+      casino.clientId = placeCasinoBet.clientId;
+      casino.userId = placeCasinoBet.userId;
+      casino.stake = placeCasinoBet.stake;
+      casino.roundId = placeCasinoBet.roundId;
+      casino.winnings = 0;
+      const debitPayload = {
+        // currency: clientSettings.currency,
+        amount: placeCasinoBet.stake,
+        userId: placeCasinoBet.userId,
+        username: `user:${placeCasinoBet.userId}`,
+        clientId: placeCasinoBet.clientId,
+        description: 'Bet Deposit (Casino)',
+        subject: placeCasinoBet.transactionId,
+        source: 'sport',
+        wallet: 'sport',
+        channel: 'Internal',
+      };
+
+      await this.walletService.debit(debitPayload).toPromise();
+      await this.casinoBetRepository.save(casino);
+      return {
+        status: 201,
+        success: true,
+        message: 'Casino Bet has been placed successfully',
+      };
+    }
+  }
+
+  async settleCasinoBet(casinoBet: CreditCasinoBet) {
+    const casino = await this.casinoBetRepository.findOne({
+      where: {
+        transactionId: casinoBet.transactionId,
+      },
+    });
+    if (casino) {
+      casino.winnings = casinoBet.winnings;
+      if (casinoBet.winnings > 0) {
+        casino.status = CasinoBetStatus.WON;
+        const creditPayload = {
+          amount: casino.winnings,
+          userId: casino.userId,
+          clientId: casino.clientId,
+          description:
+            'Casino Bet Transaction ID ' +
+            casino.transactionId +
+            ' Was Credited',
+          subject: casino.transactionId,
+          source: 'credit',
+          wallet: 'casino',
+          channel: 'Internal',
+          username: `user:${casino.userId}`,
+        };
+        await this.walletService.credit(creditPayload).toPromise();
+      } else {
+        casino.status = CasinoBetStatus.LOST;
+      }
+      await this.casinoBetRepository.save(casino);
+      return {
+        status: 201,
+        success: true,
+        message: 'Casino Bet has been credited successfully',
+      };
+    } else {
+      return {
+        status: 400,
+        success: false,
+        message: 'A casino bet with this transaction id does not exist',
+      };
+    }
+  }
+
+  async cancelCasinoBet(casinoBet: RollbackCasinoBet) {
+    const casino = await this.casinoBetRepository.findOne({
+      where: {
+        transactionId: casinoBet.transactionId,
+      },
+    });
+    if (casino) {
+      //revert stake
+      casino.status = CasinoBetStatus.CANCELLED;
+      const creditPayload = {
+        amount: casino.stake,
+        userId: casino.userId,
+        clientId: casino.clientId,
+        description:
+          'Casino Bet Stake Transaction ID ' +
+          casino.transactionId +
+          ' Was Reverted',
+        subject: casino.transactionId,
+        source: 'credit',
+        wallet: 'casino',
+        channel: 'Internal',
+        username: `user:${casino.userId}`,
+      };
+      await this.walletService.credit(creditPayload).toPromise();
+
+      //revert winnings
+      if (casino.winnings > 0) {
+        const debitPayload = {
+          // currency: clientSettings.currency,
+          amount: casino.winnings,
+          userId: casino.userId,
+          username: `user:${casino.userId}`,
+          clientId: casino.clientId,
+          description:
+            'Casino Bet Winning Transaction ID ' +
+            casino.transactionId +
+            ' Was Cancelled',
+          subject: casino.transactionId,
+          source: 'casino',
+          wallet: 'casino',
+          channel: 'Internal',
+          // transaction_type: TRANSACTION_TYPE_PLACE_BET
+        };
+        await this.walletService.debit(debitPayload).toPromise();
+      }
+      await this.casinoBetRepository.save(casino);
+      return {
+        status: 201,
+        success: true,
+        message: 'Casino Bet has been reverted successfully',
+      };
+    } else {
+      return {
+        status: 400,
+        success: false,
+        message: 'A casino bet with this transaction id does not exist',
+      };
     }
   }
 }
