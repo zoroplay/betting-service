@@ -7,6 +7,7 @@ export interface GamingActivityRequest {
     betType: string;
     source: string;
     eventType: string;
+    displayType: string;
     clientID: number
 }
 
