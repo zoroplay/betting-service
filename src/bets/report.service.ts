@@ -109,6 +109,8 @@ export class ReportService {
                 sql += `AND ${table}.bonus_id != 0 `;
             }
 
+            console.log(sql);
+
             let resSum = await this.entityManager.query(sql, params)
 
             if (resSum) {
