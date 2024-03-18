@@ -839,7 +839,7 @@ export class BetsService {
                 }
                 
                 let queueName = "mts.bet_pending"
-                // await this.amqpConnection.publish(queueName, queueName, mtsBet);
+                await this.amqpConnection.publish(queueName, queueName, mtsBet);
                 this.logger.info("published to "+queueName)
             }
 
