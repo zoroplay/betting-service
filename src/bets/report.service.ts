@@ -103,10 +103,10 @@ export class ReportService {
             }
 
             if(displayType === 'real') {
-                sql += `AND ${table}.bonus_id IS NULL`;
+                sql += `AND ${table}.bonus_id IS NULL `;
                 
             } else {
-                sql += `AND ${table}.bonus_id != 0`;
+                sql += `AND ${table}.bonus_id != 0 `;
             }
 
             let resSum = await this.entityManager.query(sql, params)
