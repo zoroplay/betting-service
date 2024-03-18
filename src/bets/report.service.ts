@@ -17,7 +17,7 @@ export class ReportService {
 
     async gamingActivity(data: GamingActivityRequest): Promise<GamingActivityResponse> {
 
-        const {groupBy, productType, from, to, username, clientID, betType, source, eventType} = data;
+        const {groupBy, productType, from, to, username, clientID, betType, source, eventType, displayType} = data;
         let table = 'bet';
 
         try {
@@ -62,6 +62,8 @@ export class ReportService {
                 sql += `, SUM(${table}.amount_won) as winnings`;
             }
 
+            
+
 
             // if(groupBy === 'user_id'){
             //     sql += `, t.amount as total_deposit, users.username, users.id`;
@@ -98,6 +100,13 @@ export class ReportService {
             if(eventType && eventType !== ''){
                 sql += `AND ${table}.event_type = ? `;
                 params.push(eventType);
+            }
+
+            if(displayType === 'real') {
+                sql += `AND ${table}.bonus_id = 0`;
+                
+            } else {
+                sql += `AND ${table}.bonus_id != 0`;
             }
 
             let resSum = await this.entityManager.query(sql, params)
