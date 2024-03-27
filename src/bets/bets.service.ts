@@ -451,9 +451,6 @@ export class BetsService {
         if (bet.clientId == 0)
             return {status: 400, message: "missing client id", success: false};
 
-        if (bet.userId == 0)
-            return {status: 400, message: "missing user id", success: false};
-
         if (bet.stake  === 0)
             return {status: 400, message: "missing stake", success: false};
 
@@ -474,6 +471,9 @@ export class BetsService {
 
         if (bet.isBooking === 0) { // check if bet placement is not booking 
             // To-Do: Get User Details and Settings
+
+            if (bet.userId == 0)
+                return {status: 400, message: "missing user id", success: false};
 
             // get user wallet
             const wallet = await this.walletService.getWallet({userId: bet.userId, clientId: bet.clientId});
