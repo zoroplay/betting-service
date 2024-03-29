@@ -651,7 +651,7 @@ export class BetsService {
             stakeAfterTax = stake - taxOnStake;
         }
 
-        let possibleWin = stakeAfterTax * totalOdds
+        let possibleWin = stakeAfterTax * totalOdds + bet.maxBonus
         let payout = possibleWin;
 
         if (clientSettings.tax_on_winning > 0) {
