@@ -22,6 +22,7 @@ import 'dotenv/config'
 import { Booking } from './entity/booking.entity';
 import { BookingSelection } from './entity/booking.selection.entity';
 import {SettingsModule} from "./settings/settings.module";
+import { VirtualBet } from './entity/virtual-bet.entity';
 
 @Module({
     imports: [
@@ -42,7 +43,7 @@ import {SettingsModule} from "./settings/settings.module";
           username: process.env.DB_USERNAME,
           password: process.env.DB_PASSWORD,
           database: process.env.DB_NAME,
-          entities:[Bet,BetSlip,BetStatus,Booking,BookingSelection,Mts,Setting,Settlement,BetCancel,SettlementRollback,BetClosure,Winning,Cronjob],
+          entities:[Bet,BetSlip,BetStatus,Booking,BookingSelection,Mts,Setting,Settlement,BetCancel,SettlementRollback,BetClosure,Winning,Cronjob,VirtualBet],
           //entities: [__dirname + '/entity/*.ts'],
           //entities: [__dirname + '/ ** / *.entity{.ts,.js}'],
           //entities: [__dirname + '/ ** / *.entity{.ts,.js}'],

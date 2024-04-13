@@ -2,7 +2,7 @@ import {Controller} from '@nestjs/common';
 import {BetsService} from './bets.service';
 import {GrpcMethod} from "@nestjs/microservices";
 import {JsonLogger, LoggerFactory} from "json-logger-service";
-import {PlaceBet} from "./interfaces/placebet.interface";
+import {GetVirtualBetRequest, GetVirtualBetResponse, PlaceBet, PlaceVirtualBetRequest, PlaceVirtualBetResponse, SettleVirtualBetRequest, SettleVirtualBetResponse} from "./interfaces/placebet.interface";
 import {PlaceBetResponse} from "./interfaces/placebet.response.interface";
 import {BetHistoryRequest, FindBetRequest} from "./interfaces/bet.history.request.interface";
 import {BetHistoryResponse, FindBetResponse} from "./interfaces/bet.history.response.interface";
@@ -12,6 +12,7 @@ import {BetID} from "./interfaces/betid.interface";
 import {Probability} from "./interfaces/betslip.interface";
 import { ReportService } from './report.service';
 import { GamingActivityRequest, GamingActivityResponse } from './interfaces/report.interface';
+import { VirtualBetService } from './virtual-bet.service';
 
 @Controller('bets')
 export class BetsController {
@@ -21,6 +22,7 @@ export class BetsController {
     constructor(
 
         private readonly betsService: BetsService,
+        private readonly virtualService: VirtualBetService,
         private readonly reportService: ReportService,
     ) {}
 
@@ -34,10 +36,20 @@ export class BetsController {
         return this.betsService.updateBet(data);
     }
 
-    // @GrpcMethod('BettingService', 'BookBet')
-    // bookBet(data: PlaceBet): Promise<PlaceBetResponse> {
-    //     return this.betsService.bookBet(data);
-    // }
+    @GrpcMethod('BettingService', 'PlaceVirtualBet')
+    placeVirtualBet(data: PlaceVirtualBetRequest): Promise<PlaceVirtualBetResponse> {
+        return this.virtualService.placeVirtualBet(data);
+    }
+
+    @GrpcMethod('BettingService', 'GetVirtualBet')
+    getVirtualBet(data: GetVirtualBetRequest): Promise<GetVirtualBetResponse> {
+        return this.virtualService.getVirtualTicket(data);
+    }
+
+    @GrpcMethod('BettingService', 'SettleVirtualBet')
+    settleVirtualBet(data: SettleVirtualBetRequest): Promise<SettleVirtualBetResponse> {
+        return this.virtualService.settleBet(data);
+    }
 
     @GrpcMethod('BettingService', 'GetCoupon')
     getBooking(data: FindBetRequest): Promise<FindBetResponse> {

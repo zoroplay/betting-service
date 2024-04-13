@@ -14,13 +14,15 @@ import { BookingSelection } from 'src/entity/booking.selection.entity';
 import { ReportService } from './report.service';
 import { BonusModule } from 'src/bonus/bonus.module';
 import { WalletModule } from 'src/wallet/wallet.module';
+import { VirtualBetService } from './virtual-bet.service';
+import { VirtualBet } from 'src/entity/virtual-bet.entity';
 
 @Module({
   imports: [
     HttpModule,
     BonusModule,
     WalletModule,
-    TypeOrmModule.forFeature([Bet,BetSlip,Booking,BookingSelection,Mts,Setting]),
+    TypeOrmModule.forFeature([Bet,BetSlip,Booking,BookingSelection,Mts,Setting, VirtualBet]),
     ClientsModule.register([
       {
         name: 'ODDS_PACKAGE',
@@ -44,6 +46,7 @@ import { WalletModule } from 'src/wallet/wallet.module';
 
   ],
   controllers: [BetsController],
-  providers: [BetsService, ReportService]
+  providers: [BetsService, ReportService, VirtualBetService]
 })
+
 export class BetsModule {}

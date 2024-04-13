@@ -45,3 +45,62 @@ export interface BetSlip {
 
 export interface Combo {
 }
+
+export interface PlaceVirtualBetRequest {
+  userId: number;
+  clientId: number;
+  roundId: string;
+  transactionId: string;
+  transactionCategory: string;
+  gameId: string;
+  stake: number;
+  username: string;
+}
+
+export interface PlaceVirtualBetResponse {
+  success: boolean;
+  status: number;
+  message: string;
+  data?: VirtualBetData | undefined;
+}
+
+export interface GetVirtualBetRequest {
+  clientId: number;
+  gameId: string;
+  transactionId: string;
+}
+
+export interface GetVirtualBetResponse {
+  success: boolean;
+  gameId: boolean;
+  transactionId: boolean;
+  data?: VirtualBetData | undefined;
+}
+
+export interface VirtualBetData {
+  userId: number;
+  clientId: number;
+  betId: number;
+  roundId: string;
+  transactionId: string;
+  transactionCategory: string;
+  gameId: string;
+  stake: number;
+  gameCycleClosed: number;
+  username: string;
+}
+
+export interface SettleVirtualBetRequest {
+  userId: number;
+  clientId: number;
+  amount: number;
+  jackpot: number;
+  roundId: string;
+  category: string;
+  gameCycleClosed: number;
+}
+
+export interface SettleVirtualBetResponse {
+  success: boolean;
+  message: string;
+}
