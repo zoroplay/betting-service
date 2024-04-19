@@ -55,7 +55,7 @@ export class BetResultingController {
     }
 
     async taskProcessBetResulting() {
-        console.log('task processing bet')
+        // console.log('task processing bet')
 
         const taskName = 'bet.resulting'
 
@@ -71,7 +71,7 @@ export class BetResultingController {
             });
 
             if (cronJob !== null && cronJob.id > 0) {
-                console.log('stopping cron job')
+                // console.log('stopping cron job')
                 //this.logger.info('another ' + taskName + ' job is already running');
                 return
             }
@@ -105,7 +105,7 @@ export class BetResultingController {
             this.logger.error("error retrieving bet_closure "+e.toString())
             return
         }
-        console.log ('rows', rows);
+        // console.log ('rows', rows);
         for (const row of rows) {
 
             let id = row.bet_id;
@@ -137,7 +137,7 @@ export class BetResultingController {
     }
 
     async taskFixInvalidBetStatus() {
-        console.log('task fix for invalid')
+        // console.log('task fix for invalid')
 
         try {
 
@@ -152,13 +152,13 @@ export class BetResultingController {
 
 
     async closeBet(betID: number): Promise<number> {
-        console.log('close bet')
+        // console.log('close bet')
 
         let rows : any
 
         try {
 
-            rows = await this.entityManager.query("SELECT possible_win,user_id,tax_on_winning,winning_after_tax,client_id,currency,betslip_id,source FROM bet WHERE id = " + betID + " AND won = " + STATUS_WON + " AND status IN (" + BET_PENDING + ","+BET_VOIDED+") AND id NOT IN (SELECT bet_id FROM winning) ")
+            rows = await this.entityManager.query("SELECT possible_win,user_id,tax_on_winning,winning_after_tax,client_id,currency,betslip_id,source,username FROM bet WHERE id = " + betID + " AND won = " + STATUS_WON + " AND status IN (" + BET_PENDING + ","+BET_VOIDED+") AND id NOT IN (SELECT bet_id FROM winning) ")
 
         }
         catch (e) {
@@ -207,9 +207,7 @@ export class BetResultingController {
         // wrap in try catch
         // J. create winning
         try {
-
             winner = await this.winningRepository.save(winning)
-
         }
         catch (e) {
 
@@ -290,7 +288,7 @@ export class BetResultingController {
             const betSlips: any = await this.betslipRepository.find({
                 where: {bet_id: row.id}
             });
-            console.log('total odds ', row.total_odd)
+            // console.log('total odds ', row.total_odd)
             let key = "bet-" + row.id;
             row.Won = 0
             row.Lost = 0
