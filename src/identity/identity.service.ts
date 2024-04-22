@@ -14,7 +14,6 @@ export class IdentityService {
         this.svc = this.client.getService<IdentityServiceClient>(IDENTITY_SERVICE_NAME);
     }
 
-
     public async validateBet(param: PlaceBetRequest) {
       return await firstValueFrom(this.svc.validateBet(param));
     }
