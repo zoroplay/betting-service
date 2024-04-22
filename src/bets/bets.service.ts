@@ -29,6 +29,7 @@ import { betTypeDescription, countItem } from 'src/commons/helper';
 import { BonusService } from 'src/bonus/bonus.service';
 import { WalletService } from 'src/wallet/wallet.service';
 import { IdentityService } from 'src/identity/identity.service';
+import { BetStatus } from 'src/entity/betstatus.entity';
 
 @Injectable()
 export class BetsService {
@@ -47,6 +48,8 @@ export class BetsService {
         private betslipRepository: Repository<BetSlip>,
         @InjectRepository(Setting)
         private settingRepository: Repository<Setting>,
+        @InjectRepository(BetStatus)
+        private betStatusRepository: Repository<BetStatus>,
         
         private readonly entityManager: EntityManager,
 
@@ -64,7 +67,7 @@ export class BetsService {
 
         private readonly walletService: WalletService,
 
-        private readonly identityService: IdentityService
+        private readonly identityService: IdentityService,
 
     ) {}
 
@@ -825,10 +828,24 @@ export class BetsService {
                     bets: mtsSelection,
                     currency: clientSettings.currency,
                 }
+
+                // by pass mts acceptance
+                let betStatus = new BetStatus()
+                betStatus.status = 1
+                betStatus.bet_id = betResult.id
+                betStatus.description = "By passed MTS acceptance"
+                await this.betStatusRepository.upsert(betStatus,['status','description'])
                 
                 let queueName = "mts.bet_pending"
                 // await this.amqpConnection.publish(queueName, queueName, mtsBet);
                 this.logger.info("published to "+queueName)
+            } else {
+                // by pass mts acceptance
+                let betStatus = new BetStatus()
+                betStatus.status = 1
+                betStatus.bet_id = betResult.id
+                betStatus.description = "By passed MTS acceptance"
+                await this.betStatusRepository.upsert(betStatus,['status','description'])
             }
 
             // do debit
