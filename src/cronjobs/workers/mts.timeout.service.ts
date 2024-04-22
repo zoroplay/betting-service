@@ -41,7 +41,7 @@ export class MtsTimeoutService {
 
     }
 
-    // @Cron("*/2 * * * * *") // run every 2 seconds
+    @Cron("*/2 * * * * *") // run every 2 seconds
     processMtsTimeoutBetCancelation() {
 
         let vm = this;
