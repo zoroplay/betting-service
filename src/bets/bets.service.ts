@@ -17,7 +17,6 @@ import OddsService from "./odds.service.interface";
 import {HttpService} from '@nestjs/axios';
 import {GetOddsReply, OddsProbability} from "./interfaces/oddsreply.interface";
 import {GetOddsRequest} from "./interfaces/oddsrequest.interface";
-import axios from 'axios';
 import {BetHistoryRequest, FindBetRequest} from './interfaces/bet.history.request.interface';
 // import {Booking} from 'src/entity/booking.entity';
 // import {BookingSelection} from 'src/entity/booking.selection.entity';
@@ -29,6 +28,7 @@ import OutrightsService from "./outrights.service.interface";
 import { betTypeDescription, countItem } from 'src/commons/helper';
 import { BonusService } from 'src/bonus/bonus.service';
 import { WalletService } from 'src/wallet/wallet.service';
+import { IdentityService } from 'src/identity/identity.service';
 
 @Injectable()
 export class BetsService {
@@ -64,15 +64,13 @@ export class BetsService {
 
         private readonly walletService: WalletService,
 
-    ) {
+        private readonly identityService: IdentityService
 
-    }
+    ) {}
 
     onModuleInit(): any {
-
         this.oddsService = this.client.getService<OddsService>('Odds');
         this.outrightsService = this.outrightsClient.getService<OutrightsService>('Outrights');
-
     }
 
     async findAll({userId, status, to, from, clientId, perPage, page, betslipId, username}: BetHistoryRequest): Promise<BetHistoryResponse> {
@@ -460,81 +458,12 @@ export class BetsService {
         if (bet.selections == undefined )
             return {status: 400, message: "missing selections", success: false};
         
-        // get client settings
-        var clientSettings = await this.settingRepository.findOne({
-            where: {
-                client_id: bet.clientId
-            }
-        });
-
-        let user;
-
-        if (bet.isBooking === 0) { // check if bet placement is not booking 
-            // To-Do: Get User Details and Settings
-
-            if (bet.userId == 0)
-                return {status: 400, message: "missing user id", success: false};
-
-            // get user wallet
-            const wallet = await this.walletService.getWallet({userId: bet.userId, clientId: bet.clientId});
-                   
-            if (wallet.success) {
-                user = wallet.data;
-            }
-        
-            if(!user) 
-                return {status: 400, message: "please login to procceed", success: false};
-
-            if (!bet.useBonus && user.availableBalance < bet.stake)// if not bonus bet, use real balance
-                return {status: 400, message: "Insufficient balance ", success: false};
-
-            if (bet.useBonus && user.sportBonusBalance < bet.stake)// if bonus bet, use bonus balance
-                return {status: 400, message: "Insufficient balance ", success: false};
-
-            // if (user.status !== 1)
-            //     return {status: 401, message: "Your account has been disabled", success: false};
-        }
-
-        let bonusId = null;
-
-        if (bet.useBonus) {//check if bonus is till valid
-            const bonusRes = await this.bonusService.validateSelection(bet).toPromise();
-
-            if (bonusRes.success) {
-                bonusId = bonusRes.id;
-            } else {
-                return {status: 400, message: bonusRes.message, success: false};
-            }
-        }
-
-        let userSelection =  bet.selections
-
-        if(clientSettings.id == undefined || clientSettings.id == 0 ) {
-            clientSettings = new Setting();
-            clientSettings.id = 1;
-            clientSettings.client_id = 1;
-            clientSettings.maximum_selections = 100;
-            clientSettings.maximum_stake = 1000
-            clientSettings.maximum_winning = 10000
-            clientSettings.tax_on_stake = 0
-            clientSettings.tax_on_winning = 0
-            clientSettings.mts_limit_id = 5071
-        }
-
-
-        // settings validation
-        if (bet.stake < clientSettings.minimum_stake)
-            return {status: 400, message: "Minimum stake is " + clientSettings.minimum_stake, success: false};
-
-        if (bet.stake > clientSettings.maximum_stake)
-            bet.stake = clientSettings.maximum_stake;
-
-
-        //2. odds validation
+        //1. odds validation
         let selections = [];
         let totalOdds = 1;
 
         let overallProbability = 1
+        let userSelection =  bet.selections
 
         for (const slips of userSelection) {
 
@@ -630,14 +559,73 @@ export class BetsService {
             })
 
             totalOdds = totalOdds * parseFloat(selection.odds.toFixed(2))
+
+            bet.totalOdds = totalOdds;
         }
 
-        if (selections.length === 0)
-            return {status: 400, message: "missing selections", success: false};
+        // if (selections.length === 0)
+        //     return {status: 400, message: "missing selections", success: false};
 
-        if (selections.length > clientSettings.maximum_selections)
-            return {message: "maximum allowed selection is " + clientSettings.maximum_selections, status: 400, success: false};
+        // if (selections.length > clientSettings.maximum_selections)
+        //     return {message: "maximum allowed selection is " + clientSettings.maximum_selections, status: 400, success: false};
 
+        // get client settings
+        var clientSettings = await this.settingRepository.findOne({
+            where: {
+                client_id: bet.clientId
+            }
+        });
+
+        // 2. Bet Validation
+
+        if (bet.isBooking === 0) { // check if bet placement is not booking 
+            // To-Do: Get User Details and Settings
+
+            if (bet.userId == 0)
+                return {status: 400, message: "missing user id", success: false};
+
+            //TO-DO: Validate bet from identity service
+            const validationRes = await this.identityService.validateBet(bet);
+            // console.log(validationRes);
+            if (!validationRes.success)
+                return {status: 400, message: validationRes.message, success: false};
+        }
+
+        let bonusId = null;
+
+        if (bet.useBonus) {//check if bonus is till valid
+            const bonusRes = await this.bonusService.validateSelection(bet).toPromise();
+
+            if (bonusRes.success) {
+                bonusId = bonusRes.id;
+            } else {
+                return {status: 400, message: bonusRes.message, success: false};
+            }
+        }
+
+
+        if(clientSettings.id == undefined || clientSettings.id == 0 ) {
+            clientSettings = new Setting();
+            clientSettings.id = 1;
+            clientSettings.client_id = 1;
+            clientSettings.maximum_selections = 100;
+            clientSettings.maximum_stake = 1000
+            clientSettings.maximum_winning = 10000
+            clientSettings.tax_on_stake = 0
+            clientSettings.tax_on_winning = 0
+            clientSettings.mts_limit_id = 5071
+        }
+
+
+        // settings validation
+        // if (bet.stake < clientSettings.minimum_stake)
+        //     return {status: 400, message: "Minimum stake is " + clientSettings.minimum_stake, success: false};
+
+        // if (bet.stake > clientSettings.maximum_stake)
+        //     bet.stake = clientSettings.maximum_stake;
+
+
+        
         //3. tax calculations
 
         let taxOnStake = 0;
@@ -839,7 +827,7 @@ export class BetsService {
                 }
                 
                 let queueName = "mts.bet_pending"
-                await this.amqpConnection.publish(queueName, queueName, mtsBet);
+                // await this.amqpConnection.publish(queueName, queueName, mtsBet);
                 this.logger.info("published to "+queueName)
             }
 
@@ -1055,7 +1043,6 @@ export class BetsService {
 
     }
 
-
     async getOdds(producerId: number,  eventPrefix : string, eventType: string, eventId: number,marketId: number, specifier: string, outcomeId: string): Promise<number> {
 
         if(producerId !== 3 ) {
@@ -1130,7 +1117,6 @@ export class BetsService {
         }
 
         return result;
-
     }
 
     async getProbability(producerId: number, eventPrefix : string, eventType: string, eventId: number, marketId: number, specifier: string, outcomeId: string): Promise<number> {
@@ -1220,6 +1206,4 @@ export class BetsService {
         }
 
     }
-
-
 }

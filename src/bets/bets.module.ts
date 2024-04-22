@@ -16,11 +16,13 @@ import { BonusModule } from 'src/bonus/bonus.module';
 import { WalletModule } from 'src/wallet/wallet.module';
 import { VirtualBetService } from './virtual-bet.service';
 import { VirtualBet } from 'src/entity/virtual-bet.entity';
+import { IdentityModule } from 'src/identity/identity.module';
 
 @Module({
   imports: [
     HttpModule,
     BonusModule,
+    IdentityModule,
     WalletModule,
     TypeOrmModule.forFeature([Bet,BetSlip,Booking,BookingSelection,Mts,Setting, VirtualBet]),
     ClientsModule.register([
