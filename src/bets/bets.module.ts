@@ -17,6 +17,7 @@ import { WalletModule } from 'src/wallet/wallet.module';
 import { VirtualBetService } from './virtual-bet.service';
 import { VirtualBet } from 'src/entity/virtual-bet.entity';
 import { IdentityModule } from 'src/identity/identity.module';
+import { BetStatus } from 'src/entity/betstatus.entity';
 
 @Module({
   imports: [
@@ -24,7 +25,7 @@ import { IdentityModule } from 'src/identity/identity.module';
     BonusModule,
     IdentityModule,
     WalletModule,
-    TypeOrmModule.forFeature([Bet,BetSlip,Booking,BookingSelection,Mts,Setting, VirtualBet]),
+    TypeOrmModule.forFeature([Bet,BetSlip,Booking,BookingSelection,Mts,Setting, VirtualBet, BetStatus]),
     ClientsModule.register([
       {
         name: 'ODDS_PACKAGE',
