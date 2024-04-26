@@ -186,9 +186,9 @@ export class VirtualBetService {
             const sumAmount = query;
 
             const total = await queryCount.getCount();
-            const totalPlayed = await sumAmount.addSelect('SUM(stake)', 'totalStake').addSelect('SUM(winnings)', 'totalWinnings').getRawOne();
+            // const totalPlayed = await sumAmount.addSelect('SUM(stake)', 'totalStake').addSelect('SUM(winnings)', 'totalWinnings').getRawOne();
 
-            console.log(totalPlayed)
+            // console.log(totalPlayed)
 
             const results = await query.limit(100).orderBy('created_at', 'DESC').getMany();
 
