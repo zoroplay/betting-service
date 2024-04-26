@@ -18,3 +18,12 @@ export interface GamingActivityResponse {
     data?: any;
     error?: string;
 }
+
+export interface GetVirtualBetsRequest {
+    clientId: number;
+    from: string;
+    to: string;
+    betType?: number;
+    username?: string;
+    page: number;
+}

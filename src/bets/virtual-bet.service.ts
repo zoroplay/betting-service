@@ -5,6 +5,8 @@ import * as dayjs from 'dayjs';
 import { GetVirtualBetRequest, GetVirtualBetResponse, PlaceVirtualBetRequest, PlaceVirtualBetResponse, SettleVirtualBetRequest, SettleVirtualBetResponse } from "./interfaces/placebet.interface";
 import { InjectRepository } from "@nestjs/typeorm";
 import { VirtualBet } from "src/entity/virtual-bet.entity";
+import { GetVirtualBetsRequest } from "./interfaces/report.interface";
+import { paginateResponse } from "src/commons/helper";
 var customParseFormat = require('dayjs/plugin/customParseFormat')
 
 dayjs.extend(customParseFormat)
@@ -161,6 +163,39 @@ export class VirtualBetService {
                 success: false,
                 message: 'Something went wrong '+ e.message,
             }
+        }
+    }
+
+    async getTickets (data: GetVirtualBetsRequest) {
+        const {clientId, username, from, to, betType, page} = data;
+        try {
+
+            const startDate = dayjs(from, 'DD/MM/YYYY HH:mm:ss').format('YYYY-MM-DD HH:mm:ss');
+            const endDate = dayjs(to, 'DD/MM/YYYY HH:mm:ss').format('YYYY-MM-DD HH:mm:ss');
+
+            let query = this.virtualBetRepo.createQueryBuilder('vb').where('client_id = :clientId', {clientId})
+                            .andWhere('created_at >= :startDate', {startDate})
+                            .andWhere('created_at <= :endDate', {endDate});
+            if (username && username !== '')
+                query.andWhere('username like :username', {username: `%${username}%`})
+
+            if (betType && betType !== 0)
+                query.andWhere('status = :betType', {betType});
+            
+            const queryCount = query;
+            const sumAmount = query;
+
+            const total = await queryCount.getCount();
+            const totalPlayed = await sumAmount.addSelect('SUM(stake)', 'totalStake').addSelect('SUM(winnings)', 'totalWinnings').getRawOne();
+
+            console.log(totalPlayed)
+
+            const results = await query.limit(100).orderBy('created_at', 'DESC').getMany();
+
+            return paginateResponse([results, total], page, 100);
+        } catch(e) {
+            console.log(e);
+            return paginateResponse([[], 0], page, 100);
         }
     }
 }

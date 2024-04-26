@@ -11,8 +11,9 @@ import {UpdateBetResponse} from './interfaces/update.bet.response.interface';
 import {BetID} from "./interfaces/betid.interface";
 import {Probability} from "./interfaces/betslip.interface";
 import { ReportService } from './report.service';
-import { GamingActivityRequest, GamingActivityResponse } from './interfaces/report.interface';
+import { GamingActivityRequest, GamingActivityResponse, GetVirtualBetsRequest } from './interfaces/report.interface';
 import { VirtualBetService } from './virtual-bet.service';
+import { PaginationResponse } from 'src/identity/identity.pb';
 
 @Controller('bets')
 export class BetsController {
@@ -76,6 +77,11 @@ export class BetsController {
     GetProbabilityFromBetID(data: BetID): Promise<Probability> {
 
         return this.betsService.getProbabilityFromBetID(data.betID)
+    }
+
+    @GrpcMethod('BettingService', 'GetVirtualBets')
+    GetVirtualBets(data: GetVirtualBetsRequest): Promise<PaginationResponse> {
+        return this.virtualService.getTickets(data)
     }
 
 }
