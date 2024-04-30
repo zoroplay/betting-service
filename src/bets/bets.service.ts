@@ -806,14 +806,14 @@ export class BetsService {
             return {status: 400, message: "error accepting bets ", success: false};
 
         } finally {
-
+            console.log('place bet completed');
             // finally release the transaction
             //if (transactionRunner) await transactionRunner.releaseTransaction();
         }
 
-        // this.logger.info("bet created with id "+betResult.id)
+        this.logger.info("bet created with id "+betResult.id)
 
-        if (betData) {
+        if (betResult) {
             if (bet.isBooking === 0) { // if it's not booking, submit to mts
 
                 // send bets to MTS
@@ -842,7 +842,7 @@ export class BetsService {
             } 
 
             // do debit
-            return {
+            const response = {
                 status: 201, 
                 message: "Bet placed successfully", 
                 data: {
@@ -853,9 +853,10 @@ export class BetsService {
                 },
                 success: true
             }
+            console.log('response', response);
+            return response;
         } else {
             return {status: 400, message: "We are unable to accept this bet at the moment ", success: false};
-
         }
     }
 
