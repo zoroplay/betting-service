@@ -815,7 +815,7 @@ export class BetsService {
 
         if (betResult) {
             if (bet.isBooking === 0) { // if it's not booking, submit to mts
-
+                console.log('sending bet to mts')
                 // send bets to MTS
                 let mtsBet = {
                     bet_id: ""+betResult.id,
