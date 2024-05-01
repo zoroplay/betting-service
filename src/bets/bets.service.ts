@@ -566,20 +566,9 @@ export class BetsService {
             bet.totalOdds = totalOdds;
         }
 
-        // if (selections.length === 0)
-        //     return {status: 400, message: "missing selections", success: false};
-
-        // if (selections.length > clientSettings.maximum_selections)
-        //     return {message: "maximum allowed selection is " + clientSettings.maximum_selections, status: 400, success: false};
-
-        // get client settings
-        var clientSettings = await this.settingRepository.findOne({
-            where: {
-                client_id: bet.clientId
-            }
-        });
-
         // 2. Bet Validation
+
+        let validationData;
 
         if (bet.isBooking === 0) { // check if bet placement is not booking 
             // To-Do: Get User Details and Settings
@@ -592,7 +581,12 @@ export class BetsService {
             // console.log(validationRes);
             if (!validationRes.success)
                 return {status: 400, message: validationRes.message, success: false};
+
+            validationData = JSON.parse(validationRes.data);
+            
         }
+
+        console.log(validationData);
 
         let bonusId = null;
 
@@ -606,28 +600,6 @@ export class BetsService {
             }
         }
 
-
-        if(clientSettings.id == undefined || clientSettings.id == 0 ) {
-            clientSettings = new Setting();
-            clientSettings.id = 1;
-            clientSettings.client_id = 1;
-            clientSettings.maximum_selections = 100;
-            clientSettings.maximum_stake = 1000
-            clientSettings.maximum_winning = 10000
-            clientSettings.tax_on_stake = 0
-            clientSettings.tax_on_winning = 0
-            clientSettings.mts_limit_id = 5071
-        }
-
-
-        // settings validation
-        // if (bet.stake < clientSettings.minimum_stake)
-        //     return {status: 400, message: "Minimum stake is " + clientSettings.minimum_stake, success: false};
-
-        // if (bet.stake > clientSettings.maximum_stake)
-        //     bet.stake = clientSettings.maximum_stake;
-
-
         
         //3. tax calculations
 
@@ -636,24 +608,24 @@ export class BetsService {
         let stake = bet.stake;
         let stakeAfterTax = stake;
 
-        if (clientSettings.tax_on_stake > 0) {
+        // if (clientSettings.tax_on_stake > 0) {
 
-            taxOnStake = clientSettings.tax_on_stake * bet.stake;
-            stakeAfterTax = stake - taxOnStake;
-        }
+        //     taxOnStake = clientSettings.tax_on_stake * bet.stake;
+        //     stakeAfterTax = stake - taxOnStake;
+        // }
 
         let possibleWin = stakeAfterTax * totalOdds + bet.maxBonus
         let payout = possibleWin;
 
-        if (clientSettings.tax_on_winning > 0) {
+        // if (clientSettings.tax_on_winning > 0) {
 
-            taxOnWinning = clientSettings.tax_on_winning * (possibleWin - stake);
-            payout = possibleWin - taxOnWinning;
-        }
+        //     taxOnWinning = clientSettings.tax_on_winning * (possibleWin - stake);
+        //     payout = possibleWin - taxOnWinning;
+        // }
+        // console.log(payout, validationData.max_winning)
+        if (payout > parseFloat(validationData.max_winning)) {
 
-        if (payout > clientSettings.maximum_winning) {
-
-            payout = clientSettings.maximum_winning;
+            payout = validationData.max_winning;
         }
 
 
@@ -679,11 +651,11 @@ export class BetsService {
             betData.username = bet.isBooking === 0 ? bet.username : 'guest';
             betData.betslip_id = this.generateBetslipId()
             betData.stake = bet.stake;
-            betData.currency = clientSettings.currency;
+            betData.currency = validationData.currency;
             betData.bet_category = bet.betType;
             betData.bet_category_desc = betTypeDescription(bet);
             betData.total_odd = totalOdds;
-            betData.possible_win = possibleWin;
+            betData.possible_win = payout;
             betData.tax_on_stake = taxOnStake;
             betData.stake_after_tax = stakeAfterTax;
             betData.tax_on_winning = taxOnWinning;
@@ -819,14 +791,14 @@ export class BetsService {
                 // send bets to MTS
                 let mtsBet = {
                     bet_id: ""+betResult.id,
-                    limit_id: clientSettings.mts_limit_id,
+                    limit_id: 5071, //clientSettings.mts_limit_id,
                     profile_id: bet.userId,
                     ip_address: bet.ipAddress,
                     stake: stakeAfterTax,
                     source: 1,
                     reply_prefix: 'betting_service',
                     bets: mtsSelection,
-                    currency: clientSettings.currency,
+                    currency: validationData.currency,
                 }
 
                 // by pass mts acceptance
