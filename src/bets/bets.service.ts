@@ -806,16 +806,16 @@ export class BetsService {
             return {status: 400, message: "error accepting bets ", success: false};
 
         } finally {
-            console.log('place bet completed');
+
             // finally release the transaction
             //if (transactionRunner) await transactionRunner.releaseTransaction();
         }
 
-        this.logger.info("bet created with id "+betResult.id)
+        // this.logger.info("bet created with id "+betResult.id)
 
-        if (betResult) {
+        if (betData) {
             if (bet.isBooking === 0) { // if it's not booking, submit to mts
-                console.log('sending bet to mts')
+
                 // send bets to MTS
                 let mtsBet = {
                     bet_id: ""+betResult.id,
@@ -837,12 +837,12 @@ export class BetsService {
                 // await this.betStatusRepository.upsert(betStatus,['status','description'])
                 
                 let queueName = "mts.bet_pending"
-                this.amqpConnection.publish(queueName, queueName, mtsBet);
+                await this.amqpConnection.publish(queueName, queueName, mtsBet);
                 this.logger.info("published to "+queueName)
             } 
 
             // do debit
-            const response = {
+            return {
                 status: 201, 
                 message: "Bet placed successfully", 
                 data: {
@@ -853,8 +853,6 @@ export class BetsService {
                 },
                 success: true
             }
-            console.log('response', response);
-            return response;
         } else {
             return {status: 400, message: "We are unable to accept this bet at the moment ", success: false};
         }
