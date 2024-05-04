@@ -15,7 +15,7 @@ export class BonusService {
     }
 
     public validateSelection(data: UserBet) {
-        return this.svc.validateBetSelections(data);
+        return firstValueFrom(this.svc.validateBetSelections(data));
     }
 
     public async placeBet(data: UserBet) {
