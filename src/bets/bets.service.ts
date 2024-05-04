@@ -570,11 +570,11 @@ export class BetsService {
 
         let validationData;
 
-        if (bet.isBooking === 0) { // check if bet placement is not booking 
+        // if (bet.isBooking === 0) { // check if bet placement is not booking 
             // To-Do: Get User Details and Settings
 
-            if (bet.userId == 0)
-                return {status: 400, message: "missing user id", success: false};
+            // if (bet.userId == 0)
+            //     return {status: 400, message: "missing user id", success: false};
 
             //TO-DO: Validate bet from identity service
             const validationRes = await this.identityService.validateBet(bet);
@@ -584,15 +584,13 @@ export class BetsService {
 
             validationData = JSON.parse(validationRes.data);
             
-        }
-
-        console.log(validationData);
+        // }
 
         let bonusId = null;
 
         if (bet.useBonus) {//check if bonus is till valid
-            const bonusRes = await this.bonusService.validateSelection(bet).toPromise();
-
+            const bonusRes = await this.bonusService.validateSelection(bet);
+            console.log(bonusRes)
             if (bonusRes.success) {
                 bonusId = bonusRes.id;
             } else {
