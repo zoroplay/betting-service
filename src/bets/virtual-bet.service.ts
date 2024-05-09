@@ -194,7 +194,7 @@ export class VirtualBetService {
                 totalWinnings: sum.totalWinnings
             }
 
-            const results = await query.limit(100).skip(offset).orderBy('created_at', 'DESC').getMany();
+            const results = await query.limit(100).offset(offset).orderBy('created_at', 'DESC').getMany();
 
             const pager = paginateResponse([results, total], page, 100);
             const response: any = {...pager};
