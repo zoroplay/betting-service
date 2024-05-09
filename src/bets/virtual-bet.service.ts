@@ -176,26 +176,35 @@ export class VirtualBetService {
             let query = this.virtualBetRepo.createQueryBuilder('vb').where('client_id = :clientId', {clientId})
                             .andWhere('created_at >= :startDate', {startDate})
                             .andWhere('created_at <= :endDate', {endDate});
+            
             if (username && username !== '')
                 query.andWhere('username like :username', {username: `%${username}%`})
 
             if (betType && betType !== 0)
                 query.andWhere('status = :betType', {betType});
             
-            const queryCount = query;
-            const sumAmount = query;
+            const total = await query.clone().getCount();
+            const sum = await query.clone().addSelect('SUM(stake)', 'totalStake').addSelect('SUM(winnings)', 'totalWinnings').getRawOne();
 
-            const total = await queryCount.getCount();
-            // const totalPlayed = await sumAmount.addSelect('SUM(stake)', 'totalStake').addSelect('SUM(winnings)', 'totalWinnings').getRawOne();
+            let offset = (page - 1) * 100
+            offset = offset + 1;
 
-            // console.log(totalPlayed)
+            const totals = {
+                totalStake: sum.totalStake,
+                totalWinnings: sum.totalWinnings
+            }
 
-            const results = await query.limit(100).orderBy('created_at', 'DESC').getMany();
+            const results = await query.limit(100).skip(offset).orderBy('created_at', 'DESC').getMany();
 
-            return paginateResponse([results, total], page, 100);
+            const pager = paginateResponse([results, total], page, 100);
+            const response: any = {...pager};
+
+            response.data = JSON.stringify({totals, data: JSON.parse(response.data)});
+            
+            return response;
         } catch(e) {
             console.log(e);
-            return paginateResponse([[], 0], page, 100);
+            return paginateResponse([[], 0], page, 100,);
         }
     }
 }
