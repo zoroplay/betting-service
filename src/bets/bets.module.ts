@@ -1,13 +1,13 @@
-import {Module} from '@nestjs/common';
-import {BetsController} from './bets.controller';
-import {BetsService} from './bets.service';
-import {TypeOrmModule} from '@nestjs/typeorm';
-import {Bet} from '../entity/bet.entity';
-import {BetSlip} from '../entity/betslip.entity';
-import {Mts} from '../entity/mts.entity';
-import {Setting} from '../entity/setting.entity';
-import {ClientsModule, Transport} from "@nestjs/microservices";
-import {join} from "path";
+import { Module } from '@nestjs/common';
+import { BetsController } from './bets.controller';
+import { BetsService } from './bets.service';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { Bet } from '../entity/bet.entity';
+import { BetSlip } from '../entity/betslip.entity';
+import { Mts } from '../entity/mts.entity';
+import { Setting } from '../entity/setting.entity';
+import { ClientsModule, Transport } from '@nestjs/microservices';
+import { join } from 'path';
 import { HttpModule } from '@nestjs/axios';
 import { Booking } from 'src/entity/booking.entity';
 import { BookingSelection } from 'src/entity/booking.selection.entity';
@@ -18,6 +18,8 @@ import { VirtualBetService } from './virtual-bet.service';
 import { VirtualBet } from 'src/entity/virtual-bet.entity';
 import { IdentityModule } from 'src/identity/identity.module';
 import { BetStatus } from 'src/entity/betstatus.entity';
+import { CasinoBetService } from './casino-bet.service';
+import { CasinoBet } from 'src/entity/casino-bet.entity';
 
 @Module({
   imports: [
@@ -25,7 +27,17 @@ import { BetStatus } from 'src/entity/betstatus.entity';
     BonusModule,
     IdentityModule,
     WalletModule,
-    TypeOrmModule.forFeature([Bet,BetSlip,Booking,BookingSelection,Mts,Setting, VirtualBet, BetStatus]),
+    TypeOrmModule.forFeature([
+      Bet,
+      BetSlip,
+      Booking,
+      BookingSelection,
+      Mts,
+      Setting,
+      VirtualBet,
+      CasinoBet,
+      BetStatus,
+    ]),
     ClientsModule.register([
       {
         name: 'ODDS_PACKAGE',
@@ -33,7 +45,7 @@ import { BetStatus } from 'src/entity/betstatus.entity';
         options: {
           package: 'protobuf',
           protoPath: join(__dirname, 'odds.proto'),
-          url: process.env.FEEDS_SERVICE_GRPC_URI
+          url: process.env.FEEDS_SERVICE_GRPC_URI,
         },
       },
       {
@@ -42,14 +54,12 @@ import { BetStatus } from 'src/entity/betstatus.entity';
         options: {
           package: 'protobuf',
           protoPath: join(__dirname, 'outrights.proto'),
-          url: process.env.OUTRIGHTS_SERVICE_GRPC_URI
+          url: process.env.OUTRIGHTS_SERVICE_GRPC_URI,
         },
       },
     ]),
-
   ],
   controllers: [BetsController],
-  providers: [BetsService, ReportService, VirtualBetService]
+  providers: [BetsService, ReportService, VirtualBetService, CasinoBetService],
 })
-
 export class BetsModule {}
