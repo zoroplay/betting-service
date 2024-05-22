@@ -15,7 +15,7 @@ import { BetCancel } from './entity/betcancel.entity';
 import { SettlementRollback } from './entity/settlementrollback.entity';
 import { BetClosure } from './entity/betclosure.entity';
 import { Winning } from './entity/winning.entity';
-// import { Cronjob } from './entity/cronjob.entity';
+import { Cronjob } from './entity/cronjob.entity';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { RabbitmqModule } from './rabbitmq.module';
 import 'dotenv/config';
@@ -57,7 +57,7 @@ import { CasinoBet } from './entity/casino-bet.entity';
         SettlementRollback,
         BetClosure,
         Winning,
-        // Cronjob,
+        Cronjob,
         CasinoBet,
         VirtualBet,
       ],
