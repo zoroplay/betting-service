@@ -65,6 +65,7 @@ export class CasinoBetService {
       };
     }
   }
+
   async placeCasinoBet(
     data: PlaceCasinoBetRequest,
   ): Promise<PlaceCasinoBetResponse> {
@@ -109,6 +110,7 @@ export class CasinoBetService {
     data: SettleCasinoBetRequest,
   ): Promise<PlaceCasinoBetResponse> {
     try {
+      console.log(data);
       const { winnings, transactionId } = data;
 
       let status = 0;
@@ -118,14 +120,15 @@ export class CasinoBetService {
         status = 2;
       }
       await this.casinoBetRepo.update(
-        { transaction_id: transactionId },
+        { id: transactionId },
         {
           winnings,
           status,
         },
       );
+
       const operator = await this.casinoBetRepo.findOneBy({
-        transaction_id: transactionId,
+        id: transactionId,
       });
 
       return {
