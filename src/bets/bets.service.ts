@@ -27,7 +27,7 @@ import {
 } from './interfaces/betslip.interface';
 import { Observable } from 'rxjs';
 import { ProducerstatusreplyInterface } from './interfaces/producerstatusreply.interface';
-// import {AmqpConnection} from '@golevelup/nestjs-rabbitmq';
+import {AmqpConnection} from '@golevelup/nestjs-rabbitmq';
 import { ClientGrpc } from '@nestjs/microservices';
 import OddsService from './odds.service.interface';
 import { HttpService } from '@nestjs/axios';
@@ -76,7 +76,7 @@ export class BetsService {
 
     private readonly entityManager: EntityManager,
 
-    // private readonly amqpConnection: AmqpConnection,
+    private readonly amqpConnection: AmqpConnection,
 
     private readonly httpService: HttpService,
 
@@ -871,7 +871,7 @@ export class BetsService {
         // await this.betStatusRepository.upsert(betStatus,['status','description'])
 
         let queueName = 'mts.bet_pending';
-        // await this.amqpConnection.publish(queueName, queueName, mtsBet);
+        await this.amqpConnection.publish(queueName, queueName, mtsBet);
         this.logger.info('published to ' + queueName);
       }
 

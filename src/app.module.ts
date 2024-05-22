@@ -17,7 +17,7 @@ import { BetClosure } from './entity/betclosure.entity';
 import { Winning } from './entity/winning.entity';
 // import { Cronjob } from './entity/cronjob.entity';
 import { TypeOrmModule } from '@nestjs/typeorm';
-// import { RabbitmqModule } from './rabbitmq.module';
+import { RabbitmqModule } from './rabbitmq.module';
 import 'dotenv/config';
 import { Booking } from './entity/booking.entity';
 import { BookingSelection } from './entity/booking.selection.entity';
@@ -33,9 +33,9 @@ import { CasinoBet } from './entity/casino-bet.entity';
       isGlobal: true,
     }),
     BetsModule,
-    // ConsumerModule,
-    // CronJobModule,
-    // RabbitmqModule,
+    ConsumerModule,
+    CronJobModule,
+    RabbitmqModule,
     SettingsModule,
     TypeOrmModule.forRoot({
       type: process.env.DB_TYPE as any,
