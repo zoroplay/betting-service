@@ -112,35 +112,6 @@ export class CasinoBetService {
     try {
       console.log(data);
       const { winnings, transactionId, provider } = data;
-      if (provider === 'evo-play') {
-        let status = 0;
-        if (winnings > 0) {
-          status = 1;
-        } else {
-          status = 2;
-        }
-        await this.casinoBetRepo.update(
-          { transaction_id: transactionId },
-          {
-            winnings,
-            status,
-          },
-        );
-
-        const operator = await this.casinoBetRepo.findOneBy({
-          transaction_id: transactionId,
-        });
-
-        return {
-          success: true,
-          status: HttpStatus.OK,
-          message: 'Bet Settled Successfully',
-          data: {
-            transactionId: operator.id,
-            balance: 0,
-          },
-        };
-      }
 
       let status = 0;
       if (winnings > 0) {
@@ -148,16 +119,17 @@ export class CasinoBetService {
       } else {
         status = 2;
       }
-      await this.casinoBetRepo.update(
-        { id: transactionId },
-        {
-          winnings,
-          status,
-        },
-      );
+      // Using QueryBuilder to add an OR condition
+      await this.casinoBetRepo
+        .createQueryBuilder()
+        .update(CasinoBet)
+        .set({ winnings, status })
+        .where('id = :transactionId', { transactionId })
+        .orWhere('transaction_id = :transactionId', { transactionId })
+        .execute();
 
-      const operator = await this.casinoBetRepo.findOneBy({
-        id: transactionId,
+      const operator = await this.casinoBetRepo.findOne({
+        where: [{ id: transactionId }, { transaction_id: transactionId }],
       });
 
       return {
@@ -170,6 +142,7 @@ export class CasinoBetService {
         },
       };
     } catch (e) {
+      console.log(e.message);
       return {
         success: false,
         status: HttpStatus.INTERNAL_SERVER_ERROR,
