@@ -24,6 +24,7 @@ export interface RollbackCasinoBetRequest {
 export interface SettleCasinoBetRequest {
   transactionId: string;
   winnings: number;
+  provider: string;
 }
 export interface SettleCasinoBetResponse {
   success: boolean;

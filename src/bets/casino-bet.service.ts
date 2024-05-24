@@ -111,7 +111,36 @@ export class CasinoBetService {
   ): Promise<PlaceCasinoBetResponse> {
     try {
       console.log(data);
-      const { winnings, transactionId } = data;
+      const { winnings, transactionId, provider } = data;
+      if (provider === 'evo-play') {
+        let status = 0;
+        if (winnings > 0) {
+          status = 1;
+        } else {
+          status = 2;
+        }
+        await this.casinoBetRepo.update(
+          { transaction_id: transactionId },
+          {
+            winnings,
+            status,
+          },
+        );
+
+        const operator = await this.casinoBetRepo.findOneBy({
+          transaction_id: transactionId,
+        });
+
+        return {
+          success: true,
+          status: HttpStatus.OK,
+          message: 'Bet Settled Successfully',
+          data: {
+            transactionId: operator.id,
+            balance: 0,
+          },
+        };
+      }
 
       let status = 0;
       if (winnings > 0) {
