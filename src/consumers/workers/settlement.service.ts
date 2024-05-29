@@ -8,7 +8,7 @@ import {BetSlip} from "../../entity/betslip.entity";
 import {BETSLIP_PROCESSING_PENDING, BETSLIP_PROCESSING_SETTLED} from "../../constants";
 import axios from "axios";
 import { xml2js } from 'xml-js';
-import { CashoutService } from "src/bets/cashout.service";
+// import { CashoutService } from "src/bets/cashout.service";
 
 @Injectable()
 export class SettlementService {
@@ -23,7 +23,7 @@ export class SettlementService {
         @InjectRepository(Settlement)
         private settlementRepository: Repository<Settlement>,
 
-        private readonly cashoutService: CashoutService,
+        // private readonly cashoutService: CashoutService,
 
     ) {
 
@@ -149,9 +149,9 @@ export class SettlementService {
 
                 counts++
                 // if result is won, check and calculate cashout amount
-                if (result === 1) {
-                    this.cashoutService.checkCashoutAvailability(matchID, marketID, specifier, outcomeID);
-                }
+                // if (result === 1) {
+                //     this.cashoutService.checkCashoutAvailability(matchID, marketID, specifier, outcomeID);
+                // }
             }
 
         }
