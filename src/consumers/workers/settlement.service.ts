@@ -296,7 +296,7 @@ export class SettlementService {
     }
 
     async getMatchInfo(matchId) {
-        console.log(matchId);
+        // console.log(matchId);
         const url = `https://api.betradar.com/v1/sports/en/sport_events/${matchId}/summary.xml`;
         
         return await axios.get(url, {
@@ -305,8 +305,9 @@ export class SettlementService {
             }
         }).then(res => {
             const json: any = xml2js(res.data, { compact: true});
-            console.log(json.match_summary)
-            const periodScore: any = json.match_summary.sport_event_status.period_scores.period_score[0]?._attributes;
+            // console.log(json.match_summary)
+            const periodScore: any = json.match_summary.sport_event_status.period_scores ? 
+                json.match_summary.sport_event_status.period_scores.period_score[0]?._attributes : null;
             const eventStatus = json.match_summary.sport_event_status;
             const ft_score = `${eventStatus._attributes.home_score}:${eventStatus._attributes.away_score}`;
             const ht_score = `${periodScore?.home_score}:${periodScore?.away_score}`;
