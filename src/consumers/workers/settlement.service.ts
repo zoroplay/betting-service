@@ -54,7 +54,7 @@ export class SettlementService {
     async createSettlement(data: any): Promise<number> {
 
         data = JSON.parse(JSON.stringify(data))
-
+        console.log(data)
         let matchID = data.match_id
         let markets = data.markets;
         
@@ -305,7 +305,7 @@ export class SettlementService {
             }
         }).then(res => {
             const json: any = xml2js(res.data, { compact: true});
-            console.log(json)
+            // console.log(json)
             const periodScore: any = json.match_summary.sport_event_status.period_scores.period_score[0]._attributes;
             const eventStatus = json.match_summary.sport_event_status;
             const ft_score = `${eventStatus._attributes.home_score}:${eventStatus._attributes.away_score}`;
