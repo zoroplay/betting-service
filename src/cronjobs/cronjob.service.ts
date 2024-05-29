@@ -4,7 +4,6 @@ import {JsonLogger, LoggerFactory} from "json-logger-service";
 import {BetSettlementService} from "./workers/bet.settlement.service";
 import {BetResultingController} from "./workers/bet.resulting.service";
 import {InjectRepository} from "@nestjs/typeorm";
-import {Settlement} from "../entity/settlement.entity";
 import {Repository} from "typeorm";
 import {Cronjob} from "../entity/cronjob.entity";
 
