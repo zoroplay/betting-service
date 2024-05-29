@@ -8,6 +8,7 @@ import {BetSlip} from "../../entity/betslip.entity";
 import {BETSLIP_PROCESSING_PENDING, BETSLIP_PROCESSING_SETTLED} from "../../constants";
 import axios from "axios";
 import { xml2js } from 'xml-js';
+import { CashoutService } from "src/bets/cashout.service";
 
 @Injectable()
 export class SettlementService {
@@ -21,6 +22,8 @@ export class SettlementService {
 
         @InjectRepository(Settlement)
         private settlementRepository: Repository<Settlement>,
+
+        private readonly cashoutService: CashoutService,
 
     ) {
 
@@ -145,6 +148,10 @@ export class SettlementService {
                 this.logger.info("done processing settlement match | " + matchID + " | marketID " + marketID + " | specifier " + specifier + " | outcomeID " + outcomeID + " | settlementID " + settlementResult.id)
 
                 counts++
+                // if result is won, check and calculate cashout amount
+                if (result === 1) {
+                    this.cashoutService.checkCashoutAvailability(matchID, marketID, specifier, outcomeID);
+                }
             }
 
         }
@@ -289,18 +296,23 @@ export class SettlementService {
     }
 
     async getMatchInfo(matchId) {
-        return await axios.get(`https://api.betradar.com/v1/sports/en/sport_events/${matchId}/summary.xml`, {
+        console.log(matchId);
+        const url = `https://api.betradar.com/v1/sports/en/sport_events/${matchId}/summary.xml`;
+        
+        return await axios.get(url, {
             headers: {
                 'x-access-token': process.env.BETRADAR_API_TOKEN
             }
         }).then(res => {
             const json: any = xml2js(res.data, { compact: true});
+            console.log(json)
             const periodScore: any = json.match_summary.sport_event_status.period_scores.period_score[0]._attributes;
             const eventStatus = json.match_summary.sport_event_status;
             const ft_score = `${eventStatus._attributes.home_score}:${eventStatus._attributes.away_score}`;
             const ht_score = `${periodScore.home_score}:${periodScore.away_score}`;
             return {success: true, scores: {ft_score, ht_score} };
         }).catch(err => {
+            console.log('Error, fetching match scores', err)
             return {success: false, scores: {}}
         });
 

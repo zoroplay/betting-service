@@ -6,6 +6,7 @@ import { BetSlip } from '../entity/betslip.entity';
 import { Setting } from '../entity/setting.entity';
 import { JsonLogger, LoggerFactory } from 'json-logger-service';
 import {
+  BETSLIP_PROCESSING_SETTLED,
   BET_CANCELLED,
   BET_LOST,
   BET_PENDING,
@@ -22,8 +23,6 @@ import {
 import { PlaceBetResponse } from './interfaces/placebet.response.interface';
 import {
   BetSlipSelection,
-  Probability,
-  ProbabilityBetSlipSelection,
 } from './interfaces/betslip.interface';
 import { Observable } from 'rxjs';
 import { ProducerstatusreplyInterface } from './interfaces/producerstatusreply.interface';
@@ -33,7 +32,6 @@ import OddsService from './odds.service.interface';
 import { HttpService } from '@nestjs/axios';
 import {
   GetOddsReply,
-  OddsProbability,
 } from './interfaces/oddsreply.interface';
 import { GetOddsRequest } from './interfaces/oddsrequest.interface';
 import {
@@ -52,6 +50,7 @@ import { BonusService } from 'src/bonus/bonus.service';
 import { WalletService } from 'src/wallet/wallet.service';
 import { IdentityService } from 'src/identity/identity.service';
 import { BetStatus } from 'src/entity/betstatus.entity';
+import { CashoutService } from 'src/bets/cashout.service';
 
 @Injectable()
 export class BetsService {
@@ -91,6 +90,8 @@ export class BetsService {
     private readonly walletService: WalletService,
 
     private readonly identityService: IdentityService,
+
+    private readonly cashoutService: CashoutService
   ) {}
 
   onModuleInit(): any {
@@ -230,7 +231,7 @@ export class BetsService {
       let limit = ` LIMIT ${offset},${noPerPage}`;
 
       let queryString = `SELECT b.id,b.user_id,b.username,b.betslip_id,b.stake,b.currency,b.bet_type,b.bet_category,b.total_odd,b.possible_win,b.source,b.total_bets,
-            b.won,b.status,b.created,w.winning_after_tax as winnings, b.sports, b.tournaments, b.events, b.markets, b.event_type, b.bet_category_desc
+            b.won,b.status,b.created,w.winning_after_tax as winnings, b.sports, b.tournaments, b.events, b.markets, b.event_type, b.bet_category_desc, b.probability
             FROM bet b LEFT JOIN winning w ON w.bet_id = b.id WHERE is_booked = 0 AND b.client_id = ? AND  ${where.join(
               ' AND ',
             )} ORDER BY b.created DESC ${limit}`;
@@ -245,11 +246,16 @@ export class BetsService {
 
     for (let bet of bets) {
       let slips: any;
+      let settled: any;
 
       try {
-        const slipQuery = `SELECT id,event_id,event_type,event_prefix,event_name,event_date,market_name,specifier,outcome_name,odds,won,
-                status,sport_name,category_name,tournament_name,match_id FROM bet_slip WHERE bet_id =? `;
+        const slipQuery = `SELECT id,event_id,event_type,event_prefix,event_name,event_date,market_name, market_id,specifier,outcome_name,odds,won,
+                status,sport_name,category_name,tournament_name,match_id, producer_id, probability FROM bet_slip WHERE bet_id =? `;
         slips = await this.entityManager.query(slipQuery, [bet.id]);
+
+        const expireQuery = slipQuery + 'AND status = ?';
+        settled = await this.entityManager.query(expireQuery, [bet.id, BETSLIP_PROCESSING_SETTLED]);
+
       } catch (e) {
         this.logger.error(' error retrieving bet slips ' + e.toString());
         continue;
@@ -281,8 +287,13 @@ export class BetsService {
       }
 
       bet.selections = [];
+      let currentProbability = 1;
+      let totalOdds = 1;
+      let cashOutAmount = 0;
+
       if (slips.length > 0) {
         for (const slip of slips) {
+
           let slipStatusDesc, slipStatus;
           switch (slip.won) {
             case STATUS_NOT_LOST_OR_WON:
@@ -297,6 +308,22 @@ export class BetsService {
             case STATUS_WON:
               slipStatusDesc = 'Won';
               slipStatus = 1;
+              // get probability for selection
+              let selectionProbability = await this.cashoutService.getProbability(
+                slip.producer_id,
+                slip.event_prefix,
+                slip.event_type,
+                slip.match_id,
+                slip.market_id,
+                slip.specifier,
+                slip.outcome_id,
+              );
+
+              totalOdds = totalOdds * slip.odds;
+
+              if (selectionProbability)
+                currentProbability = currentProbability * selectionProbability;
+
             default:
               slipStatus = 'Void';
               slipStatus = 3;
@@ -324,6 +351,9 @@ export class BetsService {
         }
       }
 
+      if (!bet.bonus_id)
+        cashOutAmount = await this.cashoutService.calculateCashout(currentProbability, bet.probability, bet.stake, totalOdds);
+      
       bet.id = bet.id;
       bet.userId = bet.user_id;
       bet.username = bet.username;
@@ -340,9 +370,11 @@ export class BetsService {
       bet.events = bet.events;
       bet.markets = bet.markets;
       bet.betCategoryDesc = bet.bet_category_desc;
+      bet.cashOutAmount = cashOutAmount;
 
       myBets.push(bet);
     }
+
     response.lastPage = last_page;
     response.from = start;
     response.to = start + total;
@@ -592,7 +624,7 @@ export class BetsService {
       // let odd = selection.odds;
 
       // get probability overallProbability
-      let selectionProbability = await this.getProbability(
+      let selectionProbability = await this.cashoutService.getProbability(
         selection.producerId,
         selection.eventPrefix,
         selection.eventType,
@@ -637,12 +669,6 @@ export class BetsService {
 
     let validationData;
 
-    // if (bet.isBooking === 0) { // check if bet placement is not booking
-    // To-Do: Get User Details and Settings
-
-    // if (bet.userId == 0)
-    //     return {status: 400, message: "missing user id", success: false};
-
     //TO-DO: Validate bet from identity service
     const validationRes = await this.identityService.validateBet(bet);
     // console.log(validationRes);
@@ -658,7 +684,7 @@ export class BetsService {
     if (bet.useBonus) {
       //check if bonus is till valid
       const bonusRes = await this.bonusService.validateSelection(bet);
-      console.log(bonusRes);
+      // console.log(bonusRes);
       if (bonusRes.success) {
         bonusId = bonusRes.id;
       } else {
@@ -696,23 +722,20 @@ export class BetsService {
     const betData = new Bet();
     let betResult = null;
     let mtsSelection = [];
-
+    let cashoutAmount = 0;
     try {
-      // creating transaction
-      //transactionRunner = await this.transactionRunner.createTransaction();
+      //4. Calculate Cashout, if not bonus bet
+      if (!bonusId)
+        cashoutAmount = await this.cashoutService.calculateCashout(overallProbability, overallProbability, bet.stake, 1);
 
-      // starting transaction
-      // pass the ISOLATION_LEVEL (default is READ COMMITTED)
-      //await transactionRunner.startTransaction();
-
-      //const transactionManager = transactionRunner.transactionManager;
-
-      //4. create bet
+      //5. create bet
       betData.client_id = bet.clientId;
       betData.user_id = bet.isBooking === 0 ? bet.userId : 0;
       betData.username = bet.isBooking === 0 ? bet.username : 'guest';
       betData.betslip_id = this.generateBetslipId();
       betData.stake = bet.stake;
+      betData.cash_out_amount = cashoutAmount;
+      betData.cash_out_status = cashoutAmount > 0 ? 1 : 0;
       betData.currency = validationData.currency;
       betData.bet_category = bet.betType;
       betData.bet_category_desc = betTypeDescription(bet);
@@ -803,7 +826,7 @@ export class BetsService {
       if (bet.isBooking === 0) {
         // if it's not booking, debit user
 
-        //5. debit user by calling wallet service
+        //6. debit user by calling wallet service
         let debitPayload = {
           // currency: clientSettings.currency,
           amount: stake,
@@ -1171,16 +1194,6 @@ export class BetsService {
     return this.outrightsService.GetOdds(data);
   }
 
-  getOddsProbability(data: GetOddsRequest): Observable<OddsProbability> {
-    return this.oddsService.GetProbability(data);
-  }
-
-  getOddsOutrightsProbability(
-    data: GetOddsRequest,
-  ): Observable<OddsProbability> {
-    return this.outrightsService.GetProbability(data);
-  }
-
   generateBetslipId() {
     const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
     let result = '';
@@ -1192,95 +1205,5 @@ export class BetsService {
     return result;
   }
 
-  async getProbability(
-    producerId: number,
-    eventPrefix: string,
-    eventType: string,
-    eventId: number,
-    marketId: number,
-    specifier: string,
-    outcomeId: string,
-  ): Promise<number> {
-    let odds = {
-      eventType: eventType,
-      eventPrefix: eventPrefix,
-      eventID: eventId,
-      producerID: producerId,
-      marketID: marketId,
-      outcomeID: outcomeId,
-      specifier: specifier,
-    };
-
-    try {
-      let oddStatus = {} as OddsProbability;
-
-      if (eventType.toLowerCase() === 'match')
-        oddStatus = await this.getOddsProbability(odds).toPromise();
-      else oddStatus = await this.getOddsOutrightsProbability(odds).toPromise();
-
-      this.logger.info(oddStatus);
-
-      // if oddStatus is undefined or there no probability we use a probability of 1
-      return oddStatus && oddStatus.probability ? oddStatus.probability : 1;
-    } catch (e) {
-      this.logger.error(e.toString());
-      return 1;
-    }
-  }
-
-  async getProbabilityFromBetID(betID: number): Promise<Probability> {
-    try {
-      const betData = await this.betRepository.findOne({
-        where: {
-          id: betID,
-        },
-      });
-
-      const slips = await this.betslipRepository.find({
-        where: {
-          bet_id: betID,
-        },
-      });
-
-      let probability = 1;
-
-      let probabilityBetSlipSelection = [];
-
-      for (let slip of slips) {
-        let selectionProbability = {} as ProbabilityBetSlipSelection;
-
-        let pro = await this.getProbability(
-          slip.producer_id,
-          slip.event_prefix,
-          slip.event_type,
-          slip.event_id,
-          slip.market_id,
-          slip.specifier,
-          slip.outcome_id,
-        );
-        selectionProbability.currentProbability = pro;
-        selectionProbability.eventId = slip.event_id;
-        selectionProbability.eventType = slip.event_type;
-        selectionProbability.eventPrefix = slip.event_prefix;
-        selectionProbability.marketId = slip.market_id;
-        selectionProbability.marketName = slip.market_name;
-        selectionProbability.specifier = slip.specifier;
-        selectionProbability.outcomeId = slip.outcome_id;
-        selectionProbability.outcomeName = slip.outcome_name;
-        selectionProbability.initialProbability = slip.probability;
-        selectionProbability.currentProbability = pro;
-        probabilityBetSlipSelection.push(selectionProbability);
-        probability = probability * pro;
-      }
-
-      return {
-        currentProbability: probability,
-        initialProbability: betData.probability,
-        selections: probabilityBetSlipSelection,
-      };
-    } catch (e) {
-      this.logger.error(' error retrieving all settings ' + e.toString());
-      throw e;
-    }
-  }
+ 
 }

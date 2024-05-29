@@ -37,6 +37,7 @@ import {
 import { VirtualBetService } from './virtual-bet.service';
 import { PaginationResponse } from 'src/identity/identity.pb';
 import { CasinoBetService } from './casino-bet.service';
+import { CashoutService } from 'src/bets/cashout.service';
 
 @Controller('bets')
 export class BetsController {
@@ -49,6 +50,7 @@ export class BetsController {
     private readonly virtualService: VirtualBetService,
     private readonly casinoService: CasinoBetService,
     private readonly reportService: ReportService,
+    private readonly cashoutService: CashoutService,
   ) {}
 
   @GrpcMethod('BettingService', 'CancelCasinoBet')
@@ -120,7 +122,7 @@ export class BetsController {
 
   @GrpcMethod('BettingService', 'GetProbabilityFromBetID')
   GetProbabilityFromBetID(data: BetID): Promise<Probability> {
-    return this.betsService.getProbabilityFromBetID(data.betID);
+    return this.cashoutService.getProbabilityFromBetID(data.betID);
   }
 
   @GrpcMethod('BettingService', 'GetVirtualBets')

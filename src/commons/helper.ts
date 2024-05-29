@@ -68,4 +68,4 @@ export const paginateResponse = (data: any,page: number,limit: number, message =
       prevPage: prevPage,
       lastPage: lastPage,
     }
-  }
+}

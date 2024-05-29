@@ -24,6 +24,8 @@ import { BookingSelection } from './entity/booking.selection.entity';
 import { SettingsModule } from './settings/settings.module';
 import { VirtualBet } from './entity/virtual-bet.entity';
 import { CasinoBet } from './entity/casino-bet.entity';
+import { CashoutLadder } from './entity/cashout.ladder.entity';
+import { Cashout } from './entity/cashout.entity';
 
 @Module({
   imports: [
@@ -50,6 +52,8 @@ import { CasinoBet } from './entity/casino-bet.entity';
         BetStatus,
         Booking,
         BookingSelection,
+        Cashout,
+        CashoutLadder,
         Mts,
         Setting,
         Settlement,

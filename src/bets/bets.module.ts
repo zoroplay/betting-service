@@ -20,6 +20,10 @@ import { IdentityModule } from 'src/identity/identity.module';
 import { BetStatus } from 'src/entity/betstatus.entity';
 import { CasinoBetService } from './casino-bet.service';
 import { CasinoBet } from 'src/entity/casino-bet.entity';
+import { CashoutService } from './cashout.service';
+import { Cashout } from 'src/entity/cashout.entity';
+import { CashoutLadder } from 'src/entity/cashout.ladder.entity';
+import { Winning } from 'src/entity/winning.entity';
 
 @Module({
   imports: [
@@ -31,12 +35,15 @@ import { CasinoBet } from 'src/entity/casino-bet.entity';
       Bet,
       BetSlip,
       Booking,
+      Cashout,
+      CashoutLadder,
       BookingSelection,
       Mts,
       Setting,
       VirtualBet,
       CasinoBet,
       BetStatus,
+      Winning
     ]),
     ClientsModule.register([
       {
@@ -60,6 +67,6 @@ import { CasinoBet } from 'src/entity/casino-bet.entity';
     ]),
   ],
   controllers: [BetsController],
-  providers: [BetsService, ReportService, VirtualBetService, CasinoBetService],
+  providers: [BetsService, CashoutService, ReportService, VirtualBetService, CasinoBetService],
 })
 export class BetsModule {}
