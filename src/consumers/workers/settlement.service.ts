@@ -54,7 +54,7 @@ export class SettlementService {
     async createSettlement(data: any): Promise<number> {
 
         data = JSON.parse(JSON.stringify(data))
-        console.log(data)
+        // console.log(data)
         let matchID = data.match_id
         let markets = data.markets;
         
@@ -68,7 +68,7 @@ export class SettlementService {
         let eventPrefix = 'sr';
 
         //To-Do: Get Event Scores
-        const scores: any = await this.getMatchInfo(`${eventPrefix}:${event_type}:${matchID}`);
+        const scores: any = await this.getMatchInfo(data.event_id);
         let ft_score = '-';
         let ht_score = '-';
 
@@ -305,11 +305,11 @@ export class SettlementService {
             }
         }).then(res => {
             const json: any = xml2js(res.data, { compact: true});
-            // console.log(json)
-            const periodScore: any = json.match_summary.sport_event_status.period_scores.period_score[0]._attributes;
+            console.log(json.match_summary)
+            const periodScore: any = json.match_summary.sport_event_status.period_scores.period_score[0]?._attributes;
             const eventStatus = json.match_summary.sport_event_status;
             const ft_score = `${eventStatus._attributes.home_score}:${eventStatus._attributes.away_score}`;
-            const ht_score = `${periodScore.home_score}:${periodScore.away_score}`;
+            const ht_score = `${periodScore?.home_score}:${periodScore?.away_score}`;
             return {success: true, scores: {ft_score, ht_score} };
         }).catch(err => {
             console.log('Error, fetching match scores', err)
