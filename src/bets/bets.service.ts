@@ -304,21 +304,23 @@ export class BetsService {
             case STATUS_WON:
               slipStatusDesc = 'Won';
               slipStatus = 1;
-              // get probability for selection
-              let selectionProbability = await this.cashoutService.getProbability(
-                slip.producer_id,
-                slip.event_prefix,
-                slip.event_type,
-                slip.match_id,
-                slip.market_id,
-                slip.specifier,
-                slip.outcome_id,
-              );
+              if (bet.status === BET_PENDING) {
+                // get probability for selection
+                let selectionProbability = await this.cashoutService.getProbability(
+                  slip.producer_id,
+                  slip.event_prefix,
+                  slip.event_type,
+                  slip.match_id,
+                  slip.market_id,
+                  slip.specifier,
+                  slip.outcome_id,
+                );
 
-              totalOdds = totalOdds * slip.odds;
+                totalOdds = totalOdds * slip.odds;
 
-              if (selectionProbability)
-                currentProbability = currentProbability * selectionProbability;
+                if (selectionProbability)
+                  currentProbability = currentProbability * selectionProbability;
+              }
 
             default:
               slipStatus = 'Void';
@@ -347,7 +349,7 @@ export class BetsService {
         }
       }
 
-      if (!bet.bonus_id)
+      if (!bet.bonus_id && bet.status === BET_PENDING)
         cashOutAmount = await this.cashoutService.calculateCashout(currentProbability, bet.probability, bet.stake, totalOdds);
       
       bet.id = bet.id;
