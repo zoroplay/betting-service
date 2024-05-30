@@ -207,19 +207,20 @@ export class CashoutService {
             };
     
         try {
-            let oddStatus = {} as OddsProbability;
+            let probability = 0;
     
             if (eventType.toLowerCase() === 'match')
-                oddStatus = await this.getOddsProbability(odds);
-            else oddStatus = await this.getOddsOutrightsProbability(odds).toPromise();
+                probability = await this.getOddsProbability(odds);
+            // else probability = await this.getOddsOutrightsProbability(odds).toPromise();
+            else probability = 0;
     
-            console.log('probability outcome', oddStatus);
+            // console.log('probability outcome', oddStatus);
     
             // if oddStatus is undefined or there no probability we use a probability of 1
-            return oddStatus && oddStatus.probability ? oddStatus.probability : 1;
+            return probability;
         } catch (e) {
           this.logger.error(e.toString());
-            return 1;
+            return 0;
         }
     }
     
@@ -282,7 +283,7 @@ export class CashoutService {
     
         // return this.oddsService.GetProbability(data);
     async getOddsProbability(data: GetOddsRequest) {
-        console.log(data);
+        // console.log(data);
         const matchId = `${data.eventPrefix}:${data.eventType}:${data.eventID}`
         // console.log(matchId);
         let url = `https://api.betradar.com/v1/probabilities/${matchId}/${data.marketID}`;
@@ -297,6 +298,8 @@ export class CashoutService {
             }
         }).then(res => {
             const match = res.data;
+            if (res.data.response_code) return  0;
+
             const markets: any = match.odds.market;
             let probability = 0
             for (const market of markets) {
@@ -309,11 +312,11 @@ export class CashoutService {
                 }
             }
             
-            return {probability};
+            return probability;
             
         }).catch(err => {
             console.log('Error, fetching probability', err)
-            return {probability: 0}
+            return 0
         });
 
     }

@@ -239,7 +239,7 @@ export class BetsService {
       // let settled: any;
 
       try {
-        const slipQuery = `SELECT id,event_id,event_type,event_prefix,event_name,event_date,market_name, market_id,specifier,outcome_name,odds,won,
+        const slipQuery = `SELECT id,event_id,event_type,event_prefix,event_name,event_date,market_name, market_id,specifier,outcome_name,outcome_id,odds,won,
                 status,sport_name,category_name,tournament_name,match_id, producer_id, probability FROM bet_slip WHERE bet_id =? `;
         slips = await this.entityManager.query(slipQuery, [bet.id]);
 
@@ -295,28 +295,29 @@ export class BetsService {
             case STATUS_WON:
               slipStatusDesc = 'Won';
               slipStatus = 1;
-              if (bet.status === BET_PENDING) {
-                // get probability for selection
-                let selectionProbability = await this.cashoutService.getProbability(
-                  slip.producer_id,
-                  slip.event_prefix,
-                  slip.event_type,
-                  slip.match_id,
-                  slip.market_id,
-                  slip.specifier,
-                  slip.outcome_id,
-                );
-
-                totalOdds = totalOdds * slip.odds;
-
-                if (selectionProbability)
-                  currentProbability = currentProbability * selectionProbability;
-              }
 
             default:
               slipStatus = 'Void';
               slipStatus = 3;
               break;
+          }
+
+          if (bet.status === BET_PENDING) {
+            // get probability for selection
+            let selectionProbability = await this.cashoutService.getProbability(
+              slip.producer_id,
+              slip.event_prefix,
+              slip.event_type,
+              slip.match_id,
+              slip.market_id,
+              slip.specifier,
+              slip.outcome_id,
+            );
+
+            totalOdds = totalOdds * slip.odds;
+
+            if (selectionProbability)
+              currentProbability = currentProbability * selectionProbability;
           }
 
           bet.selections.push({
