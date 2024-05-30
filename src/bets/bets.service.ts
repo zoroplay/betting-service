@@ -1,4 +1,4 @@
-import { ForbiddenException, Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EntityManager, Repository } from 'typeorm';
 import { Bet } from '../entity/bet.entity';
@@ -6,7 +6,6 @@ import { BetSlip } from '../entity/betslip.entity';
 import { Setting } from '../entity/setting.entity';
 import { JsonLogger, LoggerFactory } from 'json-logger-service';
 import {
-  BETSLIP_PROCESSING_SETTLED,
   BET_CANCELLED,
   BET_LOST,
   BET_PENDING,
@@ -246,15 +245,12 @@ export class BetsService {
 
     for (let bet of bets) {
       let slips: any;
-      let settled: any;
+      // let settled: any;
 
       try {
         const slipQuery = `SELECT id,event_id,event_type,event_prefix,event_name,event_date,market_name, market_id,specifier,outcome_name,odds,won,
                 status,sport_name,category_name,tournament_name,match_id, producer_id, probability FROM bet_slip WHERE bet_id =? `;
         slips = await this.entityManager.query(slipQuery, [bet.id]);
-
-        const expireQuery = slipQuery + 'AND status = ?';
-        settled = await this.entityManager.query(expireQuery, [bet.id, BETSLIP_PROCESSING_SETTLED]);
 
       } catch (e) {
         this.logger.error(' error retrieving bet slips ' + e.toString());
