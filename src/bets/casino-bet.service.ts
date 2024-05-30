@@ -120,7 +120,7 @@ export class CasinoBetService {
         status = 2;
       }
       await this.casinoBetRepo.update(
-        { id: transactionId },
+        { round_id: transactionId },
         {
           winnings,
           status,
@@ -128,7 +128,7 @@ export class CasinoBetService {
       );
 
       const operator = await this.casinoBetRepo.findOneBy({
-        id: transactionId,
+        round_id: transactionId,
       });
 
       return {
@@ -141,6 +141,7 @@ export class CasinoBetService {
         },
       };
     } catch (e) {
+      console.log('settlement error', e.message);
       return {
         success: false,
         status: HttpStatus.INTERNAL_SERVER_ERROR,
