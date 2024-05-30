@@ -4,7 +4,7 @@ import { InjectRepository } from "@nestjs/typeorm";
 import * as dayjs from 'dayjs';
 import { JsonLogger, LoggerFactory } from "json-logger-service";
 import { Observable } from "rxjs";
-import { Probability, ProbabilityBetSlipSelection } from "src/bets/interfaces/betslip.interface";
+import { Probability, ProbabilityBetSlipSelection, ProcessCashoutRequest, ProcessCashoutResponse } from "src/bets/interfaces/betslip.interface";
 import { OddsProbability } from "src/bets/interfaces/oddsreply.interface";
 import { GetOddsRequest } from "src/bets/interfaces/oddsrequest.interface";
 import { BET_PENDING, BET_WON, STATUS_WON } from "src/constants";
@@ -125,7 +125,7 @@ export class CashoutService {
         }
     }
 
-    async processCashout(betId) {
+    async processCashout({betId, amount}: ProcessCashoutRequest): Promise<ProcessCashoutResponse> {
         try {
             const bet = await this.betRepository.findOne({where: {id: betId}});
 
@@ -137,7 +137,7 @@ export class CashoutService {
                     },
                     {
                         status: BET_WON,
-                        winning_after_tax: bet.cash_out_amount,
+                        winning_after_tax: amount,
                         won: STATUS_WON
                     }
                 );
@@ -147,9 +147,9 @@ export class CashoutService {
                 winning.user_id = bet.user_id
                 winning.client_id = bet.client_id
                 winning.currency = bet.currency
-                winning.tax_on_winning = bet.tax_on_winning
-                winning.winning_before_tax = bet.cash_out_amount
-                winning.winning_after_tax = bet.cash_out_amount
+                winning.tax_on_winning = amount;
+                winning.winning_before_tax = amount
+                winning.winning_after_tax = amount
 
                 let winner : any
                 // wrap in try catch
@@ -165,7 +165,7 @@ export class CashoutService {
 
                 // send amount user
                 let winCreditPayload = {
-                    amount: bet.cash_out_amount,
+                    amount: amount,
                     userId: bet.user_id,
                     username: bet.username,
                     clientId: bet.client_id,
@@ -176,10 +176,12 @@ export class CashoutService {
                     channel: 'Internal',
                 };
                 // credit user wallet
-                await this.walletService.credit(winCreditPayload);
+                const wallet = await this.walletService.credit(winCreditPayload);
       
+                return {success: true, message: 'Cashout successful', balance: wallet.data.availableBalance};
+
             } else {
-                return {success: true, message: 'Bet not found'};
+                return {success: false, message: 'Bet not found'};
             }
         } catch(e) {
             return {success: false, message: 'Error processing cashout'};

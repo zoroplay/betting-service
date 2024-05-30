@@ -40,3 +40,14 @@ export interface Probability {
     initialProbability: number;
     selections: ProbabilityBetSlipSelection[];
 }
+
+export interface ProcessCashoutRequest {
+    betId: number;
+    amount: number;
+}
+
+export interface ProcessCashoutResponse {
+    success: boolean;
+    message: string;
+    balance?: number;
+}

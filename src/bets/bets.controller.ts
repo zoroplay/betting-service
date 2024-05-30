@@ -27,7 +27,7 @@ import {
 import { UpdateBetRequest } from './interfaces/update.bet.request.interface';
 import { UpdateBetResponse } from './interfaces/update.bet.response.interface';
 import { BetID } from './interfaces/betid.interface';
-import { Probability } from './interfaces/betslip.interface';
+import { Probability, ProcessCashoutRequest, ProcessCashoutResponse } from './interfaces/betslip.interface';
 import { ReportService } from './report.service';
 import {
   GamingActivityRequest,
@@ -128,5 +128,11 @@ export class BetsController {
   @GrpcMethod('BettingService', 'GetVirtualBets')
   GetVirtualBets(data: GetVirtualBetsRequest): Promise<PaginationResponse> {
     return this.virtualService.getTickets(data);
+  }
+
+  @GrpcMethod('BettingService', 'CashoutRequest')
+  CashoutRequest(data: ProcessCashoutRequest): Promise<ProcessCashoutResponse> {
+    console.log('cashout request')
+    return this.cashoutService.processCashout(data);
   }
 }
