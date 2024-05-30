@@ -3,9 +3,8 @@ import {JsonLogger, LoggerFactory} from "json-logger-service";
 import {InjectRepository} from "@nestjs/typeorm";
 import {EntityManager, Repository} from "typeorm";
 import {BetCancel} from "../../entity/betcancel.entity";
-import {BET_CANCELLED, BET_PENDING, TRANSACTION_TYPE_BET_CANCEL} from "../../constants";
-import { Setting } from "src/entity/setting.entity";
-import axios from "axios";
+import {BET_CANCELLED, BET_PENDING} from "../../constants";
+// import { Setting } from "src/entity/setting.entity";
 import { WalletService } from "src/wallet/wallet.service";
 import { BonusService } from "src/bonus/bonus.service";
 
@@ -17,8 +16,8 @@ export class BetCancelService {
     constructor(
         @InjectRepository(BetCancel)
         private betCancelRepository: Repository<BetCancel>,
-        @InjectRepository(Setting)
-        private settingRepository: Repository<Setting>,
+        // @InjectRepository(Setting)
+        // private settingRepository: Repository<Setting>,
 
         private readonly entityManager: EntityManager,
 

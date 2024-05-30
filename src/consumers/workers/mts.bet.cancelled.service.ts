@@ -2,11 +2,10 @@ import {Injectable} from "@nestjs/common";
 import {JsonLogger, LoggerFactory} from "json-logger-service";
 import {InjectRepository} from "@nestjs/typeorm";
 import {EntityManager, Repository} from "typeorm";
-import {BET_CANCELLED, TRANSACTION_TYPE_BET_CANCELLED} from "../../constants";
+import {BET_CANCELLED} from "../../constants";
 import {Bet} from "../../entity/bet.entity";
 import {BetStatus} from "../../entity/betstatus.entity";
 import { Setting } from "src/entity/setting.entity";
-import axios from "axios";
 import { WalletService } from "src/wallet/wallet.service";
 import { BonusService } from "src/bonus/bonus.service";
 

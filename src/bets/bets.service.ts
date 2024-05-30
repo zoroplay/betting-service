@@ -3,7 +3,6 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { EntityManager, Repository } from 'typeorm';
 import { Bet } from '../entity/bet.entity';
 import { BetSlip } from '../entity/betslip.entity';
-import { Setting } from '../entity/setting.entity';
 import { JsonLogger, LoggerFactory } from 'json-logger-service';
 import {
   BET_CANCELLED,
@@ -28,7 +27,6 @@ import { ProducerstatusreplyInterface } from './interfaces/producerstatusreply.i
 import {AmqpConnection} from '@golevelup/nestjs-rabbitmq';
 import { ClientGrpc } from '@nestjs/microservices';
 import OddsService from './odds.service.interface';
-import { HttpService } from '@nestjs/axios';
 import {
   GetOddsReply,
 } from './interfaces/oddsreply.interface';
@@ -48,7 +46,6 @@ import { betTypeDescription, countItem } from 'src/commons/helper';
 import { BonusService } from 'src/bonus/bonus.service';
 import { WalletService } from 'src/wallet/wallet.service';
 import { IdentityService } from 'src/identity/identity.service';
-import { BetStatus } from 'src/entity/betstatus.entity';
 import { CashoutService } from 'src/bets/cashout.service';
 
 @Injectable()
@@ -67,16 +64,10 @@ export class BetsService {
 
     @InjectRepository(BetSlip)
     private betslipRepository: Repository<BetSlip>,
-    @InjectRepository(Setting)
-    private settingRepository: Repository<Setting>,
-    @InjectRepository(BetStatus)
-    private betStatusRepository: Repository<BetStatus>,
 
     private readonly entityManager: EntityManager,
 
     private readonly amqpConnection: AmqpConnection,
-
-    private readonly httpService: HttpService,
 
     @Inject('ODDS_PACKAGE')
     private readonly client: ClientGrpc,

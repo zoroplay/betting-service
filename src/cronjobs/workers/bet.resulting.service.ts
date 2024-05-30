@@ -1,7 +1,7 @@
 import {Controller} from "@nestjs/common";
 import {JsonLogger, LoggerFactory} from "json-logger-service";
 import {InjectRepository} from "@nestjs/typeorm";
-import {EntityManager, In, Repository} from "typeorm";
+import {EntityManager, Repository} from "typeorm";
 import {Settlement} from "../../entity/settlement.entity";
 import {BetSlip} from "../../entity/betslip.entity";
 import {Setting} from "../../entity/setting.entity";
@@ -245,18 +245,6 @@ export class BetResultingController {
 
 
         await this.walletService.credit(creditPayload);
-
-        // this.logger.info(creditPayload)
-
-        //  // get client settings
-        //  var clientSettings = await this.settingRepository.findOne({
-        //     where: {
-        //         client_id: row.client_id // add client id to bets
-        //     }
-        // });
-
-
-        // axios.post(clientSettings.url + '/api/wallet/credit', creditPayload);
 
         return winner.id
 

@@ -12,12 +12,12 @@ import { Bet } from "src/entity/bet.entity";
 import { BetSlip } from "src/entity/betslip.entity";
 import { Cashout } from "src/entity/cashout.entity";
 import { CashoutLadder } from "src/entity/cashout.ladder.entity";
-import OddsService from 'src/bets/odds.service.interface';
 import OutrightsService from 'src/bets/outrights.service.interface';
 
 import { Repository } from "typeorm";
 import { WalletService } from "src/wallet/wallet.service";
 import { Winning } from "src/entity/winning.entity";
+import axios from "axios";
 var customParseFormat = require('dayjs/plugin/customParseFormat')
 
 dayjs.extend(customParseFormat)
@@ -25,7 +25,6 @@ dayjs.extend(customParseFormat)
 
 @Injectable()
 export class CashoutService {
-    private oddsService: OddsService;
     private outrightsService: OutrightsService;
 
     private readonly logger: JsonLogger = LoggerFactory.createLogger(
@@ -211,15 +210,15 @@ export class CashoutService {
             let oddStatus = {} as OddsProbability;
     
             if (eventType.toLowerCase() === 'match')
-                oddStatus = await this.getOddsProbability(odds).toPromise();
+                oddStatus = await this.getOddsProbability(odds);
             else oddStatus = await this.getOddsOutrightsProbability(odds).toPromise();
     
-            //   this.logger.info(oddStatus);
+            console.log('probability outcome', oddStatus);
     
             // if oddStatus is undefined or there no probability we use a probability of 1
             return oddStatus && oddStatus.probability ? oddStatus.probability : 1;
         } catch (e) {
-        //   this.logger.error(e.toString());
+          this.logger.error(e.toString());
             return 1;
         }
     }
@@ -281,9 +280,44 @@ export class CashoutService {
         }
     }
     
-    getOddsProbability(data: GetOddsRequest): Observable<OddsProbability> {
-        return this.oddsService.GetProbability(data);
+        // return this.oddsService.GetProbability(data);
+    async getOddsProbability(data: GetOddsRequest) {
+        console.log(data);
+        const matchId = `${data.eventPrefix}:${data.eventType}:${data.eventID}`
+        // console.log(matchId);
+        let url = `https://api.betradar.com/v1/probabilities/${matchId}/${data.marketID}`;
+
+        if(data.specifier) {
+            url = `https://api.betradar.com/v1/probabilities/${matchId}/${data.marketID}/${data.specifier}`;
+        }
+        
+        return await axios.get(url, {
+            headers: {
+                'x-access-token': process.env.BETRADAR_API_TOKEN
+            }
+        }).then(res => {
+            const match = res.data;
+            const markets: any = match.odds.market;
+            let probability = 0
+            for (const market of markets) {
+                if (market.cashout_status === 'AVAILABLE' || market.cashout_status === 1) {
+                    const outcome = market.outcome.find(({ id }) => id === data.outcomeID);
+                    if (outcome) probability = outcome.probabilities;
+                    else probability = 0
+                } else {
+                    probability = 0
+                }
+            }
+            
+            return {probability};
+            
+        }).catch(err => {
+            console.log('Error, fetching probability', err)
+            return {probability: 0}
+        });
+
     }
+    
     
     getOddsOutrightsProbability(
         data: GetOddsRequest,
