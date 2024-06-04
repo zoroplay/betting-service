@@ -819,7 +819,7 @@ export class BetsService {
         //6. debit user by calling wallet service
         let debitPayload = {
           // currency: clientSettings.currency,
-          amount: stake,
+          amount: stake.toFixed(2),
           userId: bet.userId,
           username: bet.username,
           clientId: bet.clientId,
@@ -927,7 +927,7 @@ export class BetsService {
             betStatus = BET_WON;
             // to-DO: credit user
             let winCreditPayload = {
-              amount: bet.winning_after_tax,
+              amount: bet.winning_after_tax.toFixed(2),
               userId: bet.user_id,
               username: bet.username,
               clientId: bet.client_id,
@@ -971,7 +971,7 @@ export class BetsService {
             betStatus = BET_VOIDED;
             // revert the stake
             let voidCreditPayload = {
-              amount: bet.stake,
+              amount: bet.stake.toFixed(2),
               userId: bet.user_id,
               clientId: bet.client_id,
               description: 'Bet betID ' + bet.betslip_id + ' was cancelled',

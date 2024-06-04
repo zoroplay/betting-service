@@ -138,7 +138,7 @@ export class SettlementRollbackService {
                 await this.entityManager.query("DELETE FROM winning WHERE bet_id = " + settledBets.id + " LIMIT 1 ")
 
                 let creditPayload = {
-                    amount: settledBet.winning_after_tax,
+                    amount: settledBet.winning_after_tax.toFixed(2),
                     userId: settledBet.user_id,
                     clientId: settledBet.client_id,
                     username: settledBet.username,
@@ -290,7 +290,7 @@ export class SettlementRollbackService {
                 await this.entityManager.query("DELETE FROM winning WHERE bet_id = " + settledBets.id + " LIMIT 1 ")
 
                 let creditPayload = {
-                    amount: settledBet.winning_after_tax,
+                    amount: settledBet.winning_after_tax.toFixed(2),
                     userId: settledBet.user_id,
                     username: settledBet.username,
                     clientId: settledBet.client_id,

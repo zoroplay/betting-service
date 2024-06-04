@@ -221,7 +221,7 @@ export class BetResultingController {
         }
 
         let creditPayload = {
-            amount: winning_after_tax,
+            amount: winning_after_tax.toFixed(2),
             userId: profileID,
             username: row.username,
             clientId: row.client_id,

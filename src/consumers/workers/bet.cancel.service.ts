@@ -145,7 +145,7 @@ export class BetCancelService {
                 let creditPayload = {
                     subject: 'Bet Cancelled',
                     source: cancelledBet.source,
-                    amount: cancelledBet.stake_after_tax,
+                    amount: cancelledBet.stake_after_tax.toFixed(2),
                     userId: cancelledBet.user_id,
                     clientId: cancelledBet.client_id,
                     username: cancelledBet.username,
@@ -295,7 +295,7 @@ export class BetCancelService {
                 let creditPayload = {
                     subject:'Bet Cancelled',
                     source: cancelledBet.source,
-                    amount: cancelledBet.stake_after_tax,
+                    amount: cancelledBet.stake_after_tax.toFixed(2),
                     userId: cancelledBet.user_id,
                     clientId: cancelledBet.client_id,
                     description: "Bet betID " + cancelledBet.betslip_id + " was cancelled",

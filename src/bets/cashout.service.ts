@@ -164,7 +164,7 @@ export class CashoutService {
 
                 // send amount user
                 let winCreditPayload = {
-                    amount: amount,
+                    amount: amount.toFixed(2),
                     userId: bet.user_id,
                     username: bet.username,
                     clientId: bet.client_id,
