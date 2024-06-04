@@ -23,6 +23,10 @@ export class CasinoBet {
 
   @Index()
   @Column({ type: 'varchar', length: 150 })
+  username: string;
+
+  @Index()
+  @Column({ type: 'varchar', length: 150 })
   round_id: string;
 
   @Index()

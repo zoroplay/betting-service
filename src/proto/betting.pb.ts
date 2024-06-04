@@ -105,6 +105,7 @@ export interface PlaceCasinoBetRequest {
   gameNumber?: string | undefined;
   source?: string | undefined;
   cashierTransactionId?: string | undefined;
+  username?: string | undefined;
 }
 
 export interface CreditCasinoBetRequest {

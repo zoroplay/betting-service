@@ -77,6 +77,7 @@ export class CasinoBetService {
       betData.transaction_id = data.transactionId;
       betData.stake = data.stake;
       betData.user_id = data.userId;
+      betData.username = data.username;
       betData.game_name = data.gameName ? data.gameName : null;
       betData.game_number = data.gameNumber ? data.gameNumber : null;
       betData.source = data.source ? data.source : null;
