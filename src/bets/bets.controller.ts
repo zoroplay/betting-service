@@ -93,6 +93,14 @@ export class BetsController {
   ): Promise<PlaceCasinoBetResponse> {
     return this.casinoService.settleCasinoBet(data);
   }
+
+
+  @GrpcMethod('BettingService', 'CloseCasinoRound')
+  CloseCasinoRound(
+    data: SettleCasinoBetRequest,
+  ): Promise<PlaceCasinoBetResponse> {
+    return this.casinoService.closeCasinoRound(data);
+  }
   @GrpcMethod('BettingService', 'SettleVirtualBet')
   settleVirtualBet(
     data: SettleVirtualBetRequest,

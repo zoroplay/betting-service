@@ -1,5 +1,5 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
-import { EntityManager, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import * as dayjs from 'dayjs';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CasinoBet } from 'src/entity/casino-bet.entity';
@@ -7,9 +7,9 @@ import {
   PlaceCasinoBetRequest,
   PlaceCasinoBetResponse,
   SettleCasinoBetRequest,
-  SettleCasinoBetResponse,
   RollbackCasinoBetRequest,
 } from './interfaces/placebet.interface';
+import { v4 as uuidv4 } from 'uuid';
 
 var customParseFormat = require('dayjs/plugin/customParseFormat');
 
@@ -31,6 +31,7 @@ export class CasinoBetService {
       const operator = await this.casinoBetRepo.findOneBy({
         transaction_id: transactionId,
       });
+      
       if (!operator)
         return {
           success: false,
@@ -52,6 +53,39 @@ export class CasinoBetService {
         message: 'Casino Bet cancelled Succesfully ',
         data: {
           transactionId: operator.transaction_id,
+          balance: 0,
+        },
+      };
+    } catch (e) {
+      console.log(e.message);
+      return {
+        success: false,
+        status: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: 'Something went wrong: ' + e.message,
+        data: null,
+      };
+    }
+  }
+
+  async closeCasinoRound(
+    data: SettleCasinoBetRequest,
+  ): Promise<PlaceCasinoBetResponse> {
+    try {
+      const { transactionId } = data;
+
+      await this.casinoBetRepo.update(
+        { round_id: transactionId, status: 0 },
+        {
+          status: 2,
+        },
+      );
+
+      return {
+        success: true,
+        status: HttpStatus.OK,
+        message: 'Casino Bet cancelled Succesfully ',
+        data: {
+          transactionId: uuidv4(),
           balance: 0,
         },
       };
@@ -111,8 +145,34 @@ export class CasinoBetService {
     data: SettleCasinoBetRequest,
   ): Promise<PlaceCasinoBetResponse> {
     try {
-      console.log(data);
+      // console.log(data);
       const { winnings, transactionId } = data;
+
+      const bet = await this.casinoBetRepo.findOneBy({
+        transaction_id: transactionId,
+      });
+
+      if (!bet) {// return error if bet not found
+        return {
+          success: false,
+          status: HttpStatus.INTERNAL_SERVER_ERROR,
+          message: 'Bet not found',
+          data: {
+            transactionId: bet.id,
+            balance: 0,
+          },
+        };
+      } else if (bet.status !== 0 ) { // check if bet has been settled and return message
+        return {
+          success: false,
+          status: HttpStatus.BAD_REQUEST,
+          message: 'Bet already closed',
+          data: {
+            transactionId: bet.id,
+            balance: 0,
+          },
+        };
+      }
 
       let status = 0;
       if (winnings > 0) {
@@ -120,24 +180,23 @@ export class CasinoBetService {
       } else {
         status = 2;
       }
+
+      // update bet status
       await this.casinoBetRepo.update(
-        { round_id: transactionId },
+        { transaction_id: transactionId },
         {
           winnings,
           status,
         },
       );
 
-      const operator = await this.casinoBetRepo.findOneBy({
-        round_id: transactionId,
-      });
 
       return {
         success: true,
         status: HttpStatus.OK,
         message: 'Bet Settled Successfully',
         data: {
-          transactionId: operator.id,
+          transactionId: bet.id,
           balance: 0,
         },
       };
