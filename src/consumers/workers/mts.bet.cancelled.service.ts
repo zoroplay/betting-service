@@ -53,47 +53,54 @@ export class MtsBetCancelledService {
             reason = reason.slice(0, 290) + '...'
         }
 
-        let betStatus = new BetStatus()
-        betStatus.status = BET_CANCELLED
-        betStatus.bet_id = betID
-        betStatus.description = reason
-        await this.betStatusRepository.save(betStatus)
+        // check if betId has been saved before
+        const isExist = await this.betStatusRepository.findOne({where: {bet_id: betID}});
 
-        await this.entityManager.query("UPDATE bet_slip SET status = "+BET_CANCELLED+", won = -1 WHERE bet_id = ? ",[betID])
+        if (!isExist) {
 
-        await this.entityManager.query("UPDATE bet SET status = "+BET_CANCELLED+", won = -1 WHERE id = ? ",[betID])
+            let betStatus = new BetStatus()
+            betStatus.status = BET_CANCELLED
+            betStatus.bet_id = betID
+            betStatus.description = reason
+            await this.betStatusRepository.save(betStatus)
 
-        // get client settings
-        let bet = await this.betRepository.findOne({
-            where: {
-                id: betID
-            }
-        });
+            await this.entityManager.query("UPDATE bet_slip SET status = "+BET_CANCELLED+", won = -1 WHERE bet_id = ? ",[betID])
 
-        // revert the stake
-        let creditPayload = {
-            amount: bet.stake.toFixed(2),
-            userId: bet.user_id,
-            username: bet.username,
-            clientId: bet.client_id,
-            description: "Bet betID " + bet.betslip_id + " was cancelled",
-            source: bet.source,
-            wallet: 'sport',
-            channel: 'Internal',
-            subject: 'Bet Rejected - MTS'
-        }
-        if(bet.bonus_id) {
-            creditPayload.wallet= 'sport-bonus';
+            await this.entityManager.query("UPDATE bet SET status = "+BET_CANCELLED+", won = -1 WHERE id = ? ",[betID])
 
-            await this.bonusService.settleBet({
+            // get client settings
+            let bet = await this.betRepository.findOne({
+                where: {
+                    id: betID
+                }
+            });
+
+            // revert the stake
+            let creditPayload = {
+                amount: bet.stake.toFixed(2),
+                userId: bet.user_id,
+                username: bet.username,
                 clientId: bet.client_id,
-                betId: bet.id,
-                status: BET_CANCELLED,
-                amount: 0,
-            })
-        }
+                description: "Bet betID " + bet.betslip_id + " was cancelled",
+                source: bet.source,
+                wallet: 'sport',
+                channel: 'Internal',
+                subject: 'Bet Rejected - MTS'
+            }
 
-        await this.walletService.credit(creditPayload);
+            if(bet.bonus_id) {
+                creditPayload.wallet= 'sport-bonus';
+
+                await this.bonusService.settleBet({
+                    clientId: bet.client_id,
+                    betId: bet.id,
+                    status: BET_CANCELLED,
+                    amount: 0,
+                })
+            }
+
+            await this.walletService.credit(creditPayload);
+        }
 
         return 1
     }
