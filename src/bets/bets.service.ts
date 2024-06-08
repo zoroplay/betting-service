@@ -623,6 +623,7 @@ export class BetsService {
         selection.specifier,
         selection.outcomeId,
       );
+
       if (selectionProbability)
         overallProbability = overallProbability * selectionProbability;
 
@@ -927,7 +928,7 @@ export class BetsService {
             betStatus = BET_WON;
             // to-DO: credit user
             let winCreditPayload = {
-              amount: bet.winning_after_tax.toFixed(2),
+              amount: ''+bet.winning_after_tax,
               userId: bet.user_id,
               username: bet.username,
               clientId: bet.client_id,

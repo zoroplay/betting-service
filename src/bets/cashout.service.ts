@@ -315,7 +315,7 @@ export class CashoutService {
             return probability;
             
         }).catch(err => {
-            console.log('Error, fetching probability', err)
+            console.log('Error, fetching probability', err.message);
             return 0
         });
 

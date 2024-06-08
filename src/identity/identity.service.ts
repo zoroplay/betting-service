@@ -15,6 +15,7 @@ export class IdentityService {
     }
 
     public async validateBet(param: PlaceBetRequest) {
+      console.log(param)
       return await firstValueFrom(this.svc.validateBet(param));
     }
     
