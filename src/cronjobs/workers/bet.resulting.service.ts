@@ -220,31 +220,35 @@ export class BetResultingController {
             return 0
         }
 
-        let creditPayload = {
-            amount: winning_after_tax.toFixed(2),
-            userId: profileID,
-            username: row.username,
-            clientId: row.client_id,
-            subject:  'Sport Win',
-            description: "Bet betID " + row.betslip_id ,
-            source: row.source,
-            wallet: 'sport',
-            channel: 'Internal'
-        }
-
-        if(row.bonus_id) {
-            creditPayload.wallet= 'sport-bonus';
-
-            await this.bonusService.settleBet({
+        try {
+            let creditPayload = {
+                amount: ''+`${winning_after_tax}`,
+                userId: profileID,
+                username: row.username,
                 clientId: row.client_id,
-                betId: row.id,
-                amount: winning_after_tax,
-                status: BET_WON
-            })
+                subject:  'Sport Win',
+                description: "Bet betID " + row.betslip_id ,
+                source: row.source,
+                wallet: 'sport',
+                channel: 'Internal'
+            }
+
+            if(row.bonus_id) {
+                creditPayload.wallet= 'sport-bonus';
+
+                await this.bonusService.settleBet({
+                    clientId: row.client_id,
+                    betId: row.id,
+                    amount: winning_after_tax,
+                    status: BET_WON
+                })
+            }
+
+
+            await this.walletService.credit(creditPayload);
+        } catch (e) {
+            console.log('Error processing winning', e.message);
         }
-
-
-        await this.walletService.credit(creditPayload);
 
         return winner.id
 
