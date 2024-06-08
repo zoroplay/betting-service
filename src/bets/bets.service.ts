@@ -316,7 +316,7 @@ export class BetsService {
 
             totalOdds = totalOdds * slip.odds;
 
-            if (selectionProbability)
+            // if (selectionProbability)
               currentProbability = currentProbability * selectionProbability;
           }
 
