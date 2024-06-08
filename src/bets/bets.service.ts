@@ -666,7 +666,7 @@ export class BetsService {
     if (!validationRes.success)
       return { status: 400, message: validationRes.message, success: false };
 
-    validationData = JSON.parse(validationRes.data);
+    validationData = validationRes.data;
 
     // }
 
