@@ -160,7 +160,7 @@ export class MtsTimeoutService {
             let creditPayload = {
                 subject: "Bet Cancelled - MTS Timeout",
                 source: bet.source,
-                amount: bet.stake_after_tax.toFixed(2),
+                amount: ''+bet.stake,
                 userId: bet.user_id,
                 username: bet.username,
                 clientId: bet.client_id,

@@ -133,7 +133,7 @@ export class BetCancelService {
                 [BET_CANCELLED])
 
             // get all cancelled bets
-            let cancelledBets = await this.entityManager.query("SELECT id,client_id, currency,user_id,tax_on_stake,stake_after_tax FROM bet WHERE status = " + BET_PENDING + " AND id IN (" + betIDs.join(',') + ") ")
+            let cancelledBets = await this.entityManager.query("SELECT id,client_id, currency,user_id,tax_on_stake,stake_after_tax,stake FROM bet WHERE status = " + BET_PENDING + " AND id IN (" + betIDs.join(',') + ") ")
 
             if (cancelledBets == undefined || cancelledBets == false || cancelledBets.length === 0) {
 
@@ -145,7 +145,7 @@ export class BetCancelService {
                 let creditPayload = {
                     subject: 'Bet Cancelled',
                     source: cancelledBet.source,
-                    amount: cancelledBet.stake_after_tax.toFixed(2),
+                    amount: ''+cancelledBet.stake,
                     userId: cancelledBet.user_id,
                     clientId: cancelledBet.client_id,
                     username: cancelledBet.username,
@@ -283,7 +283,7 @@ export class BetCancelService {
                 [BET_CANCELLED])
 
             // get all cancelled bets
-            let cancelledBets = await this.entityManager.query("SELECT id,client_id, currency,user_id,tax_on_stake,stake_after_tax FROM bet WHERE status = " + BET_PENDING + " AND id IN (" + betIDs.join(',') + ") ")
+            let cancelledBets = await this.entityManager.query("SELECT id,client_id, currency,user_id,tax_on_stake,stake_after_tax,stake FROM bet WHERE status = " + BET_PENDING + " AND id IN (" + betIDs.join(',') + ") ")
 
             if (cancelledBets == undefined || cancelledBets == false || cancelledBets.length === 0) {
 
@@ -295,7 +295,7 @@ export class BetCancelService {
                 let creditPayload = {
                     subject:'Bet Cancelled',
                     source: cancelledBet.source,
-                    amount: cancelledBet.stake_after_tax.toFixed(2),
+                    amount: ''+cancelledBet.stake,
                     userId: cancelledBet.user_id,
                     clientId: cancelledBet.client_id,
                     description: "Bet betID " + cancelledBet.betslip_id + " was cancelled",

@@ -77,7 +77,7 @@ export class MtsBetCancelledService {
 
             // revert the stake
             let creditPayload = {
-                amount: bet.stake.toFixed(2),
+                amount: ''+bet.stake,
                 userId: bet.user_id,
                 username: bet.username,
                 clientId: bet.client_id,
