@@ -38,6 +38,7 @@ import { VirtualBetService } from './virtual-bet.service';
 import { PaginationResponse } from 'src/identity/identity.pb';
 import { CasinoBetService } from './casino-bet.service';
 import { CashoutService } from 'src/bets/cashout.service';
+import { CommonResponseObj } from 'src/proto/betting.pb';
 
 @Controller('bets')
 export class BetsController {
@@ -142,5 +143,10 @@ export class BetsController {
   CashoutRequest(data: ProcessCashoutRequest): Promise<ProcessCashoutResponse> {
     console.log('cashout request')
     return this.cashoutService.processCashout(data);
+  }
+
+  @GrpcMethod('BettingService', 'GetRetailBets')
+  GetRetailBets(data: BetHistoryRequest): Promise<CommonResponseObj> {
+    return this.reportService.agentBets(data);
   }
 }
