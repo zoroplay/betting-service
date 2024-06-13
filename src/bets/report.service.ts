@@ -375,5 +375,59 @@ export class ReportService {
         }
     }
 
+    async salesReport(data) {
+        console.log(data)
+        try {
+            const {from, to, productType, role, userId, clientId} = data;
+            // const startDate = dayjs(from, 'DD/MM/YYYY').format('YYYY-MM-DD');
+            // const endDate = dayjs(to, 'DD/MM/YYYY').format('YYYY-MM-DD');
+
+            if (role === 'Cashier') {
+                // get all bets
+                const betsQuery = `SELECT SUM(CASE WHEN b.status = ? THEN 1 ELSE 0 END) as running_bets,
+                SUM(CASE WHEN b.status IN (?, ?) THEN 1 ELSE 0 END) as settled_bets, COUNT(*) as no_of_bets,
+                SUM(b.stake) as stake, SUM(w.winning_after_tax) as winnings, SUM(b.commission) as commission FROM bet b
+                JOIN winning w ON w.bet_id = b.id WHERE b.client_id = ? AND DATE(b.created) BETWEEN ? AND ? AND b.user_id = ? GROUP BY b.id`;
+
+                let bets  = await this.entityManager.query(betsQuery, [BET_PENDING, BET_WON, BET_LOST, clientId, from, to, userId]);
+
+                // get all virtual bets
+                const vBetQuery = `SELECT SUM(CASE WHEN virtual_bets.status = 0 THEN 1 ELSE 0 END) as running_bets,
+                        SUM(CASE WHEN virtual_bets.status IN (1, 2) THEN 1 ELSE 0 END) as settled_bets,
+                        COUNT(*) as no_of_bets, SUM(virtual_bets.stake) as stake,SUM(virtual_bets.winnings) as winnings,
+                        SUM(virtual_bets.commission) as commission FROM virtual_bets WHERE client_id = ? AND user_id = ?`;
+
+                let vBets  = await this.entityManager.query(vBetQuery, [clientId, userId]);
+
+                return {
+                    success: true,
+                    message: 'Sales Cashier Report',
+                    data: {
+                        retail_sports: bets,
+                        retail_virtual: vBets,
+                        grand_total: {
+                            running_bets: parseFloat(bets.running_bets) + parseFloat(vBets.running_bets),
+                            settled_bets: parseFloat(bets.settled_bets) + parseFloat(vBets.settled_bets),
+                            no_of_bets: parseFloat(bets.no_of_bets) + parseFloat(vBets.no_of_bets),
+                            stake: parseFloat(bets.stake) + parseFloat(vBets.stake),
+                            winnings: parseFloat(bets.winnings) + parseFloat(vBets.winnings),
+                            commission: parseFloat(bets.commission) + parseFloat(vBets.commission),
+                        }
+                    }
+                }
+            } else {
+                
+            }
+
+        } catch (e) {
+            console.log(e.message);
+            return {
+                success: false, 
+                status: HttpStatus.INTERNAL_SERVER_ERROR, 
+                message: 'Something went wrong'
+            }
+        }
+    }
+
 
 }

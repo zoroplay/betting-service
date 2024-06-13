@@ -100,6 +100,10 @@ export class Bet {
     cash_out_amount: number;
 
     @Index()
+    @Column({ type: "decimal", precision: 20, scale: 2, default: 0 })
+    commission: number;
+
+    @Index()
     @Column({ type: "decimal", precision: 20, scale: 2, nullable: true, default: 0 })
     probability: number;
     

@@ -149,4 +149,9 @@ export class BetsController {
   GetRetailBets(data: BetHistoryRequest): Promise<CommonResponseObj> {
     return this.reportService.agentBets(data);
   }
+
+  @GrpcMethod('BettingService', 'GetSalesReport')
+  GetSalesReport(data: BetHistoryRequest): Promise<CommonResponseObj> {
+    return this.reportService.salesReport(data);
+  }
 }
