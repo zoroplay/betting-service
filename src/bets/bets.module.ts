@@ -24,6 +24,7 @@ import { CashoutService } from './cashout.service';
 import { Cashout } from 'src/entity/cashout.entity';
 import { CashoutLadder } from 'src/entity/cashout.ladder.entity';
 import { Winning } from 'src/entity/winning.entity';
+import { RetailService } from './retail.service';
 
 @Module({
   imports: [
@@ -67,6 +68,8 @@ import { Winning } from 'src/entity/winning.entity';
     ]),
   ],
   controllers: [BetsController],
-  providers: [BetsService, CashoutService, ReportService, VirtualBetService, CasinoBetService],
+  providers: [
+    BetsService, CashoutService, RetailService, ReportService, VirtualBetService, CasinoBetService
+  ],
 })
 export class BetsModule {}

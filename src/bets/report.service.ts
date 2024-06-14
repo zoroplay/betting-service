@@ -10,6 +10,7 @@ import { Bet } from "src/entity/bet.entity";
 import { BetSlip } from "src/entity/betslip.entity";
 import { paginateResponse } from "src/commons/helper";
 import { BetHistoryRequest } from "./interfaces/bet.history.request.interface";
+import { RetailService } from "./retail.service";
 var customParseFormat = require('dayjs/plugin/customParseFormat')
 
 dayjs.extend(customParseFormat)
@@ -20,10 +21,12 @@ export class ReportService {
     constructor(
         private readonly entityManager: EntityManager,
         private readonly identityService: IdentityService,
+        private readonly retailsService: RetailService,
         @InjectRepository(Bet)
         private readonly betRepository: Repository<Bet>,
         @InjectRepository(BetSlip)
-        private readonly betSlipRepository: Repository<BetSlip>
+        private readonly betSlipRepository: Repository<BetSlip>,
+
     ) {}
 
     async gamingActivity(data: GamingActivityRequest): Promise<GamingActivityResponse> {
@@ -72,8 +75,6 @@ export class ReportService {
             if (productType === 'virtual') {
                 sql += `, SUM(${table}.amount_won) as winnings`;
             }
-
-            
 
 
             // if(groupBy === 'user_id'){
@@ -376,7 +377,6 @@ export class ReportService {
     }
 
     async salesReport(data) {
-        console.log(data)
         try {
             const {from, to, productType, role, userId, clientId} = data;
             // const startDate = dayjs(from, 'DD/MM/YYYY').format('YYYY-MM-DD');
@@ -384,18 +384,18 @@ export class ReportService {
 
             if (role === 'Cashier') {
                 // get all bets
-                const betsQuery = `SELECT SUM(CASE WHEN b.status = ? THEN 1 ELSE 0 END) as running_bets,
-                SUM(CASE WHEN b.status IN (?, ?) THEN 1 ELSE 0 END) as settled_bets, COUNT(*) as no_of_bets,
-                SUM(b.stake) as stake, SUM(w.winning_after_tax) as winnings, SUM(b.commission) as commission FROM bet b
-                JOIN winning w ON w.bet_id = b.id WHERE b.client_id = ? AND DATE(b.created) BETWEEN ? AND ? AND b.user_id = ? GROUP BY b.id`;
+                const betsQuery = `SELECT IFNULL(SUM(CASE WHEN b.status = ? THEN 1 ELSE 0 END), 0) as running_bets,
+                    IFNULL(SUM(CASE WHEN b.status IN (?, ?) THEN 1 ELSE 0 END), 0) as settled_bets, COUNT(*) as no_of_bets,
+                    IFNULL(SUM(b.stake), 0) as stake, IFNULL(SUM(w.winning_after_tax), 0) as winnings, IFNULL(SUM(b.commission), 0) as commission FROM bet b
+                    LEFT JOIN winning w ON w.bet_id = b.id WHERE b.client_id = ? AND DATE(b.created) BETWEEN ? AND ? AND b.user_id = ?`;
 
                 let bets  = await this.entityManager.query(betsQuery, [BET_PENDING, BET_WON, BET_LOST, clientId, from, to, userId]);
-
+                // console.log(bets.getSql())
                 // get all virtual bets
-                const vBetQuery = `SELECT SUM(CASE WHEN virtual_bets.status = 0 THEN 1 ELSE 0 END) as running_bets,
-                        SUM(CASE WHEN virtual_bets.status IN (1, 2) THEN 1 ELSE 0 END) as settled_bets,
-                        COUNT(*) as no_of_bets, SUM(virtual_bets.stake) as stake,SUM(virtual_bets.winnings) as winnings,
-                        SUM(virtual_bets.commission) as commission FROM virtual_bets WHERE client_id = ? AND user_id = ?`;
+                const vBetQuery = `SELECT IFNULL(SUM(CASE WHEN virtual_bets.status = 0 THEN 1 ELSE 0 END), 0) as running_bets,
+                    IFNULL(SUM(CASE WHEN virtual_bets.status IN (1, 2) THEN 1 ELSE 0 END), 0) as settled_bets,
+                    COUNT(*) as no_of_bets, IFNULL(SUM(virtual_bets.stake), 0) as stake, IFNULL(SUM(virtual_bets.winnings), 0) as winnings,
+                    IFNULL(SUM(virtual_bets.commission), 0) as commission FROM virtual_bets WHERE client_id = ? AND user_id = ?`;
 
                 let vBets  = await this.entityManager.query(vBetQuery, [clientId, userId]);
 
@@ -403,20 +403,31 @@ export class ReportService {
                     success: true,
                     message: 'Sales Cashier Report',
                     data: {
-                        retail_sports: bets,
-                        retail_virtual: vBets,
+                        retail_sports: bets[0],
+                        retail_virtual: vBets[0],
                         grand_total: {
-                            running_bets: parseFloat(bets.running_bets) + parseFloat(vBets.running_bets),
-                            settled_bets: parseFloat(bets.settled_bets) + parseFloat(vBets.settled_bets),
-                            no_of_bets: parseFloat(bets.no_of_bets) + parseFloat(vBets.no_of_bets),
-                            stake: parseFloat(bets.stake) + parseFloat(vBets.stake),
-                            winnings: parseFloat(bets.winnings) + parseFloat(vBets.winnings),
-                            commission: parseFloat(bets.commission) + parseFloat(vBets.commission),
+                            running_bets: parseFloat(bets[0].running_bets) + parseFloat(vBets[0].running_bets),
+                            settled_bets: parseFloat(bets[0].settled_bets) + parseFloat(vBets[0].settled_bets),
+                            no_of_bets: parseFloat(bets[0].no_of_bets) + parseFloat(vBets[0].no_of_bets),
+                            stake: parseFloat(bets[0].stake) + parseFloat(vBets[0].stake),
+                            winnings: parseFloat(bets[0].winnings) + parseFloat(vBets[0].winnings),
+                            commission: parseFloat(bets[0].commission) + parseFloat(vBets[0].commission),
                         }
                     }
                 }
             } else {
-                
+                switch (role) {
+                    case 'Shop':
+                        return await this.retailsService.getShopUserReport(data);
+                    case 'Agent':
+                        return await this.retailsService.getAgentReport(data);
+                    case 'Master Agent':
+                        return await this.retailsService.getMasterAgentReport(data);
+                    case 'Super Agent':
+                        return await this.retailsService.getSuperAgentReport(data);
+                    default:
+                        return {success: false, status: HttpStatus.BAD_REQUEST, message: 'No data found', data: {}}
+                }
             }
 
         } catch (e) {
@@ -429,5 +440,25 @@ export class ReportService {
         }
     }
 
+
+    async getShopUserReport (data) {
+        const {from, to, productType, role, userId, clientId} = data;
+
+        // fetch agent users
+        const usersRes = await this.identityService.getAgentUser({
+            clientId, 
+            userId
+        });
+
+        let userIds = [];
+
+        if (usersRes.success) {
+            userIds = usersRes.data.map(user => user.id);
+        }
+
+
+        if (userIds.length > 0) {
+        }
+    }
 
 }
