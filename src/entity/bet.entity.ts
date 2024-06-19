@@ -116,6 +116,10 @@ export class Bet {
     won: number;
 
     @Index()
+    @Column({type:"int", nullable: false, default: 0 })
+    print_count: number;
+
+    @Index()
     @Column({ type: "varchar", length: 50, nullable: false })
     source: string;
 

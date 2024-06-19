@@ -716,8 +716,8 @@ export class BetsService {
     let cashoutAmount = 0;
     try {
       //4. Calculate Cashout, if not bonus bet
-      if (!bonusId)
-        cashoutAmount = await this.cashoutService.calculateCashout(overallProbability, overallProbability, bet.stake, 1);
+      // if (!bonusId)
+      //   cashoutAmount = await this.cashoutService.calculateCashout(overallProbability, overallProbability, bet.stake, 1);
 
       //5. create bet
       betData.client_id = bet.clientId;
@@ -725,8 +725,9 @@ export class BetsService {
       betData.username = bet.isBooking === 0 ? bet.username : 'guest';
       betData.betslip_id = this.generateBetslipId();
       betData.stake = bet.stake;
-      betData.cash_out_amount = cashoutAmount;
-      betData.cash_out_status = cashoutAmount > 0 ? 1 : 0;
+      // betData.cash_out_amount = cashoutAmount;
+      // betData.cash_out_status = cashoutAmount > 0 ? 1 : 0;
+      betData.commission = validationData.commission;
       betData.currency = validationData.currency;
       betData.bet_category = bet.betType;
       betData.bet_category_desc = betTypeDescription(bet);
