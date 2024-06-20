@@ -110,8 +110,9 @@ export class BetsController {
   }
 
   @GrpcMethod('BettingService', 'GetCoupon')
-  getBooking(data: FindBetRequest): Promise<FindBetResponse> {
-    return this.betsService.findCoupon(data);
+  getBooking(data: FindBetRequest): Promise<CommonResponseObj> {
+    console.log('GetCoupon')
+    return this.betsService.findSingle(data);
   }
 
   @GrpcMethod('BettingService', 'BetHistory')
@@ -120,8 +121,9 @@ export class BetsController {
   }
 
   @GrpcMethod('BettingService', 'FindBet')
-  FindBet(data: FindBetRequest): Promise<FindBetResponse> {
-    return this.betsService.findSingle(data);
+  FindBet(data: FindBetRequest): Promise<CommonResponseObj> {
+    console.log('FindBet')
+    return this.betsService.findCoupon(data);
   }
 
   @GrpcMethod('BettingService', 'GamingActivity')

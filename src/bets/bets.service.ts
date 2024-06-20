@@ -47,6 +47,7 @@ import { BonusService } from 'src/bonus/bonus.service';
 import { WalletService } from 'src/wallet/wallet.service';
 import { IdentityService } from 'src/identity/identity.service';
 import { CashoutService } from 'src/bets/cashout.service';
+import { CommonResponseObj } from 'src/proto/betting.pb';
 
 @Injectable()
 export class BetsService {
@@ -379,7 +380,7 @@ export class BetsService {
   async findSingle({
     clientId,
     betslipId,
-  }: FindBetRequest): Promise<FindBetResponse> {
+  }: FindBetRequest): Promise<CommonResponseObj> {
     let bet = await this.betRepository
       .createQueryBuilder('bet')
       .select(
@@ -453,6 +454,7 @@ export class BetsService {
             outcomeName: slip.outcome_name,
             odds: slip.odds,
             sport: slip.sport_name,
+            sportId: slip.sport_id,
             category: slip.category_name,
             tournament: slip.tournament_name,
             type: slip.is_live === 1 ? 'live' : 'pre',
@@ -476,9 +478,9 @@ export class BetsService {
       data.winnings = bet.winning_after_tax;
       data.source = bet.source;
 
-      return { status: true, message: 'Bet Found', bet: data };
+      return { success: true, message: 'Bet Found', data };
     } else {
-      return { status: false, message: 'Betslip not found' };
+      return { success: false, message: 'Betslip not found' };
     }
   }
 
@@ -1057,8 +1059,9 @@ export class BetsService {
   async findCoupon({
     betslipId,
     clientId,
-  }: FindBetRequest): Promise<FindBetResponse> {
+  }: FindBetRequest): Promise<CommonResponseObj> {
     try {
+      console.log(betslipId, clientId)
       const booking = await this.betRepository.findOne({
         where: { betslip_id: betslipId, client_id: clientId },
       });
@@ -1117,12 +1120,12 @@ export class BetsService {
           selections,
         };
 
-        return { status: true, message: 'Booking code found', bet: data };
+        return { success: true, message: 'Booking code found', data };
       } else {
-        return { status: false, message: 'Booking code not found' };
+        return { success: false, message: 'Booking code not found' };
       }
     } catch (e) {
-      return { status: false, message: 'Unable to fetch booking code' };
+      return { success: false, message: 'Unable to fetch booking code' };
     }
   }
 
