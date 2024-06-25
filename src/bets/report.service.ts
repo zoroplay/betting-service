@@ -440,7 +440,6 @@ export class ReportService {
         }
     }
 
-
     async getShopUserReport (data) {
         const {from, to, productType, role, userId, clientId} = data;
 
@@ -461,4 +460,9 @@ export class ReportService {
         }
     }
 
+    async deletePlayerData(id) {
+        const sql = `DELETE b, bs FROM bet b JOIN bet_slip bs ON bs.bet_id = b.id WHERE b.user_id = ?`;
+
+        await this.entityManager.query(sql, [id]);
+    }
 }

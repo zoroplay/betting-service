@@ -38,7 +38,7 @@ import { VirtualBetService } from './virtual-bet.service';
 import { PaginationResponse } from 'src/identity/identity.pb';
 import { CasinoBetService } from './casino-bet.service';
 import { CashoutService } from 'src/bets/cashout.service';
-import { CommonResponseObj } from 'src/proto/betting.pb';
+import { CommonResponseObj, SettingsById } from 'src/proto/betting.pb';
 
 @Controller('bets')
 export class BetsController {
@@ -154,6 +154,11 @@ export class BetsController {
 
   @GrpcMethod('BettingService', 'GetSalesReport')
   GetSalesReport(data: BetHistoryRequest): Promise<CommonResponseObj> {
+    return this.reportService.salesReport(data);
+  }
+
+  @GrpcMethod('BettingService', 'DeletePlayerData')
+  deletePlayerData(data: SettingsById): Promise<CommonResponseObj> {
     return this.reportService.salesReport(data);
   }
 }
