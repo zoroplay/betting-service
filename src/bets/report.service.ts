@@ -464,5 +464,7 @@ export class ReportService {
         const sql = `DELETE b, bs FROM bet b JOIN bet_slip bs ON bs.bet_id = b.id WHERE b.user_id = ?`;
 
         await this.entityManager.query(sql, [id]);
+
+        return {success: true, message: 'Successful'}
     }
 }
