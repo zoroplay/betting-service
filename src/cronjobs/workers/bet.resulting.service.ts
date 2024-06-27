@@ -236,12 +236,15 @@ export class BetResultingController {
             if(row.bonus_id) {
                 creditPayload.wallet= 'sport-bonus';
 
-                await this.bonusService.settleBet({
+                const bonusData = await this.bonusService.settleBet({
                     clientId: row.client_id,
                     betId: row.id,
                     amount: winning_after_tax,
                     status: BET_WON
                 })
+
+                // set credit amount to amount returned from bonus
+                if (bonusData.success) creditPayload.amount = bonusData.data.amount;
             }
 
 
