@@ -118,7 +118,7 @@ export class BetSettlementService {
 
         this.logger.info("createBetSettlement | settlementID "+settlement.id)
 
-        let rows = await this.entityManager.query("SELECT DISTINCT b.id,b.stake,b.stake_after_tax,b.total_bets,b.total_odd,b.bet_type,b.user_id,b.client_id " +
+        let rows = await this.entityManager.query("SELECT DISTINCT b.id,b.stake,b.stake_after_tax,b.total_bets,b.total_odd,b.bet_type,b.user_id,b.client_id, b.bonus_id " +
             "FROM bet b " +
             "INNER JOIN bet_slip bs on b.id = bs.bet_id " +
             "INNER JOIN bet_status bst on b.id = bst.bet_id " +
@@ -403,7 +403,7 @@ export class BetSettlementService {
         }
 
         // lets start resulting here
-        console.log(bet.id)
+        // console.log(bet.id)
 
         // bet won
         if (bet.Lost == 0 && bet.Pending == 0 && bet.TotalGames == bet.Won) {
@@ -459,12 +459,14 @@ export class BetSettlementService {
                     status: processing_status,
                 });
 
-            await this.bonusService.settleBet({
-                clientId: bet.client_id,
-                betId: bet.id,
-                amount: 0,
-                status: BET_LOST
-            })
+            if (bet.bonus_id) {
+                await this.bonusService.settleBet({
+                    clientId: bet.client_id,
+                    betId: bet.id,
+                    amount: 0,
+                    status: BET_LOST
+                })
+            }
 
             // this.logger.info("Done Processing BET ID " + bet.id+" as lost")
 
