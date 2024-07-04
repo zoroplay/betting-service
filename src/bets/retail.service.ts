@@ -447,7 +447,7 @@ export class RetailService {
             const pager = paginateResponse([results, total], page, perPage);
             const response: any = {...pager};
 
-            response.tickets = JSON.parse(response.data);
+            response.data = JSON.parse(response.data);
 
             response.totals = {
                 totalStake: sum.totalStake || 0,

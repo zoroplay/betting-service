@@ -189,17 +189,16 @@ export class VirtualBetService {
             let offset = (page - 1) * 100
             offset = offset + 1;
 
-            const totals = {
-                totalStake: sum.totalStake || 0,
-                totalWinnings: sum.totalWinnings || 0
-            }
-
             const results = await query.limit(100).offset(offset).orderBy('created_at', 'DESC').getMany();
 
             const pager = paginateResponse([results, total], page, 100);
             const response: any = {...pager};
 
-            response.data = {totals, data: JSON.parse(response.data)};
+            response.data = JSON.parse(response.data);
+            response.totals = {
+                totalStake: sum.totalStake || 0,
+                totalWinnings: sum.totalWinnings || 0
+            }
             
             return {
                 success: true,
