@@ -1,14 +1,14 @@
 import { HttpStatus, Injectable } from "@nestjs/common";
-import { GamingActivityRequest, GamingActivityResponse } from "./interfaces/report.interface";
 import { EntityManager, Repository } from "typeorm";
 
 import * as dayjs from 'dayjs';
-import { BET_CANCELLED, BET_LOST, BET_PENDING, BET_VOIDED, BET_WON, STATUS_LOST, STATUS_NOT_LOST_OR_WON, STATUS_WON } from "src/constants";
+import { BET_CANCELLED, BET_LOST, BET_PENDING, BET_VOIDED, BET_WON} from "src/constants";
 import { IdentityService } from "src/identity/identity.service";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Bet } from "src/entity/bet.entity";
 import { BetSlip } from "src/entity/betslip.entity";
 import { RetailService } from "./retail.service";
+import { GamingActivityRequest, GamingActivityResponse } from "src/proto/betting.pb";
 var customParseFormat = require('dayjs/plugin/customParseFormat')
 
 dayjs.extend(customParseFormat)
@@ -29,7 +29,7 @@ export class ReportService {
 
     async gamingActivity(data: GamingActivityRequest): Promise<GamingActivityResponse> {
 
-        const {groupBy, productType, from, to, username, clientID, betType, source, eventType, displayType} = data;
+        const {groupBy, productType, from, to, username, clientID, betType, source, eventType, displayType, userId} = data;
         let table = 'bet';
 
         try {
@@ -119,6 +119,13 @@ export class ReportService {
                 sql += `AND ${table}.bonus_id != 0 `;
             }
 
+            if (userId) {
+                const userIds = await this.retailsService.fetchUserIds(userId, clientID);
+                
+                sql += `AND ${table}.user_id IN (?) `;
+                params.push(userIds);
+            }
+
             console.log(sql);
 
             let resSum = await this.entityManager.query(sql, params)
@@ -139,7 +146,13 @@ export class ReportService {
             // }
 
             // $bets = $bets->groupBy($group_by)->paginate(100);
-            return {success: true, status: HttpStatus.OK, message: 'Data fetched', data: {bets, totalStake, totalWinnings, totalTickets}};
+            return {
+                success: true, 
+                status: HttpStatus.OK, 
+                message: 'Data fetched', 
+                data: {bets, totalStake, totalWinnings, totalTickets},
+                error: null
+            };
         } catch(e) {
             return {success: false, status: HttpStatus.BAD_REQUEST, message: 'Unable to fetch data', error: e.message};
         }

@@ -9,6 +9,8 @@ import { BetSlip } from "src/entity/betslip.entity";
 import { BET_CANCELLED, BET_LOST, BET_PENDING, BET_VOIDED, BET_WON, STATUS_LOST, STATUS_NOT_LOST_OR_WON, STATUS_WON } from "src/constants";
 import { paginateResponse } from "src/commons/helper";
 import { BetHistoryRequest } from "./interfaces/bet.history.request.interface";
+import { GetVirtualBetRequest, GetVirtualBetsRequest } from "src/proto/betting.pb";
+import { VirtualBet } from "src/entity/virtual-bet.entity";
 var customParseFormat = require('dayjs/plugin/customParseFormat')
 
 dayjs.extend(customParseFormat)
@@ -22,7 +24,9 @@ export class RetailService {
         @InjectRepository(Bet)
         private readonly betRepository: Repository<Bet>,
         @InjectRepository(BetSlip)
-        private readonly betSlipRepository: Repository<BetSlip>
+        private readonly betSlipRepository: Repository<BetSlip>,
+        @InjectRepository(VirtualBet)
+        private readonly virtualBetRepo: Repository<VirtualBet>
     ) {}
 
     
@@ -206,16 +210,7 @@ export class RetailService {
                 meta: null
             }
             // fetch agent users
-            const usersRes = await this.identityService.getAgentUser({
-                clientId, 
-                userId
-            });
-
-            let userIds = [];
-
-            if (usersRes.success) {
-                userIds = usersRes.data.map(user => user.id);
-            }
+            const userIds = await this.fetchUserIds(userId, clientId);
 
 
             if (userIds.length > 0) {
@@ -394,7 +389,7 @@ export class RetailService {
                     }
                 }
 
-                const pager = paginateResponse([bets, total], page, 100);
+                const pager = paginateResponse([bets, total], page, perPage);
                 respData.meta = {
                     page,
                     perPage: limit,
@@ -422,8 +417,76 @@ export class RetailService {
         }
     }
 
+    async agentVBets (data: GetVirtualBetsRequest) {
+        const {clientId, username, from, to, perPage, userId, page} = data;
+        try {
+
+            // fetch agent users
+            const userIds = await this.fetchUserIds(userId, clientId);
+
+            const startDate = dayjs(from, 'DD/MM/YYYY HH:mm:ss').format('YYYY-MM-DD HH:mm:ss');
+            const endDate = dayjs(to, 'DD/MM/YYYY HH:mm:ss').format('YYYY-MM-DD HH:mm:ss');
+
+            let query = this.virtualBetRepo.createQueryBuilder('vb').where('client_id = :clientId', {clientId})
+                            .andWhere('created_at >= :startDate', {startDate})
+                            .andWhere('created_at <= :endDate', {endDate})
+                            .andWhere("user_id IN (:...userIds)", {userIds});
+            
+            if (username && username !== '')
+                query.andWhere('username like :username', {username: `%${username}%`})
+
+            
+            const total = await query.clone().getCount();
+            const sum = await query.clone().addSelect('SUM(stake)', 'totalStake').addSelect('SUM(winnings)', 'totalWinnings').getRawOne();
+
+            let offset = (page - 1) * 100
+            offset = offset + 1;
+
+            const results = await query.limit(100).offset(offset).orderBy('created_at', 'DESC').getMany();
+
+            const pager = paginateResponse([results, total], page, perPage);
+            const response: any = {...pager};
+
+            response.tickets = JSON.parse(response.data);
+
+            response.totals = {
+                totalStake: sum.totalStake || 0,
+                totalWinnings: sum.totalWinnings || 0
+            }
+
+            return {
+                success: true,
+                message: 'Virtual Bets retreived',
+                data: response
+            }
+        } catch(e) {
+            console.log(e.message);
+            return {
+                success: false,
+                message: 'Unable to fetch betlist, something went wrong',
+                data: {}
+            }
+        }
+    }
+
     async gamingActivity(data) {
 
+    }
+
+    async fetchUserIds(userId, clientId) {
+        // fetch agent users
+        const usersRes = await this.identityService.getAgentUser({
+            clientId, 
+            userId
+        });
+
+        let userIds = [];
+
+        if (usersRes.success) {
+            userIds = usersRes.data.map(user => user.id);
+        }
+
+        return userIds;
     }
 
 }

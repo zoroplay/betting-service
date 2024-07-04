@@ -190,8 +190,8 @@ export class VirtualBetService {
             offset = offset + 1;
 
             const totals = {
-                totalStake: sum.totalStake,
-                totalWinnings: sum.totalWinnings
+                totalStake: sum.totalStake || 0,
+                totalWinnings: sum.totalWinnings || 0
             }
 
             const results = await query.limit(100).offset(offset).orderBy('created_at', 'DESC').getMany();
@@ -199,12 +199,20 @@ export class VirtualBetService {
             const pager = paginateResponse([results, total], page, 100);
             const response: any = {...pager};
 
-            response.data = JSON.stringify({totals, data: JSON.parse(response.data)});
+            response.data = {totals, data: JSON.parse(response.data)};
             
-            return response;
+            return {
+                success: true,
+                message: 'Virtual Bets retreived',
+                data: response
+            }
         } catch(e) {
-            console.log(e);
-            return paginateResponse([[], 0], page, 100,);
+            console.log(e.message);
+            return {
+                success: false,
+                message: 'Unable to fetch betlist, something went wrong',
+                data: {}
+            }
         }
     }
 }

@@ -28,16 +28,11 @@ import { UpdateBetResponse } from './interfaces/update.bet.response.interface';
 import { BetID } from './interfaces/betid.interface';
 import { Probability, ProcessCashoutRequest, ProcessCashoutResponse } from './interfaces/betslip.interface';
 import { ReportService } from './report.service';
-import {
-  GamingActivityRequest,
-  GamingActivityResponse,
-  GetVirtualBetsRequest,
-} from './interfaces/report.interface';
 import { VirtualBetService } from './virtual-bet.service';
 import { PaginationResponse } from 'src/identity/identity.pb';
 import { CasinoBetService } from './casino-bet.service';
 import { CashoutService } from 'src/bets/cashout.service';
-import { CommonResponseObj, SettingsById } from 'src/proto/betting.pb';
+import { CommonResponseObj, GamingActivityRequest, GamingActivityResponse, GetVirtualBetsRequest, SettingsById } from 'src/proto/betting.pb';
 import { RetailService } from './retail.service';
 
 @Controller('bets')
@@ -138,7 +133,7 @@ export class BetsController {
   }
 
   @GrpcMethod('BettingService', 'GetVirtualBets')
-  GetVirtualBets(data: GetVirtualBetsRequest): Promise<PaginationResponse> {
+  GetVirtualBets(data: GetVirtualBetsRequest): Promise<CommonResponseObj> {
     return this.virtualService.getTickets(data);
   }
 
@@ -151,6 +146,11 @@ export class BetsController {
   @GrpcMethod('BettingService', 'GetRetailBets')
   GetRetailBets(data: BetHistoryRequest): Promise<CommonResponseObj> {
     return this.retailService.agentBets(data);
+  }
+
+  @GrpcMethod('BettingService', 'GetRetailVBets')
+  GetRetailVBets(data: GetVirtualBetsRequest): Promise<CommonResponseObj> {
+    return this.retailService.agentVBets(data);
   }
 
   @GrpcMethod('BettingService', 'GetSalesReport')
