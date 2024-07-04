@@ -22,7 +22,6 @@ import {
 } from './interfaces/bet.history.request.interface';
 import {
   BetHistoryResponse,
-  FindBetResponse,
 } from './interfaces/bet.history.response.interface';
 import { UpdateBetRequest } from './interfaces/update.bet.request.interface';
 import { UpdateBetResponse } from './interfaces/update.bet.response.interface';
@@ -39,6 +38,7 @@ import { PaginationResponse } from 'src/identity/identity.pb';
 import { CasinoBetService } from './casino-bet.service';
 import { CashoutService } from 'src/bets/cashout.service';
 import { CommonResponseObj, SettingsById } from 'src/proto/betting.pb';
+import { RetailService } from './retail.service';
 
 @Controller('bets')
 export class BetsController {
@@ -52,6 +52,7 @@ export class BetsController {
     private readonly casinoService: CasinoBetService,
     private readonly reportService: ReportService,
     private readonly cashoutService: CashoutService,
+    private readonly retailService: RetailService,
   ) {}
 
   @GrpcMethod('BettingService', 'CancelCasinoBet')
@@ -149,7 +150,7 @@ export class BetsController {
 
   @GrpcMethod('BettingService', 'GetRetailBets')
   GetRetailBets(data: BetHistoryRequest): Promise<CommonResponseObj> {
-    return this.reportService.agentBets(data);
+    return this.retailService.agentBets(data);
   }
 
   @GrpcMethod('BettingService', 'GetSalesReport')
