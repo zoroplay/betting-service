@@ -48,6 +48,7 @@ import { WalletService } from 'src/wallet/wallet.service';
 import { IdentityService } from 'src/identity/identity.service';
 import { CashoutService } from 'src/bets/cashout.service';
 import { CommonResponseObj } from 'src/proto/betting.pb';
+import * as dayjs from 'dayjs';
 
 @Injectable()
 export class BetsService {
@@ -1061,7 +1062,7 @@ export class BetsService {
     clientId,
   }: FindBetRequest): Promise<CommonResponseObj> {
     try {
-      console.log(betslipId, clientId)
+      // console.log(betslipId, clientId)
       const booking = await this.betRepository.findOne({
         where: { betslip_id: betslipId, client_id: clientId },
       });
@@ -1199,6 +1200,24 @@ export class BetsService {
 
     return result;
   }
+
+  async getCommissionReport (from, to, userIds) {
+    const startDate = dayjs(from, 'DD-MM-YYYY').format('YYYY-MM-DD');
+    const endDate = dayjs(to, 'DD-MM-YYYY').format('YYYY-MM-DD');
+
+    return await this.betRepository.createQueryBuilder('b')
+                    .addSelect('COUNT(*)', 'totalTickets')
+                    .addSelect('SUM(stake)', 'totalSales')
+                    .addSelect('SUM(w.winning_after_tax)', 'totalWinnings')
+                    .addSelect('SUM(b.commission)', 'totalCommissions')
+                    .leftJoin(Winning, 'w', 'b.id = w.bet_id')
+                    .where('b.user_id IN (:...userIds)', {userIds})
+                    .andWhere('b.created >= :startDate', {startDate})
+                    .andWhere('b.created <= :endDate', {endDate})
+                    .andWhere("status IN (:...status)", {status: [BET_WON, BET_LOST]})
+                    .getRawOne();
+
+}
 
  
 }

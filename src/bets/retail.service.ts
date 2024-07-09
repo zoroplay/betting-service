@@ -11,6 +11,9 @@ import { paginateResponse } from "src/commons/helper";
 import { BetHistoryRequest } from "./interfaces/bet.history.request.interface";
 import { GetVirtualBetRequest, GetVirtualBetsRequest } from "src/proto/betting.pb";
 import { VirtualBet } from "src/entity/virtual-bet.entity";
+import { CasinoBetService } from "./casino-bet.service";
+import { VirtualBetService } from "./virtual-bet.service";
+import { BetsService } from "./bets.service";
 var customParseFormat = require('dayjs/plugin/customParseFormat')
 
 dayjs.extend(customParseFormat)
@@ -21,6 +24,10 @@ export class RetailService {
     constructor(
         private readonly entityManager: EntityManager,
         private readonly identityService: IdentityService,
+        private casinoBetService: CasinoBetService,
+        private virtualBetService: VirtualBetService,
+        private sportsBetService: BetsService,
+
         @InjectRepository(Bet)
         private readonly betRepository: Repository<Bet>,
         @InjectRepository(BetSlip)
@@ -469,10 +476,6 @@ export class RetailService {
         }
     }
 
-    async gamingActivity(data) {
-
-    }
-
     async fetchUserIds(userId, clientId) {
         // fetch agent users
         const usersRes = await this.identityService.getAgentUser({
@@ -487,6 +490,84 @@ export class RetailService {
         }
 
         return userIds;
+    }
+
+    async getCommissions (data) {
+        const {clientId, provider, from, to} = data;
+        try {
+            // Get commission profiles from identity service
+            const profiles = await this.identityService.getCommissionProfileUsers({
+                clientId,
+                provider
+            });
+
+            console.log(profiles);
+            
+            const data = {
+                current_week: {
+                    total_weeks: 0,
+                    current_week: 0,
+                    no_of_tickets: 0,
+                    played: 0, 
+                    won: 0,
+                    net: 0,
+                    commission: 0
+                },
+                current_month: 0,
+                commissions: []
+            };
+
+            if (profiles.success && profiles.data) {
+                for (const agent of profiles.data) {
+                    let res;
+                    console.log(agent.users)
+                    if (agent.users.length) {
+                        switch (provider) {
+                            case 'casino':
+                                res = await this.casinoBetService.getCommissionReport(from, to, agent.users);
+                                break;
+                                case 'virtual':
+                                res = await this.virtualBetService.getCommissionReport(from, to, agent.users);
+                                break;
+                            default:
+                                res = await this.sportsBetService.getCommissionReport(from, to, agent.users);
+                                break;
+                        }
+                    }
+                    const totalSales = res?.totalSales || 0;
+                    const totalWinnings = res?.totalWinnings || 0;
+                    const commission = res?.totalCommissions || 0;
+                    const net = totalSales - totalWinnings;
+
+                    data.commissions.push({
+                        user_id: agent.userId,
+                        username: agent.username,
+                        profile: agent.commissionName,
+                        profile_id: agent.commissionId,
+                        total_tickets: res?.totalTickets || 0,
+                        total_sales: res?.totalSales || 0,
+                        total_won: res?.totalWinnings || 0,
+                        net,
+                        is_paid: 0,
+                        commission: res?.totalCommissions || 0,
+                        profit: net - commission
+                    })
+                }
+            }
+
+            return {
+                success: true,
+                message: 'Commission retrieved',
+                data
+            };
+        } catch (e) {
+            console.log(e.message);
+            return {
+                success: false, 
+                message: 'Error while fetching commission', 
+                data: null
+            };
+        }
     }
 
 }

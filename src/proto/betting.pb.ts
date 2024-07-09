@@ -12,6 +12,13 @@ import { Struct } from "./google/protobuf/struct.pb";
 
 export const protobufPackage = "betting";
 
+export interface GetCommissionsRequest {
+  clientId: number;
+  provider: string;
+  from: string;
+  to: string;
+}
+
 export interface SalesReportRequest {
   clientId: number;
   userId: number;
@@ -500,6 +507,8 @@ export interface BettingServiceClient {
   getSalesReport(request: SalesReportRequest): Observable<CommonResponseObj>;
 
   deletePlayerData(request: SettingsById): Observable<CommonResponseObj>;
+
+  getCommissions(request: GetCommissionsRequest): Observable<CommonResponseObj>;
 }
 
 export interface BettingServiceController {
@@ -582,6 +591,10 @@ export interface BettingServiceController {
   deletePlayerData(
     request: SettingsById,
   ): Promise<CommonResponseObj> | Observable<CommonResponseObj> | CommonResponseObj;
+
+  getCommissions(
+    request: GetCommissionsRequest,
+  ): Promise<CommonResponseObj> | Observable<CommonResponseObj> | CommonResponseObj;
 }
 
 export function BettingServiceControllerMethods() {
@@ -612,6 +625,7 @@ export function BettingServiceControllerMethods() {
       "getRetailVBets",
       "getSalesReport",
       "deletePlayerData",
+      "getCommissions",
     ];
     for (const method of grpcMethods) {
       const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);

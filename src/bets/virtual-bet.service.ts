@@ -214,4 +214,21 @@ export class VirtualBetService {
             }
         }
     }
+
+    async getCommissionReport (from, to, userIds) {
+        const startDate = dayjs(from, 'DD-MM-YYYY').format('YYYY-MM-DD');
+        const endDate = dayjs(to, 'DD-MM-YYYY').format('YYYY-MM-DD');
+
+        return await this.virtualBetRepo.createQueryBuilder('vb')
+                        .addSelect('COUNT(*)', 'totalTickets')
+                        .addSelect('SUM(stake)', 'totalSales')
+                        .addSelect('SUM(winnings)', 'totalWinnings')
+                        .addSelect('SUM(comission)', 'totalCommissions')
+                        .where('user_id IN (:...userIds)', {userIds})
+                        .andWhere('created_at >= :startDate', {startDate})
+                        .andWhere('created_at <= :endDate', {endDate})
+                        .andWhere("status IN (:...status)", {status: [1, 2]})
+                        .getRawOne();
+
+    }
 }
