@@ -145,12 +145,14 @@ export class CasinoBetService {
     data: SettleCasinoBetRequest,
   ): Promise<PlaceCasinoBetResponse> {
     try {
-      // console.log(data);
+      console.log(data);
       const { winnings, transactionId } = data;
 
       const bet = await this.casinoBetRepo.findOneBy({
         transaction_id: transactionId,
       });
+
+      console.log(bet)
 
       if (!bet) {// return error if bet not found
         return {

@@ -501,7 +501,7 @@ export class RetailService {
                 provider
             });
 
-            console.log(profiles);
+            // console.log(profiles);
             
             const data = {
                 current_week: {
@@ -520,7 +520,7 @@ export class RetailService {
             if (profiles.success && profiles.data) {
                 for (const agent of profiles.data) {
                     let res;
-                    console.log(agent.users)
+                    // console.log(agent.users)
                     if (agent.users.length) {
                         switch (provider) {
                             case 'casino':
