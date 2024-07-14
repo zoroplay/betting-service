@@ -314,6 +314,7 @@ export class BetsService {
               slip.market_id,
               slip.specifier,
               slip.outcome_id,
+              slip.odds
             );
 
             totalOdds = totalOdds * slip.odds;
@@ -625,6 +626,7 @@ export class BetsService {
         selection.marketId,
         selection.specifier,
         selection.outcomeId,
+        odd
       );
 
       if (selectionProbability)

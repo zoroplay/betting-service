@@ -80,6 +80,7 @@ export class CashoutService {
                         selection.market_id,
                         selection.specifier,
                         selection.outcome_id,
+                        selection.odds
                     );
                       
                     if (selectionProbability)
@@ -195,8 +196,9 @@ export class CashoutService {
         marketId: number,
         specifier: string,
         outcomeId: string,
+        odds: number,
     ): Promise<number> {
-            let odds = {
+            let payload = {
                 eventType: eventType,
                 eventPrefix: eventPrefix,
                 eventID: eventId,
@@ -209,8 +211,11 @@ export class CashoutService {
         try {
             let probability = 0;
     
-            if (eventType.toLowerCase() === 'match')
-                probability = await this.getOddsProbability(odds);
+            if (eventType.toLowerCase() === 'match') {
+                probability = await this.getOddsProbability(payload);
+                if (probability === 0)
+                    probability = 1/odds;
+            } 
             // else probability = await this.getOddsOutrightsProbability(odds).toPromise();
             else probability = 0;
     
@@ -253,6 +258,7 @@ export class CashoutService {
                     slip.market_id,
                     slip.specifier,
                     slip.outcome_id,
+                    slip.odds
                 );
 
                 selectionProbability.currentProbability = pro;
