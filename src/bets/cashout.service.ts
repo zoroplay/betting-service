@@ -129,6 +129,9 @@ export class CashoutService {
         try {
             const bet = await this.betRepository.findOne({where: {id: betId}});
 
+            if (bet.status !== BET_PENDING) 
+                return {success: false, message: 'Cashout no longer available'};
+            
             if (bet) {
                 // update bet status
                 await this.betRepository.update(
@@ -326,7 +329,6 @@ export class CashoutService {
         });
 
     }
-    
     
     getOddsOutrightsProbability(
         data: GetOddsRequest,
