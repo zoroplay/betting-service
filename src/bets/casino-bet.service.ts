@@ -148,27 +148,31 @@ export class CasinoBetService {
       // console.log(data);
       const { winnings, transactionId } = data;
 
-      const bet = await this.casinoBetRepo.findOneBy({
-        transaction_id: transactionId,
+      const bet = await this.casinoBetRepo.find({
+        where: {
+          transaction_id: transactionId,
+        }
       });
 
-      if (!bet) {// return error if bet not found
+      if (!bet.length) {// return error if bet not found
         return {
           success: false,
           status: HttpStatus.INTERNAL_SERVER_ERROR,
           message: 'Bet not found',
           data: {
-            transactionId: bet.id,
+            transactionId: transactionId,
             balance: 0,
           },
         };
-      } else if (bet.status !== 0 ) { // check if bet has been settled and return message
+      } 
+
+      if (bet[0].status !== 0 ) { // check if bet has been settled and return message
         return {
           success: false,
           status: HttpStatus.BAD_REQUEST,
           message: 'Bet already closed',
           data: {
-            transactionId: bet.id,
+            transactionId: bet[0].id,
             balance: 0,
           },
         };
@@ -196,7 +200,7 @@ export class CasinoBetService {
         status: HttpStatus.OK,
         message: 'Bet Settled Successfully',
         data: {
-          transactionId: bet.id,
+          transactionId: bet[0].id,
           balance: 0,
         },
       };
