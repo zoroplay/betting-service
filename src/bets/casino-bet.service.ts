@@ -6,10 +6,10 @@ import { CasinoBet } from 'src/entity/casino-bet.entity';
 import {
   PlaceCasinoBetRequest,
   PlaceCasinoBetResponse,
-  SettleCasinoBetRequest,
   RollbackCasinoBetRequest,
 } from './interfaces/placebet.interface';
 import { v4 as uuidv4 } from 'uuid';
+import { SettleCasinoBetRequest } from 'src/proto/betting.pb';
 
 var customParseFormat = require('dayjs/plugin/customParseFormat');
 
@@ -145,7 +145,7 @@ export class CasinoBetService {
     data: SettleCasinoBetRequest,
   ): Promise<PlaceCasinoBetResponse> {
     try {
-      console.log(data);
+      // console.log(data);
       const { winnings, transactionId } = data;
 
       const bet = await this.casinoBetRepo.find({
@@ -166,7 +166,7 @@ export class CasinoBetService {
         };
       } 
 
-      if (bet[0].status !== 0 ) { // check if bet has been settled and return message
+      if (data.provider === 'smart-soft' && bet[0].status !== 0 ) { // check if bet has been settled and return message
         return {
           success: false,
           status: HttpStatus.BAD_REQUEST,
@@ -185,14 +185,18 @@ export class CasinoBetService {
         status = 2;
       }
 
-      // update bet status
-      await this.casinoBetRepo.update(
-        { transaction_id: transactionId },
-        {
-          winnings,
-          status,
-        },
-      );
+      if (data.provider === 'evoplay')
+      for (const singleBet of bet) {
+        // update bet status
+        await this.casinoBetRepo.update(
+          { transaction_id: transactionId },
+          {
+            winnings: winnings + singleBet.winnings,
+            status,
+          },
+        );
+      }
+      
 
 
       return {
