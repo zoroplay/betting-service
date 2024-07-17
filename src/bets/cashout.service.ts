@@ -104,24 +104,30 @@ export class CashoutService {
     async calculateCashout(currentProbability: number, probabilityAtTicketTime: number, stake: number, odds: number) {
         // console.log('current Probability', currentProbability)
         // console.log('Probability at ticket time', probabilityAtTicketTime)
+        
         // cashout value without margin
-        const cashoutValueNoMargin = stake * odds * currentProbability;
-        // calculate ticket value
-        const ticketValueFactor = currentProbability / probabilityAtTicketTime;
-        // console.log('ticket value factor', ticketValueFactor)
-        const ladder = await this.cashoutLadderRepo.createQueryBuilder('ladder')
-                                .where('ladder_type = :type', {type: 'low_reduction'})
-                                .andWhere('ticket_value <= :value', {value: ticketValueFactor})
-                                .getOne();
-        if(ladder) {
-            const reductionFactor = ladder.deduction_factor;
-            // console.log('reduction factor', reductionFactor)
+        try {
+            const cashoutValueNoMargin = stake * odds * currentProbability;
+            // calculate ticket value
+            const ticketValueFactor = currentProbability / probabilityAtTicketTime;
+            // console.log('ticket value factor', ticketValueFactor)
+            const ladder = await this.cashoutLadderRepo.createQueryBuilder('ladder')
+                                    .where('ladder_type = :type', {type: 'low_reduction'})
+                                    .andWhere('ticket_value <= :value', {value: ticketValueFactor})
+                                    .getOne();
+            if(ladder) {
+                const reductionFactor = ladder.deduction_factor;
+                // console.log('reduction factor', reductionFactor)
 
-            // const cashout = cashoutValueNoMargin / reductionFactor;
-            const cashout = (stake * currentProbability * odds) / reductionFactor;
-            return cashout * 100;
-        } else {
-            return 0
+                // const cashout = cashoutValueNoMargin / reductionFactor;
+                const cashout = (stake * currentProbability * odds) / reductionFactor;
+                return cashout * 100;
+            } else {
+                return 0
+            }
+        } catch (e) {
+            console.log('cashout calculation failed', e.message);
+            return 0;
         }
     }
 
@@ -131,7 +137,7 @@ export class CashoutService {
 
             if (bet.status !== BET_PENDING) 
                 return {success: false, message: 'Cashout no longer available'};
-            
+
             if (bet) {
                 // update bet status
                 await this.betRepository.update(
