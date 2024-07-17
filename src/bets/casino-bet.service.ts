@@ -145,7 +145,7 @@ export class CasinoBetService {
     data: SettleCasinoBetRequest,
   ): Promise<PlaceCasinoBetResponse> {
     try {
-      // console.log(data);
+      console.log(data);
       const { winnings, transactionId } = data;
 
       const bet = await this.casinoBetRepo.find({
