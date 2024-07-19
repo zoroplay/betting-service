@@ -8,7 +8,7 @@ import {
 } from 'typeorm';
 
 @Entity({ name: 'casino_bets' })
-@Index(['round_id', 'transaction_id'], { unique: true })
+// @Index(['round_id', 'transaction_id'], { unique: true })
 export class CasinoBet {
   @PrimaryGeneratedColumn('uuid')
   id: string;
