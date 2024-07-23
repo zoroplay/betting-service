@@ -158,7 +158,7 @@ export class BetResultingController {
 
         try {
 
-            rows = await this.entityManager.query("SELECT possible_win,user_id,tax_on_winning,winning_after_tax,client_id,currency,betslip_id,source,username,bonus_id FROM bet WHERE id = " + betID + " AND won = " + STATUS_WON + " AND status IN (" + BET_PENDING + ","+BET_VOIDED+") AND id NOT IN (SELECT bet_id FROM winning) ")
+            rows = await this.entityManager.query("SELECT possible_win,user_id,tax_on_winning,winning_after_tax,client_id,currency,betslip_id,source,username,bonus_id,stake FROM bet WHERE id = " + betID + " AND won = " + STATUS_WON + " AND status IN (" + BET_PENDING + ","+BET_VOIDED+") AND id NOT IN (SELECT bet_id FROM winning) ")
 
         }
         catch (e) {
@@ -234,7 +234,7 @@ export class BetResultingController {
             }
 
             if(row.bonus_id) {
-                creditPayload.wallet= 'sport-bonus';
+                creditPayload.wallet = 'sport-bonus';
 
                 const bonusData = await this.bonusService.settleBet({
                     clientId: row.client_id,
@@ -242,6 +242,9 @@ export class BetResultingController {
                     amount: winning_after_tax,
                     status: BET_WON
                 })
+                // remove stake amount from winning
+                const amount = winning_after_tax - row.stake;
+                creditPayload.amount = '' + amount
 
                 // set credit amount to amount returned from bonus
                 if (bonusData.success) creditPayload.amount = bonusData.data.amount;

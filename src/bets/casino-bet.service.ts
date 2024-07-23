@@ -40,6 +40,14 @@ export class CasinoBetService {
           data: null,
         };
 
+      if (operator.status === 3) 
+        return {
+          success: false,
+          status: HttpStatus.CREATED,
+          message: 'Transaction already processed',
+          data: null,
+        };
+
       await this.casinoBetRepo.update(
         { transaction_id: transactionId },
         {
