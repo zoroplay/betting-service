@@ -224,7 +224,7 @@ export class VirtualBetService {
                         .addSelect('COUNT(*)', 'totalTickets')
                         .addSelect('SUM(stake)', 'totalSales')
                         .addSelect('SUM(winnings)', 'totalWinnings')
-                        .addSelect('SUM(comission)', 'totalCommissions')
+                        .addSelect('SUM(commission)', 'totalCommissions')
                         .where('user_id IN (:...userIds)', {userIds})
                         .andWhere('created_at >= :startDate', {startDate})
                         .andWhere('created_at <= :endDate', {endDate})
