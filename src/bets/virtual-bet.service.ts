@@ -216,6 +216,7 @@ export class VirtualBetService {
     }
 
     async getCommissionReport (from, to, userIds) {
+        try {
         const startDate = dayjs(from, 'DD-MM-YYYY').format('YYYY-MM-DD');
         const endDate = dayjs(to, 'DD-MM-YYYY').format('YYYY-MM-DD');
 
@@ -229,6 +230,15 @@ export class VirtualBetService {
                         .andWhere('created_at <= :endDate', {endDate})
                         .andWhere("status IN (:...status)", {status: [1, 2]})
                         .getRawOne();
+        } catch (e) {
+            console.log('virtual service: ' + e.message)
+            return {
+                totalTickets: 0,
+                totalSales: 0,
+                totalWinnings: 0,
+                totalCommissions: 0
+            }
+        }
 
     }
 }
