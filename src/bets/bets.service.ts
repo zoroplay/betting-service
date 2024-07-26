@@ -69,7 +69,7 @@ export class BetsService {
 
     private readonly entityManager: EntityManager,
 
-    private readonly amqpConnection: AmqpConnection,
+    // private readonly amqpConnection: AmqpConnection,
 
     @Inject('ODDS_PACKAGE')
     private readonly client: ClientGrpc,
@@ -344,7 +344,7 @@ export class BetsService {
         }
       }
 
-      if (!bet.bonus_id && bet.status === BET_PENDING)
+      if ((!bet.bonus_id || bet.bonus_id !== 0) && bet.status === BET_PENDING)
         cashOutAmount = await this.cashoutService.calculateCashout(currentProbability, bet.probability, bet.stake, totalOdds);
       
       bet.id = bet.id;
@@ -891,7 +891,7 @@ export class BetsService {
         // await this.betStatusRepository.upsert(betStatus,['status','description'])
 
         let queueName = 'mts.bet_pending';
-        await this.amqpConnection.publish(queueName, queueName, mtsBet);
+        // await this.amqpConnection.publish(queueName, queueName, mtsBet);
         this.logger.info('published to ' + queueName);
       }
 
