@@ -12,11 +12,29 @@ import { Struct } from "./google/protobuf/struct.pb";
 
 export const protobufPackage = "betting";
 
+export interface GetTicketsRequest {
+  userId: number;
+  clientId: number;
+  from: string;
+  to: string;
+  status: string;
+  page: number;
+  perPage: number;
+  betslipId: string;
+  username: string;
+  gameId?: string | undefined;
+  ticketType?: string | undefined;
+  betType?: string | undefined;
+  amountRange?: string | undefined;
+  groupType?: string | undefined;
+}
+
 export interface GetCommissionsRequest {
   clientId: number;
   provider: string;
   from: string;
   to: string;
+  page: number;
 }
 
 export interface SalesReportRequest {
@@ -509,6 +527,8 @@ export interface BettingServiceClient {
   deletePlayerData(request: SettingsById): Observable<CommonResponseObj>;
 
   getCommissions(request: GetCommissionsRequest): Observable<CommonResponseObj>;
+
+  ticketsReport(request: GetTicketsRequest): Observable<CommonResponseObj>;
 }
 
 export interface BettingServiceController {
@@ -595,6 +615,10 @@ export interface BettingServiceController {
   getCommissions(
     request: GetCommissionsRequest,
   ): Promise<CommonResponseObj> | Observable<CommonResponseObj> | CommonResponseObj;
+
+  ticketsReport(
+    request: GetTicketsRequest,
+  ): Promise<CommonResponseObj> | Observable<CommonResponseObj> | CommonResponseObj;
 }
 
 export function BettingServiceControllerMethods() {
@@ -626,6 +650,7 @@ export function BettingServiceControllerMethods() {
       "getSalesReport",
       "deletePlayerData",
       "getCommissions",
+      "ticketsReport",
     ];
     for (const method of grpcMethods) {
       const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);

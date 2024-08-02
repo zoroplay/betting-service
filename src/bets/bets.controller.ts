@@ -32,7 +32,7 @@ import { VirtualBetService } from './virtual-bet.service';
 import { PaginationResponse } from 'src/identity/identity.pb';
 import { CasinoBetService } from './casino-bet.service';
 import { CashoutService } from 'src/bets/cashout.service';
-import { CommonResponseObj, GamingActivityRequest, GamingActivityResponse, GetCommissionsRequest, GetVirtualBetsRequest, SettingsById } from 'src/proto/betting.pb';
+import { CommonResponseObj, GamingActivityRequest, GamingActivityResponse, GetCommissionsRequest, GetTicketsRequest, GetVirtualBetsRequest, SettingsById } from 'src/proto/betting.pb';
 import { RetailService } from './retail.service';
 
 @Controller('bets')
@@ -166,5 +166,10 @@ export class BetsController {
   @GrpcMethod('BettingService', 'GetCommissions')
   getCommissions(data: GetCommissionsRequest): Promise<CommonResponseObj> {
     return this.retailService.getCommissions(data);
+  }
+
+  @GrpcMethod('BettingService', 'TicketsReport')
+  getTickets(data: GetTicketsRequest): Promise<CommonResponseObj> {
+    return this.reportService.ticketsReport(data);
   }
 }

@@ -242,5 +242,5 @@ export class CasinoBetService {
                     .andWhere("status IN (:...status)", {status: [1, 2]})
                     .getRawOne();
 
-}
+  }
 }
