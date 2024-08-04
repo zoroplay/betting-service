@@ -548,7 +548,7 @@ export class ReportService {
             
             return {
                 success: true,
-                message: 'Virtual Bets retreived',
+                message: 'Sports Bets retreived',
                 data: response,
                 status: HttpStatus.OK
             }
