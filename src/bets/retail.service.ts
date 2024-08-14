@@ -502,7 +502,6 @@ export class RetailService {
             });
 
             // console.log(profiles);
-            
             const data = {
                 current_week: {
                     total_weeks: 0,
@@ -568,6 +567,47 @@ export class RetailService {
                 data: null
             };
         }
+    }
+
+    async getTotalSales(payload) {
+        const {product, from, to} = payload;
+        const userIds = payload.userIds.split(',');
+        let data;
+        const startDate = dayjs(from, 'DD/MM/YYYY HH:mm:ss').format('YYYY-MM-DD HH:mm:ss');
+        const endDate = dayjs(to, 'DD/MM/YYYY HH:mm:ss').format('YYYY-MM-DD HH:mm:ss');
+
+        try {
+            if (product === 'sports') {
+                // get all bets
+                const betsQuery = `SELECT IFNULL(SUM(CASE WHEN b.status = ? THEN 1 ELSE 0 END), 0) as running_bets,
+                IFNULL(SUM(CASE WHEN b.status IN (?, ?) THEN 1 ELSE 0 END), 0) as settledBets, COUNT(*) as noOfBets,
+                IFNULL(SUM(b.stake), 0) as totalStake, IFNULL(SUM(w.winning_after_tax), 0) as totalWinnings, IFNULL(SUM(b.commission), 0) as commission FROM bet b
+                LEFT JOIN winning w ON w.bet_id = b.id WHERE DATE(b.created) BETWEEN ? AND ? AND b.user_id IN (?)`;
+
+                const bets  = await this.entityManager.query(betsQuery, [BET_PENDING, BET_WON, BET_LOST, startDate, endDate, userIds]);
+                data = bets[0];
+            } else if (product === 'virtual') {
+                // console.log(bets.getSql())
+                // get all virtual bets
+                const vBetQuery = `SELECT IFNULL(SUM(CASE WHEN virtual_bets.status = 0 THEN 1 ELSE 0 END), 0) as running_bets,
+                        IFNULL(SUM(CASE WHEN virtual_bets.status IN (1, 2) THEN 1 ELSE 0 END), 0) as settled_bets,
+                        COUNT(*) as noOfBets, IFNULL(SUM(virtual_bets.stake), 0) as totalStake, IFNULL(SUM(virtual_bets.winnings), 0) as winnings,
+                        IFNULL(SUM(virtual_bets.commission), 0) as commission FROM virtual_bets WHERE DATE(b.created) BETWEEN ? AND ? user_id IN (?)`;
+
+                const bets  = await this.entityManager.query(vBetQuery, [startDate, endDate, userIds]);
+                data = bets[0];
+            }
+
+            return {success: true, message: 'Data retreived', data};
+        } catch (e) {
+            console.log(e.message);
+            return {
+                success: false, 
+                message: 'Something went wrong',
+                data: null
+            }
+        }
+
     }
 
 }
