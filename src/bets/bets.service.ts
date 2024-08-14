@@ -16,7 +16,6 @@ import {
 } from '../constants';
 import {
   BetHistoryResponse,
-  FindBetResponse,
 } from './interfaces/bet.history.response.interface';
 import { PlaceBetResponse } from './interfaces/placebet.response.interface';
 import {
@@ -223,8 +222,8 @@ export class BetsService {
       let limit = ` LIMIT ${offset},${noPerPage}`;
 
       let queryString = `SELECT b.id,b.user_id,b.username,b.betslip_id,b.stake,b.currency,b.bet_type,b.bet_category,b.total_odd,b.possible_win,b.source,b.total_bets,
-            b.won,b.status,b.created,w.winning_after_tax as winnings, b.sports, b.tournaments, b.events, b.markets, b.event_type, b.bet_category_desc, b.probability
-            FROM bet b LEFT JOIN winning w ON w.bet_id = b.id WHERE is_booked = 0 AND b.client_id = ? AND  ${where.join(
+            b.won,b.status,b.created,w.winning_after_tax as winnings, b.sports, b.tournaments, b.events, b.markets, b.event_type, b.bet_category_desc, b.probability,
+            b.bonus_id FROM bet b LEFT JOIN winning w ON w.bet_id = b.id WHERE is_booked = 0 AND b.client_id = ? AND  ${where.join(
               ' AND ',
             )} ORDER BY b.created DESC ${limit}`;
 
@@ -304,7 +303,7 @@ export class BetsService {
               break;
           }
 
-          if (bet.status === BET_PENDING) {
+          if (bet.status === BET_PENDING && (!bet.bonus_id || bet.bonus_id !== 0)) {
             // get probability for selection
             let selectionProbability = await this.cashoutService.getProbability(
               slip.producer_id,
