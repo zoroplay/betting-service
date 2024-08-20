@@ -363,8 +363,7 @@ export class BetsService {
       bet.markets = bet.markets;
       bet.betCategoryDesc = bet.bet_category_desc;
       bet.cashOutAmount = cashOutAmount;
-      bet.bonusId = bet.bonus_id;
-      bet.hasCashout = bet.bonus_id ? false : true
+      bet.isBonusBet = bet.bonus_id ? true : false
 
       myBets.push(bet);
     }
