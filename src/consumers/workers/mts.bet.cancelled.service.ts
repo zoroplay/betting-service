@@ -93,7 +93,7 @@ export class MtsBetCancelledService {
 
                 await this.bonusService.settleBet({
                     clientId: bet.client_id,
-                    betId: bet.id,
+                    betId: bet.id.toString(),
                     status: BET_CANCELLED,
                     amount: 0,
                 })

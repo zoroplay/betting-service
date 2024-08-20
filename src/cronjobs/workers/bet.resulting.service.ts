@@ -238,7 +238,7 @@ export class BetResultingController {
 
                 const bonusData = await this.bonusService.settleBet({
                     clientId: row.client_id,
-                    betId: betID,
+                    betId: betID.toString(),
                     amount: winning_after_tax,
                     status: BET_WON
                 })

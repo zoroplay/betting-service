@@ -3,13 +3,10 @@ import { Repository } from 'typeorm';
 import * as dayjs from 'dayjs';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CasinoBet } from 'src/entity/casino-bet.entity';
-import {
-  PlaceCasinoBetRequest,
-  PlaceCasinoBetResponse,
-  RollbackCasinoBetRequest,
-} from './interfaces/placebet.interface';
 import { v4 as uuidv4 } from 'uuid';
-import { SettleCasinoBetRequest } from 'src/proto/betting.pb';
+import { PlaceCasinoBetRequest, PlaceCasinoBetResponse, RollbackCasinoBetRequest, SettleCasinoBetRequest } from 'src/proto/betting.pb';
+import { BonusService } from 'src/bonus/bonus.service';
+import { UserBet } from 'src/bonus/bonus.pb';
 
 var customParseFormat = require('dayjs/plugin/customParseFormat');
 
@@ -20,6 +17,7 @@ export class CasinoBetService {
   constructor(
     @InjectRepository(CasinoBet)
     private readonly casinoBetRepo: Repository<CasinoBet>,
+    private readonly bonusService: BonusService,
   ) {}
 
   async cancelCasinoBet(
@@ -129,6 +127,19 @@ export class CasinoBetService {
 
       const bet = await this.casinoBetRepo.save(betData);
 
+      if (data.bonusId) {
+        const bonusData: UserBet = {
+          clientId: data.clientId,
+          userId: data.userId,
+          stake: data.stake,
+          totalOdds: 0,
+          bonusId: data.bonusId,
+          betId: betData.id,
+          selections: null,
+        }
+        await this.bonusService.placeBet(bonusData);
+      }
+
       return {
         success: true,
         status: HttpStatus.OK,
@@ -194,18 +205,25 @@ export class CasinoBetService {
       }
 
       if (data.provider === 'evoplay')
-      for (const singleBet of bet) {
-        // update bet status
-        await this.casinoBetRepo.update(
-          { transaction_id: transactionId },
-          {
-            winnings: winnings + singleBet.winnings,
-            status,
-          },
-        );
-      }
+        for (const singleBet of bet) {
+          // update bet status
+          await this.casinoBetRepo.update(
+            { transaction_id: transactionId },
+            {
+              winnings: winnings + singleBet.winnings,
+              status,
+            },
+          );
+        }
       
-
+      for (const singleBet of bet) {
+        await this.bonusService.settleBet({
+          clientId: singleBet.client_id,
+          betId: singleBet.id,
+          status,
+          amount: winnings
+        })
+      }
 
       return {
         success: true,

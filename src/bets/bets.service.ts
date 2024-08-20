@@ -363,6 +363,8 @@ export class BetsService {
       bet.markets = bet.markets;
       bet.betCategoryDesc = bet.bet_category_desc;
       bet.cashOutAmount = cashOutAmount;
+      bet.bonusId = bet.bonus_id;
+      bet.hasCashout = bet.bonus_id ? false : true
 
       myBets.push(bet);
     }
@@ -948,7 +950,7 @@ export class BetsService {
               winCreditPayload.wallet = 'sport-bonus';
               await this.bonusService.settleBet({
                 clientId: bet.client_id,
-                betId: bet.id,
+                betId: bet.id.toString(),
                 amount: bet.winning_after_tax,
                 status: BET_WON,
               });
@@ -966,7 +968,7 @@ export class BetsService {
             if (bet.bonus_id) {
               await this.bonusService.settleBet({
                 clientId: bet.client_id,
-                betId: bet.id,
+                betId: bet.id.toString(),
                 amount: 0,
                 status: BET_LOST,
               });
@@ -992,7 +994,7 @@ export class BetsService {
               voidCreditPayload.wallet = 'sport-bonus';
               await this.bonusService.settleBet({
                 clientId: bet.client_id,
-                betId: bet.id,
+                betId: bet.id.toString(),
                 amount: 0,
                 status: BET_VOIDED,
               });

@@ -167,6 +167,8 @@ export interface PlaceCasinoBetRequest {
   source?: string | undefined;
   cashierTransactionId?: string | undefined;
   username?: string | undefined;
+  betType?: string | undefined;
+  bonusId?: number | undefined;
 }
 
 export interface CreditCasinoBetRequest {

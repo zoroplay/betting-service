@@ -22,6 +22,10 @@ export class CasinoBet {
   user_id: number;
 
   @Index()
+  @Column({ type: 'bigint', nullable: true })
+  bonus_id: number;
+
+  @Index()
   @Column({ type: 'varchar', length: 150 })
   username: string;
 
