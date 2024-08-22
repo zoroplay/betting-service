@@ -402,6 +402,7 @@ export interface BetHistory {
   markets: string;
   betCategoryDesc: string;
   isBonusBet?: boolean | undefined;
+  pendingGames?: number | undefined;
 }
 
 export interface BetHistoryResponse {

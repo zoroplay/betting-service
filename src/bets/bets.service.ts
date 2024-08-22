@@ -237,12 +237,16 @@ export class BetsService {
 
     for (let bet of bets) {
       let slips: any;
+      let pendingGames: any;
       // let settled: any;
 
       try {
         const slipQuery = `SELECT id,event_id,event_type,event_prefix,event_name,event_date,market_name, market_id,specifier,outcome_name,outcome_id,odds,won,
                 status,sport_name,category_name,tournament_name,match_id, producer_id, probability FROM bet_slip WHERE bet_id =? `;
         slips = await this.entityManager.query(slipQuery, [bet.id]);
+
+        const pendingGamesQry = `SELECT count(*) as pending FROM bet_slip WHERE bet_id =? AND status =?`;
+        pendingGames = await this.entityManager.query(pendingGamesQry, [bet.id, BET_PENDING]);
 
       } catch (e) {
         this.logger.error(' error retrieving bet slips ' + e.toString());
@@ -364,7 +368,8 @@ export class BetsService {
       bet.betCategoryDesc = bet.bet_category_desc;
       bet.cashOutAmount = cashOutAmount;
       bet.isBonusBet = bet.bonus_id ? true : false
-
+      bet.pendingGames = pendingGames[0].pending;
+      
       myBets.push(bet);
     }
 
