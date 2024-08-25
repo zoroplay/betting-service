@@ -29,7 +29,7 @@ export class CronjobService {
 
         this.betResultingService.taskProcessBetResulting().then(function () {
 
-            //vm.logger.info("done running taskProcessBetResulting ")
+            vm.logger.info("done running taskProcessBetResulting ")
 
         })
 
@@ -42,7 +42,7 @@ export class CronjobService {
 
         this.betSettlementService.taskProcessBetSettlement().then(function () {
 
-            //vm.logger.info("done running processBetSettlement ")
+            vm.logger.info("done running processBetSettlement ")
 
         })
     }

@@ -468,7 +468,7 @@ export class BetSettlementService {
                 })
             }
 
-            // this.logger.info("Done Processing BET ID " + bet.id+" as lost")
+            this.logger.info("Done Processing BET ID " + bet.id+" as lost")
 
             return {
                 BetID: bet.id,
