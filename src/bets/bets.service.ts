@@ -323,8 +323,11 @@ export class BetsService {
             totalOdds = totalOdds * slip.odds;
 
             // if (selectionProbability)
-              currentProbability = currentProbability * selectionProbability;
+            currentProbability = currentProbability * selectionProbability;
+          } else if (slip.status === BET_LOST) {
+            currentProbability = 0
           }
+
 
           bet.selections.push({
             eventName: slip.event_name,
