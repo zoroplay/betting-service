@@ -324,7 +324,7 @@ export class BetsService {
 
             // if (selectionProbability)
             currentProbability = currentProbability * selectionProbability;
-          } else if (slip.status === BET_LOST) {
+          } else if (slip.won === STATUS_LOST) {
             currentProbability = 0
           }
 
