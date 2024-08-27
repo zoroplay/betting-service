@@ -350,7 +350,9 @@ export class BetsService {
         }
       }
 
-      if ((!bet.bonus_id || bet.bonus_id !== 0) && bet.status === BET_PENDING)
+      console.log('current probability', currentProbability)
+
+      if ((!bet.bonus_id || bet.bonus_id !== 0) && bet.status === BET_PENDING && currentProbability > 0)
         cashOutAmount = await this.cashoutService.calculateCashout(currentProbability, bet.probability, bet.stake, totalOdds);
       
       bet.id = bet.id;
