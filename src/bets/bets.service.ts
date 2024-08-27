@@ -282,6 +282,7 @@ export class BetsService {
       let currentProbability = 1;
       let totalOdds = 1;
       let cashOutAmount = 0;
+      let lostGames = 0;
 
       if (slips.length > 0) {
         for (const slip of slips) {
@@ -307,7 +308,7 @@ export class BetsService {
               break;
           }
 
-          if (bet.status === BET_PENDING && (!bet.bonus_id || bet.bonus_id !== 0)) {
+          if (slip.won !== STATUS_LOST && bet.status === BET_PENDING && (!bet.bonus_id || bet.bonus_id !== 0)) {
             // get probability for selection
             let selectionProbability = await this.cashoutService.getProbability(
               slip.producer_id,
@@ -324,10 +325,11 @@ export class BetsService {
 
             // if (selectionProbability)
             currentProbability = currentProbability * selectionProbability;
-          } else if (slip.won === STATUS_LOST) {
-            currentProbability = 0
-          }
+          } 
 
+          if (slip.won === STATUS_LOST) {
+            lostGames += 1;
+          }
 
           bet.selections.push({
             eventName: slip.event_name,
@@ -350,9 +352,9 @@ export class BetsService {
         }
       }
 
-      console.log('current probability', currentProbability)
+      console.log('current probability', currentProbability, lostGames)
 
-      if ((!bet.bonus_id || bet.bonus_id !== 0) && bet.status === BET_PENDING && currentProbability > 0)
+      if ((!bet.bonus_id || bet.bonus_id !== 0) && bet.status === BET_PENDING && lostGames === 0)
         cashOutAmount = await this.cashoutService.calculateCashout(currentProbability, bet.probability, bet.stake, totalOdds);
       
       bet.id = bet.id;
