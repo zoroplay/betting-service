@@ -89,7 +89,7 @@ export class CasinoBetService {
       return {
         success: true,
         status: HttpStatus.OK,
-        message: 'Casino Bet cancelled Succesfully ',
+        message: 'Casino round closed Succesfully ',
         data: {
           transactionId: uuidv4(),
           balance: 0,
@@ -168,10 +168,10 @@ export class CasinoBetService {
       const { winnings, transactionId } = data;
 
       const bet = await this.casinoBetRepo.find({
-        where: {
-          transaction_id: transactionId,
-        }
+        where: {transaction_id: transactionId}
       });
+
+      // console.log(bet)
 
       if (!bet.length) {// return error if bet not found
         return {
@@ -204,25 +204,26 @@ export class CasinoBetService {
         status = 2;
       }
 
-      if (data.provider === 'evoplay')
-        for (const singleBet of bet) {
-          // update bet status
-          await this.casinoBetRepo.update(
-            { transaction_id: transactionId },
-            {
-              winnings: winnings + singleBet.winnings,
-              status,
-            },
-          );
-        }
-      
+      console.log('status is', status);
+
       for (const singleBet of bet) {
-        await this.bonusService.settleBet({
-          clientId: singleBet.client_id,
-          betId: singleBet.id,
-          status,
-          amount: winnings
-        })
+        // update bet status
+        await this.casinoBetRepo.update(
+          { transaction_id: transactionId },
+          {
+            winnings: parseFloat(winnings.toString()) + parseFloat(singleBet.winnings.toString()),
+            status,
+          },
+        );
+        //if it's bonus bet, settle bonus bet
+        if (singleBet.bonus_id) {
+          await this.bonusService.settleBet({
+            clientId: singleBet.client_id,
+            betId: singleBet.id,
+            status,
+            amount: winnings
+          })
+        }
       }
 
       return {
