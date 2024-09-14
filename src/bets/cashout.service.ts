@@ -135,6 +135,9 @@ export class CashoutService {
         try {
             const bet = await this.betRepository.findOne({where: {id: betId}});
 
+            return {success: false, message: 'Unable to complete request'};
+
+
             if (bet.status !== BET_PENDING) 
                 return {success: false, message: 'Cashout no longer available'};
 
