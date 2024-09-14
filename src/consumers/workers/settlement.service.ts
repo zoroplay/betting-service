@@ -52,7 +52,8 @@ export class SettlementService {
  */
 
     async createSettlement(data: any): Promise<number> {
-
+        console.log('creating bet settlement');
+        
         data = JSON.parse(JSON.stringify(data))
         // console.log(data)
         let matchID = data.match_id
