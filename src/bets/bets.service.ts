@@ -66,6 +66,9 @@ export class BetsService {
     @InjectRepository(BetSlip)
     private betslipRepository: Repository<BetSlip>,
 
+    @InjectRepository(Winning)
+    private winningRepository: Repository<Winning>,
+
     private readonly entityManager: EntityManager,
 
     private readonly amqpConnection: AmqpConnection,
@@ -967,6 +970,15 @@ export class BetsService {
               });
             }
 
+            let winning = new Winning();
+            winning.bet_id = bet.id
+            winning.user_id = bet.user_id
+            winning.client_id = bet.client_id
+            winning.currency = bet.currency
+            winning.tax_on_winning = bet.tax_on_winning
+            winning.winning_before_tax = bet.possible_win
+            winning.winning_after_tax = bet.winning_after_tax
+            await this.winningRepository.save(winning)
             // credit user wallet
             await this.walletService.credit(winCreditPayload);
 
