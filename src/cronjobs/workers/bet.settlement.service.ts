@@ -17,6 +17,7 @@ import {Bet} from "../../entity/bet.entity";
 import {Cronjob} from "../../entity/cronjob.entity";
 import {BetClosure} from "../../entity/betclosure.entity";
 import { BonusService } from "src/bonus/bonus.service";
+import * as dayjs from "dayjs";
 
 @Injectable()
 export class BetSettlementService {
@@ -110,6 +111,55 @@ export class BetSettlementService {
         task.name = taskName;
         task.status = 0;
         await this.cronJobRepository.upsert(task,['status'])
+
+    }
+
+
+    async taskProcessUnSettledBet() {
+        console.log('task for processing unsettled bet')
+
+        const taskName = 'unsettled.bet'
+
+        // check if similar job is running
+        // get client settings
+        var cronJob = await this.cronJobRepository.findOne({
+            where: {
+                name: taskName,
+                status: 1,
+            }
+        });
+
+        if(cronJob !== null && cronJob.id > 0 ) {
+
+            this.logger.info('another '+taskName+' job is already running');
+            return
+        }
+
+        // update status to running
+        // create settlement
+        const task = new Cronjob();
+        task.name = taskName;
+        task.status = 1;
+
+        await this.cronJobRepository.upsert(task,['status']);
+
+        const now = dayjs().subtract(2, 'hours').format('YYYY-MM-DD HH:MM:SS');
+        // find unsettled bets
+        const rows = await this.entityManager.query("SELECT b.id FROM bet_slip bs JOIN bet b ON b.id = bs.bet_id WHERE b.status = 0 AND bs.event_date <= ? GROUP BY bs.bet_id", [now]);
+
+        for (const row of rows) {
+            const betId = row.id;
+            // find selections
+            const total = await this.betslipRepository.count({where: {bet_id: betId}});
+            const won = await this.betslipRepository.count({where: {bet_id: betId, won: STATUS_WON}})
+            const lost = await this.betslipRepository.count({where: {bet_id: betId, won: STATUS_LOST}});
+
+            if (lost > 0){
+
+            }
+
+            if (won === total) {}
+        }
 
     }
 
@@ -426,7 +476,17 @@ export class BetSettlementService {
                 {
                     won: STATUS_WON,
                     status: processing_status,
+                    settled_at: dayjs().toDate()
                 });
+
+                if (bet.bonus_id) {
+                    await this.bonusService.settleBet({
+                        clientId: bet.client_id,
+                        betId: bet.id,
+                        amount: 0,
+                        status: STATUS_WON
+                    })
+                }
 
             this.logger.info("Done Processing BET ID " + bet.id+" as won ")
 
@@ -457,6 +517,7 @@ export class BetSettlementService {
                 {
                     won: STATUS_LOST,
                     status: processing_status,
+                    settled_at: dayjs().toDate()
                 });
 
             if (bet.bonus_id) {

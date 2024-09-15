@@ -12,6 +12,7 @@ import {BetStatus} from "../../entity/betstatus.entity";
 import { Setting } from "src/entity/setting.entity";
 import { WalletService } from "src/wallet/wallet.service";
 import { BonusService } from "src/bonus/bonus.service";
+import * as dayjs from "dayjs";
 
 @Injectable()
 export class MtsTimeoutService {
@@ -132,6 +133,8 @@ export class MtsTimeoutService {
                 },
                 {
                     status: BET_CANCELLED,
+                    settled_at: dayjs().toDate(),
+                    settlement_type: 'mts'
                 });
 
             // update bet slip to cancelled

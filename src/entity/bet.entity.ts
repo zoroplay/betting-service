@@ -148,6 +148,14 @@ export class Bet {
     ip_address: string;
 
     @Index()
+    @Column({ type: "varchar", length: 50, nullable: true, default: 'system' })
+    settlement_type: string;
+
+    @Index()
+    @Column({type:"timestamptz", nullable: true })
+    settled_at: Date;
+
+    @Index()
     @CreateDateColumn()
     created: string;
 

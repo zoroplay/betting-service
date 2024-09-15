@@ -15,6 +15,7 @@ import { WalletService } from "src/wallet/wallet.service";
 import { BonusService } from "src/bonus/bonus.service";
 import { BetStatus } from "src/entity/betstatus.entity";
 import axios from "axios";
+import * as dayjs from "dayjs";
 
 @Controller('cronjob/bet/resulting')
 export class BetResultingController {
@@ -148,26 +149,26 @@ export class BetResultingController {
 
             await this.entityManager.query("insert ignore into bet_closure (bet_id,created) select id, now() from bet where won = 1 and status = 0 and id not in (select bet_id from winning) ");
             
-            const bets = await this.betRepository.createQueryBuilder('b')
-                                .where('won = :won', {won: STATUS_WON})
-                                .getMany();
+            // const bets = await this.betRepository.createQueryBuilder('b')
+            //                     .where('won = :won', {won: STATUS_WON})
+            //                     .getMany();
             
-            // console.log('number of pending bets', bets.length);
+            // // console.log('number of pending bets', bets.length);
 
-            for (const bet of bets) {
-                const betWon = await this.winningRepository.find({where: {bet_id: bet.id}});
-                if (!betWon) {
-                    let winning = new Winning();
-                    winning.bet_id = bet.id
-                    winning.user_id = bet.user_id
-                    winning.client_id = bet.client_id
-                    winning.currency = bet.currency
-                    winning.tax_on_winning = bet.tax_on_winning
-                    winning.winning_before_tax = bet.possible_win
-                    winning.winning_after_tax = bet.winning_after_tax
-                    await this.winningRepository.save(winning)
-                }
-            }
+            // for (const bet of bets) {
+            //     const betWon = await this.winningRepository.find({where: {bet_id: bet.id}});
+            //     if (!betWon) {
+            //         let winning = new Winning();
+            //         winning.bet_id = bet.id
+            //         winning.user_id = bet.user_id
+            //         winning.client_id = bet.client_id
+            //         winning.currency = bet.currency
+            //         winning.tax_on_winning = bet.tax_on_winning
+            //         winning.winning_before_tax = bet.possible_win
+            //         winning.winning_after_tax = bet.winning_after_tax
+            //         await this.winningRepository.save(winning)
+            //     }
+            // }
 
             // // find unsettled events
             // const matches = await this.betslipRepository.createQueryBuilder('bs')
@@ -264,6 +265,7 @@ export class BetResultingController {
                 },
                 {
                     status: BET_WON,
+                    settled_at: dayjs().toDate(),
                 }
             );
         } catch (e) {

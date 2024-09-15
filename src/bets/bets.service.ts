@@ -1039,6 +1039,8 @@ export class BetsService {
           {
             won: updateStatus,
             status: betStatus,
+            settled_at: dayjs().toDate(),
+            settlement_type: 'manual'
           },
         );
       } else {
