@@ -143,7 +143,7 @@ export class BetSettlementService {
 
         await this.cronJobRepository.upsert(task,['status']);
 
-        const now = dayjs().subtract(2, 'hours').format('YYYY-MM-DD HH:MM:SS');
+        const now = dayjs().subtract(2, 'hours').format('YYYY-MM-DD HH:mm:ss');
         // find unsettled bets
         const rows = await this.entityManager.query("SELECT b.id FROM bet_slip bs JOIN bet b ON b.id = bs.bet_id WHERE b.status = 0 AND bs.event_date <= ? GROUP BY bs.bet_id", [now]);
 
@@ -476,7 +476,7 @@ export class BetSettlementService {
                 {
                     won: STATUS_WON,
                     status: processing_status,
-                    settled_at: dayjs().format('YYYY-MM-DD HH:MM:SS'),
+                    settled_at: dayjs().format('YYYY-MM-DD HH:mm:ss'),
                 });
 
                 if (bet.bonus_id) {
@@ -517,7 +517,7 @@ export class BetSettlementService {
                 {
                     won: STATUS_LOST,
                     status: processing_status,
-                    settled_at: dayjs().format('YYYY-MM-DD HH:MM:SS'),
+                    settled_at: dayjs().format('YYYY-MM-DD HH:mm:ss'),
                 });
 
             if (bet.bonus_id) {
