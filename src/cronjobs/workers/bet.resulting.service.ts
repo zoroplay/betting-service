@@ -5,7 +5,7 @@ import {EntityManager, Repository} from "typeorm";
 import {Settlement} from "../../entity/settlement.entity";
 import {BetSlip} from "../../entity/betslip.entity";
 import {Setting} from "../../entity/setting.entity";
-import {BET_PENDING, BET_VOIDED, BET_WON, STATUS_NOT_LOST_OR_WON, STATUS_WON, TRANSACTION_TYPE_WINNING} from "../../constants";
+import {BET_PENDING, BET_VOIDED, BET_WON, BETSLIP_PROCESSING_PENDING, STATUS_NOT_LOST_OR_WON, STATUS_WON, TRANSACTION_TYPE_WINNING} from "../../constants";
 import {Bet} from "../../entity/bet.entity";
 import {Cronjob} from "../../entity/cronjob.entity";
 import {Winning} from "../../entity/winning.entity";
@@ -13,6 +13,8 @@ import { BetClosure } from "src/entity/betclosure.entity";
 import { BetSettlementService } from "./bet.settlement.service";
 import { WalletService } from "src/wallet/wallet.service";
 import { BonusService } from "src/bonus/bonus.service";
+import { BetStatus } from "src/entity/betstatus.entity";
+import axios from "axios";
 
 @Controller('cronjob/bet/resulting')
 export class BetResultingController {
@@ -32,6 +34,9 @@ export class BetResultingController {
 
         @InjectRepository(Settlement)
         private settlementRepository: Repository<Settlement>,
+
+        @InjectRepository(BetStatus)
+        private betStatusRepository: Repository<BetStatus>,
 
         @InjectRepository(Cronjob)
         private cronJobRepository: Repository<Cronjob>,
@@ -137,6 +142,77 @@ export class BetResultingController {
     }
 
     async taskFixInvalidBetStatus() {
+        // console.log('task fix for invalid')
+
+        try {
+
+            await this.entityManager.query("insert ignore into bet_closure (bet_id,created) select id, now() from bet where won = 1 and status = 0 and id not in (select bet_id from winning) ");
+            
+            // await this.entityManager.query("insert ignore into bet_status (bet_id, status, description,created) select id, 1, 'Bet accepted by MTS', now() from bet where won = -1 and status = 0 and id not in (select bet_id from bet_status) ");
+            const bets = await this.betRepository.createQueryBuilder('b')
+                                .where('won = :won', {won: STATUS_NOT_LOST_OR_WON})
+                                .andWhere('status = :status', {status: BET_PENDING})
+                                .andWhere('DATE(created) = :date', {date: '2024-09-14'})
+                                .getMany();
+            
+            console.log('number of pending bets', bets.length);
+
+            for (const bet of bets) {
+                const betStatus = await this.betStatusRepository.find({where: {bet_id: bet.id}});
+                if (!betStatus) {
+                    let betStatus = new BetStatus()
+                    betStatus.status = 1
+                    betStatus.bet_id = bet.id
+                    betStatus.description = "Bet accepted by MTS";
+                    await this.betStatusRepository.upsert(betStatus,['status','description']);
+                }
+            }
+
+            // find unsettled events
+            const matches = await this.betslipRepository.createQueryBuilder('bs')
+            .where('DATE(event_date) = :eDate', {eDate: '2024-09-14'})
+            .andWhere('DATE(created) >= :date', {date: '2024-09-13'})
+            .andWhere('won = :won', {won: STATUS_NOT_LOST_OR_WON})
+            .andWhere('status = :status', {status: BETSLIP_PROCESSING_PENDING})
+            .groupBy('match_id')
+            .getMany();
+
+            console.log('number of pending settlements', matches.length);
+
+            let requestId = 1001;
+            for (const match of matches) {
+                // check if settlement exists
+                const settlement = await this.settlementRepository.find({where: {event_id: match.match_id}});
+                
+                if (settlement.length === 0){
+                    const url = `https://api.betradar.com/v1/pre/stateful_messages/events/sr:match:${match.match_id}/initiate_request?request_id=${requestId}`
+                    // request settlement
+                    await axios.post(url, {}, {
+                        headers: {
+                            'x-access-token': process.env.BETRADAR_API_TOKEN
+                        }
+                    }).then(res => {
+                        console.log('response', res.data);
+                    }).catch(err => console.log('error', err))
+                } else {
+                    // update settlement status
+                    await this.settlementRepository.update(
+                        {event_id: match.match_id}, 
+                        {processed: 0}
+                    )
+                }
+                requestId++;
+            }
+
+
+        }
+        catch (e) {
+            this.logger.error("error deleting bet closure "+e.toString())
+        }
+
+    }
+    
+    async taskInsertBetWithoutBetStatus() {
         // console.log('task fix for invalid')
 
         try {
