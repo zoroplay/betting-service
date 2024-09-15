@@ -1039,7 +1039,7 @@ export class BetsService {
           {
             won: updateStatus,
             status: betStatus,
-            settled_at: dayjs().toDate(),
+            settled_at: dayjs().format('YYYY-MM-DD HH:MM:SS'),
             settlement_type: 'manual'
           },
         );

@@ -476,7 +476,7 @@ export class BetSettlementService {
                 {
                     won: STATUS_WON,
                     status: processing_status,
-                    settled_at: dayjs().toDate()
+                    settled_at: dayjs().format('YYYY-MM-DD HH:MM:SS'),
                 });
 
                 if (bet.bonus_id) {
@@ -517,7 +517,7 @@ export class BetSettlementService {
                 {
                     won: STATUS_LOST,
                     status: processing_status,
-                    settled_at: dayjs().toDate()
+                    settled_at: dayjs().format('YYYY-MM-DD HH:MM:SS'),
                 });
 
             if (bet.bonus_id) {

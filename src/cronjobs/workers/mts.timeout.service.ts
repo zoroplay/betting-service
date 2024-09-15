@@ -133,7 +133,7 @@ export class MtsTimeoutService {
                 },
                 {
                     status: BET_CANCELLED,
-                    settled_at: dayjs().toDate(),
+                    settled_at: dayjs().format('YYYY-MM-DD HH:MM:SS'),
                     settlement_type: 'mts'
                 });
 

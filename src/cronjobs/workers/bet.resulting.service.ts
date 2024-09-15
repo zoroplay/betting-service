@@ -265,7 +265,7 @@ export class BetResultingController {
                 },
                 {
                     status: BET_WON,
-                    settled_at: dayjs().toDate(),
+                    settled_at: dayjs().format('YYYY-MM-DD HH:MM:SS'),
                 }
             );
         } catch (e) {
