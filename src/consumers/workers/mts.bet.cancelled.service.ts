@@ -53,9 +53,9 @@ export class MtsBetCancelledService {
             reason = reason.slice(0, 290) + '...'
         }
 
-        if (reason.inlcudes('Market/SOV expired in MTS'))
-            return;
-
+        if (reason.includes('Market/SOV expired in MTS')) {
+            return 1;
+        }
         // check if betId has been saved before
         const isExist = await this.betStatusRepository.findOne({where: {bet_id: betID}});
 
