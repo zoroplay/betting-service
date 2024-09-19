@@ -149,62 +149,61 @@ export class BetResultingController {
 
             await this.entityManager.query("insert ignore into bet_closure (bet_id,created) select id, now() from bet where won = 1 and status = 0 and id not in (select bet_id from winning) ");
             
-            // const bets = await this.betRepository.createQueryBuilder('b')
-            //                     .where('won = :won', {won: STATUS_WON})
-            //                     .getMany();
+            // await this.entityManager.query("insert ignore into bet_status (bet_id, status, description,created) select id, 1, 'Bet accepted by MTS', now() from bet where won = -1 and status = 0 and id not in (select bet_id from bet_status) ");
+            const bets = await this.betRepository.createQueryBuilder('b')
+                                .where('won = :won', {won: STATUS_NOT_LOST_OR_WON})
+                                .andWhere('status = :status', {status: BET_PENDING})
+                                .andWhere('DATE(created) = :date', {date: '2024-09-14'})
+                                .getMany();
             
-            // // console.log('number of pending bets', bets.length);
+            console.log('number of pending bets', bets.length);
 
-            // for (const bet of bets) {
-            //     const betWon = await this.winningRepository.find({where: {bet_id: bet.id}});
-            //     if (!betWon) {
-            //         let winning = new Winning();
-            //         winning.bet_id = bet.id
-            //         winning.user_id = bet.user_id
-            //         winning.client_id = bet.client_id
-            //         winning.currency = bet.currency
-            //         winning.tax_on_winning = bet.tax_on_winning
-            //         winning.winning_before_tax = bet.possible_win
-            //         winning.winning_after_tax = bet.winning_after_tax
-            //         await this.winningRepository.save(winning)
-            //     }
-            // }
+            for (const bet of bets) {
+                const betStatus = await this.betStatusRepository.find({where: {bet_id: bet.id}});
+                if (!betStatus) {
+                    let betStatus = new BetStatus()
+                    betStatus.status = 1
+                    betStatus.bet_id = bet.id
+                    betStatus.description = "Bet accepted by MTS";
+                    await this.betStatusRepository.upsert(betStatus,['status','description']);
+                }
+            }
 
-            // // find unsettled events
-            // const matches = await this.betslipRepository.createQueryBuilder('bs')
-            // .where('DATE(event_date) = :eDate', {eDate: '2024-09-14'})
-            // .andWhere('DATE(created) >= :date', {date: '2024-09-13'})
-            // .andWhere('won = :won', {won: STATUS_NOT_LOST_OR_WON})
-            // .andWhere('status = :status', {status: BETSLIP_PROCESSING_PENDING})
-            // .groupBy('match_id')
-            // .getMany();
+            // find unsettled events
+            const matches = await this.betslipRepository.createQueryBuilder('bs')
+            .where('DATE(event_date) = :eDate', {eDate: '2024-09-14'})
+            .andWhere('DATE(created) >= :date', {date: '2024-09-13'})
+            .andWhere('won = :won', {won: STATUS_NOT_LOST_OR_WON})
+            .andWhere('status = :status', {status: BETSLIP_PROCESSING_PENDING})
+            .groupBy('match_id')
+            .getMany();
 
-            // console.log('number of pending settlements', matches.length);
+            console.log('number of pending settlements', matches.length);
 
-            // let requestId = 1001;
-            // for (const match of matches) {
-            //     // check if settlement exists
-            //     const settlement = await this.settlementRepository.find({where: {event_id: match.match_id}});
+            let requestId = 1001;
+            for (const match of matches) {
+                // check if settlement exists
+                const settlement = await this.settlementRepository.find({where: {event_id: match.match_id}});
                 
-            //     if (settlement.length === 0){
-            //         const url = `https://api.betradar.com/v1/pre/stateful_messages/events/sr:match:${match.match_id}/initiate_request?request_id=${requestId}`
-            //         // request settlement
-            //         await axios.post(url, {}, {
-            //             headers: {
-            //                 'x-access-token': process.env.BETRADAR_API_TOKEN
-            //             }
-            //         }).then(res => {
-            //             console.log('response', res.data);
-            //         }).catch(err => console.log('error', err))
-            //     } else {
-            //         // update settlement status
-            //         await this.settlementRepository.update(
-            //             {event_id: match.match_id}, 
-            //             {processed: 0}
-            //         )
-            //     }
-            //     requestId++;
-            // }
+                if (settlement.length === 0){
+                    const url = `https://api.betradar.com/v1/pre/stateful_messages/events/sr:match:${match.match_id}/initiate_request?request_id=${requestId}`
+                    // request settlement
+                    await axios.post(url, {}, {
+                        headers: {
+                            'x-access-token': process.env.BETRADAR_API_TOKEN
+                        }
+                    }).then(res => {
+                        console.log('response', res.data);
+                    }).catch(err => console.log('error', err))
+                } else {
+                    // update settlement status
+                    await this.settlementRepository.update(
+                        {event_id: match.match_id}, 
+                        {processed: 0}
+                    )
+                }
+                requestId++;
+            }
 
 
         }
