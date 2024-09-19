@@ -192,6 +192,10 @@ export class BetSettlementService {
             }
         }
 
+        task.name = taskName;
+        task.status = 0;
+        await this.cronJobRepository.upsert(task,['status'])
+
     }
 
     async createBetSettlement(settlement: Settlement): Promise<number> {
