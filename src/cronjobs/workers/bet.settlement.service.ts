@@ -18,6 +18,8 @@ import {Cronjob} from "../../entity/cronjob.entity";
 import {BetClosure} from "../../entity/betclosure.entity";
 import { BonusService } from "src/bonus/bonus.service";
 import * as dayjs from "dayjs";
+import { WalletService } from "src/wallet/wallet.service";
+import { Winning } from "src/entity/winning.entity";
 
 @Injectable()
 export class BetSettlementService {
@@ -44,9 +46,14 @@ export class BetSettlementService {
         @InjectRepository(BetClosure)
         private betClosureRepository: Repository<BetClosure>,
 
+        @InjectRepository(Winning)
+        private winningRepository: Repository<Winning>,
+
         private readonly entityManager: EntityManager,
 
         private readonly bonusService: BonusService,
+
+        private readonly walletService: WalletService,
 
     ) {
 
@@ -145,9 +152,14 @@ export class BetSettlementService {
 
         const now = dayjs().subtract(2, 'hours').format('YYYY-MM-DD HH:mm:ss');
         // find unsettled bets
-        const rows = await this.entityManager.query("SELECT b.id FROM bet_slip bs JOIN bet b ON b.id = bs.bet_id WHERE b.status = 0 AND bs.event_date <= ? GROUP BY bs.bet_id", [now]);
+        let rows = await this.entityManager.query("SELECT DISTINCT b.id, b.bonus_id, b.client_id " +
+            "FROM bet b " +
+            "INNER JOIN bet_slip bs on b.id = bs.bet_id " +
+            "WHERE b.status IN (0,1) AND b.won = "+STATUS_NOT_LOST_OR_WON+" AND bs.event_date <= ?", [now])
 
-        for (const row of rows) {
+        let bets = new Map()
+
+        for (let row of rows) {
             const betId = row.id;
             // find selections
             const total = await this.betslipRepository.count({where: {bet_id: betId}});
@@ -155,10 +167,29 @@ export class BetSettlementService {
             const lost = await this.betslipRepository.count({where: {bet_id: betId, won: STATUS_LOST}});
 
             if (lost > 0){
-
+                await this.betRepository.update(
+                    {
+                        id: row.id,
+                    },
+                    {
+                        won: STATUS_LOST,
+                        status: BET_LOST,
+                        settled_at: dayjs().format('YYYY-MM-DD HH:mm:ss'),
+                    });
+    
+                if (row.bonus_id) {
+                    await this.bonusService.settleBet({
+                        clientId: row.client_id,
+                        betId: row.id,
+                        amount: 0,
+                        status: BET_LOST
+                    })
+                }
             }
 
-            if (won === total) {}
+            if (won === total) {
+                this.closeBet(row.id);
+            }
         }
 
     }
@@ -547,6 +578,116 @@ export class BetSettlementService {
             Lost: false,
             Pending: true,
         }
+    }
+
+    async closeBet(betID: number): Promise<number> {
+        // console.log('close bet')
+
+        let rows : any
+
+        try {
+
+            rows = await this.entityManager.query("SELECT possible_win,user_id,tax_on_winning,winning_after_tax,client_id,currency,betslip_id,source,username,bonus_id,stake FROM bet WHERE id = " + betID + " AND won = " + STATUS_WON + " AND status IN (" + BET_PENDING + ","+BET_VOIDED+") AND id NOT IN (SELECT bet_id FROM winning) ")
+
+        }
+        catch (e) {
+
+            this.logger.error("error retrieving bets to settle "+e.toString())
+            return
+        }
+
+        if (rows == undefined || rows == false || rows == null) {
+            return 0
+        }
+
+        let row = rows[0]
+
+        let possibleWin = row.possible_win;
+        let profileID = row.user_id;
+        let winningTaxAmount = row.tax_on_winning;
+        let winning_after_tax = row.winning_after_tax;
+
+        try {
+            //H. update bet to won and status = 2
+            //UPDATE bet SET status = 2  WHERE id = ?
+            await this.betRepository.update(
+                {
+                    id: betID,
+                },
+                {
+                    status: BET_WON,
+                    settled_at: dayjs().format('YYYY-MM-DD HH:mm:ss'),
+                }
+            );
+        } catch (e) {
+            this.logger.error("error updating bet to won "+e.toString())
+            return
+        }
+
+        let winning = new Winning();
+        winning.bet_id = betID
+        winning.user_id = profileID
+        winning.client_id = row.client_id
+        winning.currency = row.currency
+        winning.tax_on_winning = winningTaxAmount
+        winning.winning_before_tax = possibleWin
+        winning.winning_after_tax = winning_after_tax
+
+        let winner : any
+        // wrap in try catch
+        // J. create winning
+        try {
+            winner = await this.winningRepository.save(winning)
+        }
+        catch (e) {
+
+            this.logger.error("error saving winner "+e.toString())
+            return
+        }
+
+        if (winner.id == 0 ) {
+
+            return 0
+        }
+
+        try {
+            let creditPayload = {
+                amount: ''+`${winning_after_tax}`,
+                userId: profileID,
+                username: row.username,
+                clientId: row.client_id,
+                subject:  'Sport Win',
+                description: "Bet betID " + row.betslip_id ,
+                source: row.source,
+                wallet: 'sport',
+                channel: 'Internal'
+            }
+
+            if(row.bonus_id) {
+                creditPayload.wallet = 'sport-bonus';
+
+                const bonusData = await this.bonusService.settleBet({
+                    clientId: row.client_id,
+                    betId: betID.toString(),
+                    amount: winning_after_tax,
+                    status: BET_WON
+                })
+                // remove stake amount from winning
+                const amount = winning_after_tax - row.stake;
+                creditPayload.amount = '' + amount
+
+                // set credit amount to amount returned from bonus
+                if (bonusData.success) creditPayload.amount = bonusData.data.amount;
+            }
+
+
+            await this.walletService.credit(creditPayload);
+        } catch (e) {
+            console.log('Error processing winning', e.message);
+        }
+
+        return winner.id
+
     }
 
 }
