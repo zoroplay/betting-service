@@ -3,4 +3,5 @@ export interface UpdateBetRequest {
     status: string;
     entityType: string;
     clientId: number,
+    selectionId?: number
 }

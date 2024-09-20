@@ -69,3 +69,34 @@ export const paginateResponse = (data: any,page: number,limit: number, message =
       lastPage: lastPage,
     }
 }
+
+export const recalculateVoid = ({bet, odd}) => {
+    // recalculate odds
+    let newOdds = bet.total_odd / odd
+
+    bet.total_odd = newOdds
+
+    // calculate new net win
+    let netWin = newOdds * bet.stake_after_tax
+
+    // calculate profit
+    let possibleWin = netWin - bet.stake_after_tax
+
+    // calculate tax & possible win
+    // let winningTaxPercentage = setting.tax_on_winning / 100
+
+    // let withHoldingTax = profit * winningTaxPercentage
+
+    // let possibleWin = netWin - withHoldingTax
+
+    // // check limits maximum winning
+
+    // if (possibleWin > setting.maximum_winning) {
+
+    //     possibleWin = setting.maximum_winning
+    // }
+
+    return {possibleWin, newOdds};
+
+    // console.log(possibleWin, netWin, withHoldingTax, newOdds)
+}

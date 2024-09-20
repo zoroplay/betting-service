@@ -2,7 +2,7 @@ import { HttpStatus, Injectable } from "@nestjs/common";
 import { EntityManager, Repository } from "typeorm";
 
 import * as dayjs from 'dayjs';
-import { BET_CANCELLED, BET_LOST, BET_PENDING, BET_VOIDED, BET_WON, STATUS_LOST, STATUS_NOT_LOST_OR_WON, STATUS_WON} from "src/constants";
+import { BET_CANCELLED, BET_LOST, BET_PENDING, BET_VOIDED, BET_WON, STATUS_LOST, STATUS_NOT_LOST_OR_WON, STATUS_VOID, STATUS_WON} from "src/constants";
 import { IdentityService } from "src/identity/identity.service";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Bet } from "src/entity/bet.entity";
@@ -477,22 +477,21 @@ export class ReportService {
                         let slipStatusDesc, slipStatus;
                         switch (slip.won) {
                             case STATUS_NOT_LOST_OR_WON:
-                            slipStatusDesc = 'Pending';
-                            slipStatus = 0;
-                            break;
+                                slipStatusDesc = 'Pending';
+                                slipStatus = 0;
+                                break;
                             case STATUS_LOST:
-                            slipStatusDesc = 'Lost';
-                            slipStatus = 2;
-
-                            break;
+                                slipStatusDesc = 'Lost';
+                                slipStatus = 2;
+                                break;
                             case STATUS_WON:
-                            slipStatusDesc = 'Won';
-                            slipStatus = 1;
-
-                            default:
-                            slipStatus = 'Void';
-                            slipStatus = 3;
-                            break;
+                                slipStatusDesc = 'Won';
+                                slipStatus = 1;
+                                break;
+                            case STATUS_VOID:
+                                slipStatusDesc = 'Void';
+                                slipStatus = 3;
+                                break;
                         }
 
 
@@ -513,6 +512,7 @@ export class ReportService {
                             type: slip.is_live === 1 ? 'live' : 'pre',
                             statusDescription: slipStatusDesc,
                             status: slipStatus,
+                            id: slip.id
                         });
                     }
                 }

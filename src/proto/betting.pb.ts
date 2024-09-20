@@ -255,6 +255,7 @@ export interface UpdateBetRequest {
   status: string;
   entityType: string;
   clientId: number;
+  selectionId?: number | undefined;
 }
 
 export interface UpdateBetResponse {
@@ -316,6 +317,7 @@ export interface BetSlip {
   eventDate: string;
   eventPrefix: string;
   isBonus?: boolean | undefined;
+  id?: number | undefined;
 }
 
 export interface Combo {

@@ -21,6 +21,7 @@ export const BETSLIP_PROCESSING_VOIDED = 3
 export const STATUS_NOT_LOST_OR_WON = -1
 export const STATUS_WON = 1
 export const STATUS_LOST = 0
+export const STATUS_VOID = 2
 
 
 export const CASH_OUT_STATUS_PENDING = 0 //GAME RUNNING AND HAS CASH OUT

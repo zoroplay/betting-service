@@ -314,22 +314,22 @@ export class RetailService {
                             let slipStatusDesc, slipStatus;
                             switch (slip.won) {
                                 case STATUS_NOT_LOST_OR_WON:
-                                slipStatusDesc = 'Pending';
-                                slipStatus = 0;
-                                break;
+                                    slipStatusDesc = 'Pending';
+                                    slipStatus = 0;
+                                    break;
                                 case STATUS_LOST:
-                                slipStatusDesc = 'Lost';
-                                slipStatus = 2;
+                                    slipStatusDesc = 'Lost';
+                                    slipStatus = 2;
 
-                                break;
+                                    break;
                                 case STATUS_WON:
-                                slipStatusDesc = 'Won';
-                                slipStatus = 1;
-
-                                default:
-                                slipStatus = 'Void';
-                                slipStatus = 3;
+                                    slipStatusDesc = 'Won';
+                                    slipStatus = 1;
                                 break;
+                                default:
+                                    slipStatus = 'Void';
+                                    slipStatus = 3;
+                                    break;
                             }
 
                             // if (bet.status === BET_PENDING) {

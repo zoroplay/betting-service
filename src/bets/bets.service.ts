@@ -10,8 +10,11 @@ import {
   BET_PENDING,
   BET_VOIDED,
   BET_WON,
+  BETSLIP_PROCESSING_COMPLETED,
+  BETSLIP_PROCESSING_VOIDED,
   STATUS_LOST,
   STATUS_NOT_LOST_OR_WON,
+  STATUS_VOID,
   STATUS_WON,
 } from '../constants';
 import {
@@ -41,7 +44,7 @@ import { UpdateBetRequest } from './interfaces/update.bet.request.interface';
 import { UpdateBetResponse } from './interfaces/update.bet.response.interface';
 import { Winning } from 'src/entity/winning.entity';
 import OutrightsService from './outrights.service.interface';
-import { betTypeDescription, countItem } from 'src/commons/helper';
+import { betTypeDescription, countItem, recalculateVoid } from 'src/commons/helper';
 import { BonusService } from 'src/bonus/bonus.service';
 import { WalletService } from 'src/wallet/wallet.service';
 import { IdentityService } from 'src/identity/identity.service';
@@ -304,7 +307,7 @@ export class BetsService {
             case STATUS_WON:
               slipStatusDesc = 'Won';
               slipStatus = 1;
-
+              break;
             default:
               slipStatus = 'Void';
               slipStatus = 3;
@@ -351,6 +354,7 @@ export class BetsService {
             type: slip.is_live === 1 ? 'live' : 'pre',
             statusDescription: slipStatusDesc,
             status: slipStatus,
+            id: slip.id
           });
         }
       }
@@ -448,12 +452,12 @@ export class BetsService {
             case STATUS_LOST:
               slipStatusDesc = 'Lost';
               slipStatus = 2;
-
               break;
             case STATUS_WON:
               slipStatusDesc = 'Won';
               slipStatus = 1;
-            default:
+              break;
+            case STATUS_VOID:
               slipStatus = 'Void';
               slipStatus = 3;
               break;
@@ -477,6 +481,7 @@ export class BetsService {
             type: slip.is_live === 1 ? 'live' : 'pre',
             statusDescription: slipStatusDesc,
             status: slipStatus,
+            id: slip.id
           });
         }
       }
@@ -935,13 +940,13 @@ export class BetsService {
     betId,
     status,
     entityType,
-    clientId,
+    selectionId,
   }: UpdateBetRequest): Promise<UpdateBetResponse> {
     try {
       let updateStatus, betStatus;
 
       const bet = await this.betRepository.findOne({ where: { id: betId } });
-
+      
       if (entityType === 'bet') {
         switch (status) {
           case 'won':
@@ -1044,6 +1049,7 @@ export class BetsService {
           },
         );
       } else {
+        const slip = await this.betslipRepository.findOne({where: {id: selectionId}})
         switch (status) {
           case 'won':
             updateStatus = STATUS_WON;
@@ -1053,8 +1059,37 @@ export class BetsService {
             break;
           case 'void':
             updateStatus = BET_VOIDED;
-            // TO-DO: recalculate odds
-            break;
+            // TO-DO: recalcumlate odds
+            const {possibleWin, newOdds} = recalculateVoid({bet: bet, odd: slip.odds  });
+            console.log(possibleWin, newOdds)
+            await this.betRepository.update(
+              {
+                  id: bet.id, // confirm if ID is present
+              },
+              {
+                  possible_win: possibleWin,
+                  winning_after_tax: possibleWin,
+                  tax_on_winning: 0,
+                  total_odd: newOdds
+              });
+
+              // console.log('updating selections', updateStatus)
+              await this.betslipRepository.update(
+                {
+                  id: selectionId,
+                },
+                {
+                  odds: 1,
+                  won: STATUS_VOID,
+                  status: BETSLIP_PROCESSING_VOIDED
+                },
+              );
+
+              return {
+                status: 200,
+                success: true,
+                message: `${entityType} updated successfully`,
+              };
           default:
             updateStatus = STATUS_NOT_LOST_OR_WON;
             break;
@@ -1062,10 +1097,11 @@ export class BetsService {
         // update selection status
         await this.betslipRepository.update(
           {
-            id: betId,
+            id: selectionId,
           },
           {
             won: updateStatus,
+            status: BETSLIP_PROCESSING_COMPLETED
           },
         );
       }
@@ -1135,6 +1171,7 @@ export class BetsService {
                 category: selection.category_name,
                 tournament: selection.tournament_name,
                 selectionId: selection.selection_id,
+                id: selection.id
               });
             }
           }

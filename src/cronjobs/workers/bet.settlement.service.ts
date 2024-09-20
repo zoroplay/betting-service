@@ -11,7 +11,7 @@ import {
     BET_VOIDED,
     BET_WON, BETSLIP_PROCESSING_CANCELLED,
     BETSLIP_PROCESSING_COMPLETED,
-    BETSLIP_PROCESSING_SETTLED, BETSLIP_PROCESSING_VOIDED, STATUS_LOST, STATUS_NOT_LOST_OR_WON, STATUS_WON
+    BETSLIP_PROCESSING_SETTLED, BETSLIP_PROCESSING_VOIDED, STATUS_LOST, STATUS_NOT_LOST_OR_WON, STATUS_VOID, STATUS_WON
 } from "../../constants";
 import {Bet} from "../../entity/bet.entity";
 import {Cronjob} from "../../entity/cronjob.entity";
@@ -373,7 +373,7 @@ export class BetSettlementService {
                     },
                     {
                         odds: b.VoidFactor,
-                        won: STATUS_WON,
+                        won: STATUS_VOID,
                         status: BETSLIP_PROCESSING_VOIDED,
                         score: scores.ftScore,
                         ht_score: scores.htScores
