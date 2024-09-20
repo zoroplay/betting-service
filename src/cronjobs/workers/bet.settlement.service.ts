@@ -152,12 +152,13 @@ export class BetSettlementService {
 
         const now = dayjs().subtract(2, 'hours').format('YYYY-MM-DD HH:mm:ss');
         // find unsettled bets
-        let rows = await this.entityManager.query("SELECT DISTINCT b.id, b.bonus_id, b.client_id " +
+        let rows = await this.entityManager.query("SELECT DISTINCT b.betslip_id, b.id, b.bonus_id, b.client_id " +
             "FROM bet b " +
             "INNER JOIN bet_slip bs on b.id = bs.bet_id " +
             "WHERE b.status IN (0,1) AND b.won = "+STATUS_NOT_LOST_OR_WON+" AND bs.event_date <= ?", [now])
 
         let bets = new Map()
+
 
         for (let row of rows) {
             const betId = row.id;
@@ -165,7 +166,7 @@ export class BetSettlementService {
             const total = await this.betslipRepository.count({where: {bet_id: betId}});
             const won = await this.betslipRepository.count({where: {bet_id: betId, won: STATUS_WON}})
             const lost = await this.betslipRepository.count({where: {bet_id: betId, won: STATUS_LOST}});
-
+            console.log(total, won, lost);
             if (lost > 0){
                 await this.betRepository.update(
                     {
@@ -195,7 +196,6 @@ export class BetSettlementService {
         task.name = taskName;
         task.status = 0;
         await this.cronJobRepository.upsert(task,['status'])
-
     }
 
     async createBetSettlement(settlement: Settlement): Promise<number> {
@@ -591,7 +591,7 @@ export class BetSettlementService {
 
         try {
 
-            rows = await this.entityManager.query("SELECT possible_win,user_id,tax_on_winning,winning_after_tax,client_id,currency,betslip_id,source,username,bonus_id,stake FROM bet WHERE id = " + betID + " AND won = " + STATUS_WON + " AND status IN (" + BET_PENDING + ","+BET_VOIDED+") AND id NOT IN (SELECT bet_id FROM winning) ")
+            rows = await this.entityManager.query("SELECT possible_win,user_id,tax_on_winning,winning_after_tax,client_id,currency,betslip_id,source,username,bonus_id,stake FROM bet WHERE id = " + betID + " AND status IN (" + BET_PENDING + ","+BET_VOIDED+") AND id NOT IN (SELECT bet_id FROM winning) ")
 
         }
         catch (e) {
@@ -619,6 +619,7 @@ export class BetSettlementService {
                     id: betID,
                 },
                 {
+                    won: STATUS_WON,
                     status: BET_WON,
                     settled_at: dayjs().format('YYYY-MM-DD HH:mm:ss'),
                 }
