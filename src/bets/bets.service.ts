@@ -74,7 +74,7 @@ export class BetsService {
 
     private readonly entityManager: EntityManager,
 
-    private readonly amqpConnection: AmqpConnection,
+    // private readonly amqpConnection: AmqpConnection,
 
     @Inject('ODDS_PACKAGE')
     private readonly client: ClientGrpc,
@@ -444,6 +444,7 @@ export class BetsService {
       if (slips.length > 0) {
         for (const slip of slips) {
           let slipStatusDesc, slipStatus;
+          // console.log('slip status', slip.won)
           switch (slip.won) {
             case STATUS_NOT_LOST_OR_WON:
               slipStatusDesc = 'Pending';
@@ -911,7 +912,7 @@ export class BetsService {
         // await this.betStatusRepository.upsert(betStatus,['status','description'])
 
         let queueName = 'mts.bet_pending';
-        await this.amqpConnection.publish(queueName, queueName, mtsBet);
+        // await this.amqpConnection.publish(queueName, queueName, mtsBet);
         this.logger.info('published to ' + queueName);
       }
 
@@ -947,6 +948,7 @@ export class BetsService {
 
       const bet = await this.betRepository.findOne({ where: { id: betId } });
       
+
       if (entityType === 'bet') {
         switch (status) {
           case 'won':

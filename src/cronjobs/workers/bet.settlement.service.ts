@@ -155,19 +155,18 @@ export class BetSettlementService {
         let rows = await this.entityManager.query("SELECT DISTINCT b.betslip_id, b.id, b.bonus_id, b.client_id " +
             "FROM bet b " +
             "INNER JOIN bet_slip bs on b.id = bs.bet_id " +
-            "WHERE b.status IN (0,1) AND b.won = "+STATUS_NOT_LOST_OR_WON+" AND bs.event_date <= ?", [now])
+            "WHERE b.status IN (0,1) AND b.won = "+STATUS_NOT_LOST_OR_WON)
 
         let bets = new Map()
 
-
         for (let row of rows) {
-            console.log(row.betslip_id);
+            // console.log(row.betslip_id);
             const betId = row.id;
             // find selections
             const total = await this.betslipRepository.count({where: {bet_id: betId}});
             const won = await this.betslipRepository.count({where: {bet_id: betId, won: STATUS_WON}})
             const lost = await this.betslipRepository.count({where: {bet_id: betId, won: STATUS_LOST}});
-            console.log(total, won, lost);
+            // console.log(total, won, lost);
             if (lost > 0){
                 await this.betRepository.update(
                     {
