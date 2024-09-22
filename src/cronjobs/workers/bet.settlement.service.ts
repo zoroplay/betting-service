@@ -161,6 +161,7 @@ export class BetSettlementService {
 
 
         for (let row of rows) {
+            console.log(row.betslip_id);
             const betId = row.id;
             // find selections
             const total = await this.betslipRepository.count({where: {bet_id: betId}});
