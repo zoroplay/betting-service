@@ -147,64 +147,7 @@ export class BetResultingController {
 
         try {
 
-            await this.entityManager.query("insert ignore into bet_closure (bet_id,created) select id, now() from bet where won = 1 and status = 0 and id not in (select bet_id from winning) ");
-            
-            // await this.entityManager.query("insert ignore into bet_status (bet_id, status, description,created) select id, 1, 'Bet accepted by MTS', now() from bet where won = -1 and status = 0 and id not in (select bet_id from bet_status) ");
-            // const bets = await this.betRepository.createQueryBuilder('b')
-            //                     .where('won = :won', {won: STATUS_NOT_LOST_OR_WON})
-            //                     .andWhere('status = :status', {status: BET_PENDING})
-            //                     .andWhere('DATE(created) = :date', {date: '2024-09-14'})
-            //                     .getMany();
-            
-            // console.log('number of pending bets', bets.length);
-
-            // for (const bet of bets) {
-            //     const betStatus = await this.betStatusRepository.find({where: {bet_id: bet.id}});
-            //     if (!betStatus) {
-            //         let betStatus = new BetStatus()
-            //         betStatus.status = 1
-            //         betStatus.bet_id = bet.id
-            //         betStatus.description = "Bet accepted by MTS";
-            //         await this.betStatusRepository.upsert(betStatus,['status','description']);
-            //     }
-            // }
-
-            // // find unsettled events
-            // const matches = await this.betslipRepository.createQueryBuilder('bs')
-            // .where('DATE(event_date) = :eDate', {eDate: '2024-09-14'})
-            // .andWhere('DATE(created) >= :date', {date: '2024-09-13'})
-            // .andWhere('won = :won', {won: STATUS_NOT_LOST_OR_WON})
-            // .andWhere('status = :status', {status: BETSLIP_PROCESSING_PENDING})
-            // .groupBy('match_id')
-            // .getMany();
-
-            // console.log('number of pending settlements', matches.length);
-
-            // let requestId = 1001;
-            // for (const match of matches) {
-            //     // check if settlement exists
-            //     const settlement = await this.settlementRepository.find({where: {event_id: match.match_id}});
-                
-            //     if (settlement.length === 0){
-            //         const url = `https://api.betradar.com/v1/pre/stateful_messages/events/sr:match:${match.match_id}/initiate_request?request_id=${requestId}`
-            //         // request settlement
-            //         await axios.post(url, {}, {
-            //             headers: {
-            //                 'x-access-token': process.env.BETRADAR_API_TOKEN
-            //             }
-            //         }).then(res => {
-            //             console.log('response', res.data);
-            //         }).catch(err => console.log('error', err))
-            //     } else {
-            //         // update settlement status
-            //         await this.settlementRepository.update(
-            //             {event_id: match.match_id}, 
-            //             {processed: 0}
-            //         )
-            //     }
-            //     requestId++;
-            // }
-
+            await this.entityManager.query("insert ignore into bet_closure (bet_id,created) select id, now() from bet where won = 1 and status = 0 and id not in (select bet_id from winning) ");            
 
         }
         catch (e) {
@@ -338,150 +281,63 @@ export class BetResultingController {
 
     }
 
-    async settlePendingBets() {
-        const betss: any = await this.betRepository.find({
-            select: {
-                id: true, 
-                total_odd: true,
-                stake: true, 
-                stake_after_tax: true,
-                client_id: true,
-                total_bets: true,
-                user_id: true,
-                bet_type: true,
-            },
-            where: {
-                status: BET_PENDING,
-                won: STATUS_NOT_LOST_OR_WON,
+    async taskRequestSettlement() {
+        const date = dayjs().subtract(2, 'hours').format('YYYY-MM-DD HH:mm:ss');
+            
+        const matches = await this.betslipRepository.createQueryBuilder('b')
+                            .where('won = :won', {won: STATUS_NOT_LOST_OR_WON})
+                            .andWhere('status = :status', {status: BETSLIP_PROCESSING_PENDING})
+                            .andWhere('DATE(event_date) <= :date', {date})
+                            .groupBy('match_id')
+                            .getMany();
+        
+        console.log('number of pending games', matches.length);
+
+        // for (const bet of bets) {
+        //     const betStatus = await this.betStatusRepository.find({where: {bet_id: bet.id}});
+        //     if (!betStatus) {
+        //         let betStatus = new BetStatus()
+        //         betStatus.status = 1
+        //         betStatus.bet_id = bet.id
+        //         betStatus.description = "Bet accepted by MTS";
+        //         await this.betStatusRepository.upsert(betStatus,['status','description']);
+        //     }
+        // }
+
+        // // find unsettled events
+        // const matches = await this.betslipRepository.createQueryBuilder('bs')
+        // .where('DATE(event_date) = :eDate', {eDate: '2024-09-14'})
+        // .andWhere('DATE(created) >= :date', {date: '2024-09-13'})
+        // .andWhere('won = :won', {won: STATUS_NOT_LOST_OR_WON})
+        // .andWhere('status = :status', {status: BETSLIP_PROCESSING_PENDING})
+        // .groupBy('match_id')
+        // .getMany();
+
+        // console.log('number of pending settlements', matches.length);
+
+        let requestId = 1001;
+        for (const match of matches) {
+            // check if settlement exists
+            const settlement = await this.settlementRepository.find({where: {event_id: match.match_id}});
+            
+            if (settlement.length === 0){
+                const url = `https://api.betradar.com/v1/pre/stateful_messages/events/sr:match:${match.match_id}/initiate_request?request_id=${requestId}`
+                // request settlement
+                await axios.post(url, {}, {
+                    headers: {
+                        'x-access-token': process.env.BETRADAR_API_TOKEN
+                    }
+                }).then(res => {
+                    console.log('response', res.data);
+                }).catch(err => console.log('error', err))
+            } else {
+                // update settlement status
+                await this.settlementRepository.update(
+                    {event_id: match.match_id}, 
+                    {processed: 0}
+                )
             }
-        });
-        let bets = new Map()
-
-        let betIds = []
-
-        // console.log(bets);
-        for (const row of betss) {
-            const betSlips: any = await this.betslipRepository.find({
-                where: {bet_id: row.id}
-            });
-            // console.log('total odds ', row.total_odd)
-            let key = "bet-" + row.id;
-            row.Won = 0
-            row.Lost = 0
-            row.Pending = 0
-            row.Cancelled = 0
-            row.Voided = 0
-            row.TotalGames = betSlips.length,
-            row.total_odd = row.total_odd;
-            bets.set(key, row)
-            betIds.push(row.id)
-
-            for (const betSlip of betSlips) {
-
-                let void_factor = parseFloat(betSlip.void_factor)
-                let dead_heat_factor = parseFloat(betSlip.dead_heat_factor)
-                let won = parseInt(betSlip.won)
-    
-                let lost = 0
-                let pending = 0
-                let win = 0
-                let cancelled = 0
-                let voided = 0
-    
-                if (parseInt(betSlip.status) == -1) {
-    
-                    cancelled = 1
-                }
-    
-                if (void_factor > 0) {
-    
-                    voided = 1
-                }
-    
-                if (won == STATUS_NOT_LOST_OR_WON) {
-    
-                    pending = 1
-    
-                } else if (won == STATUS_WON) {
-    
-                    win = 1
-    
-                } else {
-    
-                    lost = 1
-                }
-    
-                let currentBetSlip = {
-                    ID: betSlip.id,
-                    BetID: betSlip.bet_id,
-                    Status: betSlip.status,
-                    Won: won,
-                    VoidFactor: void_factor,
-                    DeadHeatFactor: dead_heat_factor,
-                    Odd: betSlip.odds,
-                }
-    
-                let keyName = "bet-" + currentBetSlip.BetID
-                let bs = bets.get(keyName)
-                
-                if(bs == undefined ) {
-    
-                    this.logger.error("could not find "+keyName+" from array ")
-                    continue
-                }
-    
-                let slips = []
-    
-                if (bs.BetSlips !== undefined) {
-    
-                    slips = bs.BetSlips
-                }
-    
-                bs.Won = bs.Won + win
-                bs.Lost = bs.Lost + lost
-                bs.Pending = bs.Pending + pending
-                bs.Cancelled = bs.Cancelled + cancelled
-                bs.Voided = bs.Voided + voided
-    
-                slips.push(currentBetSlip)
-    
-                bs.BetSlips = slips
-    
-                bets[keyName] = bs
-    
-            }
-        }
-
-        for (const bet of bets.values()) {
-            // console.log(bet, 'resulting')
-            // get client settings
-            var clientSettings = await this.settingRepository.findOne({
-                where: {
-                    client_id: bet.client_id // add client id to bets
-                }
-            });
-
-            if (bet.BetSlips) {
-                let result = await this.betSettlementService.resultBet(bet, clientSettings, {ftScore: '', htScore: ''})
-
-                //console.log(bet.id+" | "+JSON.stringify(result,undefined,2))
-
-                if (result.Won) {
-
-                    const betClosure = new BetClosure();
-                    betClosure.bet_id = result.BetID;
-                    await this.betClosureRepository.upsert(betClosure,['bet_id'])
-                    this.logger.info("bet ID "+result.BetID+" has won and bet closure created")
-
-                    // publish to bonus queue
-
-                } else if (result.Lost) {
-
-                    // publish to bonus queue
-
-                }
-            }
-
+            requestId++;
         }
     }
 

@@ -1,5 +1,5 @@
 import {Injectable} from "@nestjs/common";
-import {Cron, CronExpression} from "@nestjs/schedule";
+import {Cron, CronExpression, Timeout} from "@nestjs/schedule";
 import {JsonLogger, LoggerFactory} from "json-logger-service";
 import {BetSettlementService} from "./workers/bet.settlement.service";
 import {BetResultingController} from "./workers/bet.resulting.service";
@@ -71,21 +71,25 @@ export class CronjobService {
             vm.logger.info("done running taskFixInvalidBetStatus ")
 
         })
-
     }
 
     
-    @Cron(CronExpression.EVERY_10_SECONDS) // run every 10 minutes
+    @Cron(CronExpression.EVERY_10_MINUTES) // run every 10 minutes
     processUnsettledBets() {
-
         let vm = this;
-
         this.betSettlementService.taskProcessUnSettledBet().then(function () {
-
             vm.logger.info("done running processUnsettledBets ")
-
         })
-
     }
+
+    // @Cron(CronExpression.EVERY_2_HOURS) // run every 2 hours
+    @Timeout(10000)
+    processResendSettlement() {
+        let vm = this;
+        this.betResultingService.taskRequestSettlement().then(function () {
+            vm.logger.info("done running processResendSettlement ")
+        })
+    }
+    
 
 }
