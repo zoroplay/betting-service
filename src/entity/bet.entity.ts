@@ -152,7 +152,7 @@ export class Bet {
     settlement_type: string;
 
     @Index()
-    @Column({type:"string", nullable: true })
+    @Column({type:"varchar", length: 20, nullable: true })
     settled_at: string;
 
     @Index()
