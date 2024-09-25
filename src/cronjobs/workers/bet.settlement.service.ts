@@ -512,6 +512,7 @@ export class BetSettlementService {
                     won: STATUS_WON,
                     status: processing_status,
                     settled_at: dayjs().format('YYYY-MM-DD HH:mm:ss'),
+                    settlement_type: 'secondary_automation'
                 });
 
                 if (bet.bonus_id) {
@@ -553,6 +554,7 @@ export class BetSettlementService {
                     won: STATUS_LOST,
                     status: processing_status,
                     settled_at: dayjs().format('YYYY-MM-DD HH:mm:ss'),
+                    settlement_type: 'secondary_automation'
                 });
 
             if (bet.bonus_id) {
@@ -622,6 +624,7 @@ export class BetSettlementService {
                     won: STATUS_WON,
                     status: BET_WON,
                     settled_at: dayjs().format('YYYY-MM-DD HH:mm:ss'),
+                    settlement_type: 'secondary_automation'
                 }
             );
         } catch (e) {
