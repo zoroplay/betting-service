@@ -53,7 +53,7 @@ export class MtsBetCancelledService {
             reason = reason.slice(0, 290) + '...'
         }
 
-        if (reason.includes('Market/SOV expired in MTS')) {
+        if (reason.includes('Market/SOV expired in MTS') || reason.includes('Payout is higher than the aggregated max payout on bookmaker level.')) {
             return 1;
         }
         // check if betId has been saved before
