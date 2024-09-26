@@ -377,6 +377,8 @@ export interface BetSlipHistory {
   eventDate: string;
   selectionId: string;
   eventPrefix: string;
+  score: string;
+  htScore: string;
 }
 
 export interface BetHistory {

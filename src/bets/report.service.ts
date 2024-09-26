@@ -434,8 +434,7 @@ export class ReportService {
                 // let settled: any;
 
                 try {
-                    const slipQuery = `SELECT id,event_id,event_type,event_prefix,event_name,event_date,market_name, market_id,specifier,outcome_name,outcome_id,odds,won,
-                            status,sport_name,category_name,tournament_name,match_id, producer_id, probability FROM bet_slip WHERE bet_id =? `;
+                    const slipQuery = `SELECT * FROM bet_slip WHERE bet_id =? `;
                     slips = await this.entityManager.query(slipQuery, [bet.id]);
 
                 } catch (e) {
@@ -512,6 +511,8 @@ export class ReportService {
                             type: slip.is_live === 1 ? 'live' : 'pre',
                             statusDescription: slipStatusDesc,
                             status: slipStatus,
+                            score: slip.score,
+                            htScore: slip.ht_score,
                             id: slip.id
                         });
                     }

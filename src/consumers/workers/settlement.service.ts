@@ -52,7 +52,7 @@ export class SettlementService {
  */
 
     async createSettlement(data: any): Promise<number> {
-        console.log('creating bet settlement');
+        // console.log('creating bet settlement');
         
         data = JSON.parse(JSON.stringify(data))
         // console.log(data)
