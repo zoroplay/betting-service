@@ -492,7 +492,7 @@ export class BetsService {
 
       data.id = bet.id;
       data.stake = bet.stake;
-      data.created = bet.created;
+      data.created = dayjs(bet.created).format('YYYY-MM-DD HH:mm:ss');
       data.userId = bet.user_id;
       data.username = bet.username;
       data.betslipId = bet.betslip_id;
