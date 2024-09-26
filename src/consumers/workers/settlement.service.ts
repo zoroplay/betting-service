@@ -8,6 +8,7 @@ import {BetSlip} from "../../entity/betslip.entity";
 import {BETSLIP_PROCESSING_PENDING, BETSLIP_PROCESSING_SETTLED} from "../../constants";
 import axios from "axios";
 import { xml2js } from 'xml-js';
+import * as dayjs from "dayjs";
 // import { CashoutService } from "src/bets/cashout.service";
 
 @Injectable()
@@ -58,6 +59,9 @@ export class SettlementService {
         // console.log(data)
         let matchID = data.match_id
         let markets = data.markets;
+        if (matchID == 53700099) {
+            console.log(data)
+        }
         
         if(markets == undefined) {
             console.log("invalid data "+JSON.stringify(data))
@@ -141,6 +145,8 @@ export class SettlementService {
                         dead_heat_factor: dead_heat_factor,
                         void_factor: void_factor,
                         status: BETSLIP_PROCESSING_SETTLED,
+                        settled_at: dayjs().format('YYYY-MM-DD HH:mm:ss'),
+                        settlement_type: 'betradar',
                     });
 
                 // publish settlements to queue

@@ -1075,7 +1075,7 @@ export class BetsService {
                   possible_win: possibleWin,
                   winning_after_tax: possibleWin,
                   tax_on_winning: 0,
-                  total_odd: newOdds
+                  total_odd: newOdds,
               });
 
               // console.log('updating selections', updateStatus)
@@ -1086,7 +1086,9 @@ export class BetsService {
                 {
                   odds: 1,
                   won: STATUS_VOID,
-                  status: BETSLIP_PROCESSING_VOIDED
+                  status: BETSLIP_PROCESSING_VOIDED,
+                  settled_at: dayjs().format('YYYY-MM-DD HH:mm:ss'),
+                  settlement_type: 'manual',
                 },
               );
 
@@ -1106,7 +1108,9 @@ export class BetsService {
           },
           {
             won: updateStatus,
-            status: BETSLIP_PROCESSING_COMPLETED
+            status: BETSLIP_PROCESSING_COMPLETED,
+            settled_at: dayjs().format('YYYY-MM-DD HH:mm:ss'),
+            settlement_type: 'manual',
           },
         );
       }

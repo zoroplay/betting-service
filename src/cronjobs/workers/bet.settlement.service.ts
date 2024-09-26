@@ -374,7 +374,9 @@ export class BetSettlementService {
                         won: STATUS_VOID,
                         status: BETSLIP_PROCESSING_VOIDED,
                         score: scores.ftScore,
-                        ht_score: scores.htScores
+                        ht_score: scores.htScores,
+                        settled_at: dayjs().format('YYYY-MM-DD HH:mm:ss'),
+                        settlement_type: 'betradar',
                     });
 
                 // recalculate odds
@@ -428,7 +430,9 @@ export class BetSettlementService {
                     {
                         status: BETSLIP_PROCESSING_COMPLETED,
                         score: scores.ftScore,
-                        ht_score: scores.htScores
+                        ht_score: scores.htScores,
+                        settled_at: dayjs().format('YYYY-MM-DD HH:mm:ss'),
+                        settlement_type: 'betradar',
                     });
             }
         }

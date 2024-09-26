@@ -416,7 +416,7 @@ export class ReportService {
                 let limit = ` LIMIT ${offset},${noPerPage}`;
 
                 let queryString = `SELECT b.id,b.user_id,b.username,b.betslip_id,b.stake,b.currency,b.bet_type,b.bet_category,b.total_odd,b.possible_win,b.source,b.total_bets,
-                    b.won,b.status,b.created,w.winning_after_tax as winnings, b.sports, b.tournaments, b.events, b.markets, b.event_type, b.bet_category_desc, b.probability
+                    b.won,b.status,b.created,w.winning_after_tax as winnings, b.sports, b.tournaments, b.events, b.markets, b.event_type, b.bet_category_desc, b.probability, b.settled_at
                     FROM bet b LEFT JOIN winning w ON w.bet_id = b.id WHERE is_booked = 0 AND b.client_id = ? AND  ${where.join(
                     ' AND ',
                     )} ORDER BY b.created DESC ${limit}`;
@@ -513,7 +513,9 @@ export class ReportService {
                             status: slipStatus,
                             score: slip.score,
                             htScore: slip.ht_score,
-                            id: slip.id
+                            id: slip.id,
+                            settledAt: slip.settled_at,
+                            settlementType: slip.settlement_type
                         });
                     }
                 }
@@ -535,6 +537,7 @@ export class ReportService {
                 bet.markets = bet.markets;
                 bet.betCategoryDesc = bet.bet_category_desc;
                 bet.cashOutAmount = cashOutAmount;
+                bet.settledAt = bet.settled_at;
 
                 myBets.push(bet);
             }
