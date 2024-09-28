@@ -74,7 +74,7 @@ export class BetsService {
 
     private readonly entityManager: EntityManager,
 
-    private readonly amqpConnection: AmqpConnection,
+    // private readonly amqpConnection: AmqpConnection,
 
     @Inject('ODDS_PACKAGE')
     private readonly client: ClientGrpc,
@@ -691,7 +691,7 @@ export class BetsService {
 
     //TO-DO: Validate bet from identity service
     const validationRes = await this.identityService.validateBet(bet);
-    // console.log(validationRes);
+    console.log(validationRes)  ;
     if (!validationRes.success)
       return { status: 400, message: validationRes.message, success: false };
 
@@ -699,6 +699,7 @@ export class BetsService {
 
     // }
 
+    
     let bonusId = null;
 
     if (bet.useBonus) {
@@ -915,7 +916,7 @@ export class BetsService {
         // await this.betStatusRepository.upsert(betStatus,['status','description'])
 
         let queueName = 'mts.bet_pending';
-        await this.amqpConnection.publish(queueName, queueName, mtsBet);
+        // await this.amqpConnection.publish(queueName, queueName, mtsBet);
         this.logger.info('published to ' + queueName);
       }
 
