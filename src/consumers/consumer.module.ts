@@ -34,18 +34,18 @@ let defChannel : RabbitMQChannelConfig = {
 
 channels['betting_service'] = defChannel
 
-for (let n = 0; n < maxBetAcceptedChannels; n++) {
+// for (let n = 0; n < maxBetAcceptedChannels; n++) {
 
-    let name = 'betting_service.bet_accepted.' + n
-    exchanges.push({
-        name: name,
-        type: 'direct'
-    })
+//     let name = 'betting_service.bet_accepted.' + n
+//     exchanges.push({
+//         name: name,
+//         type: 'direct'
+//     })
 
-    channels[name] = {
-        prefetchCount: 200,
-    }
-}
+//     channels[name] = {
+//         prefetchCount: 200,
+//     }
+// }
 
 for (let n = 0; n < maxSettlementChannels; n++) {
 
