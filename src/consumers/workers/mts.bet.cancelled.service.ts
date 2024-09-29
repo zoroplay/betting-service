@@ -43,6 +43,7 @@ export class MtsBetCancelledService {
     async processBetRejectedMessage(data: any): Promise<number> {
 
         data = JSON.parse(JSON.stringify(data))
+        console.log('got bet_rejected from mts '+JSON.stringify(data))
 
         let betID = data.bet_id;
         let reason = data.reason;
