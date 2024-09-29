@@ -159,6 +159,21 @@ export class ConsumerService {
     }
 
     @RabbitSubscribe({
+        exchange: 'betting_service.bet_accepted.0',
+        routingKey: 'betting_service.bet_accepted.0',
+        queue: 'betting_service.bet_accepted.0',
+        queueOptions: {
+            channel: 'betting_service.bet_accepted.0',
+            durable: true,
+        },
+        createQueueIfNotExists: true,
+    })
+    public async betAccepted0(msg: {}) {
+        await  this.mtsBetAcceptedService.processBetAcceptedMessage(msg);
+        return
+    }
+
+    @RabbitSubscribe({
         exchange: 'betting_service.bet_accepted.1',
         routingKey: 'betting_service.bet_accepted.1',
         queue: 'betting_service.bet_accepted.1',
@@ -172,7 +187,6 @@ export class ConsumerService {
         await  this.mtsBetAcceptedService.processBetAcceptedMessage(msg);
         return
     }
-
 
     @RabbitSubscribe({
         exchange: 'betting_service.bet_accepted.2',
