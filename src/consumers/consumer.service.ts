@@ -159,6 +159,100 @@ export class ConsumerService {
     }
 
     @RabbitSubscribe({
+        exchange: 'betting_service.bet_accepted.0',
+        routingKey: 'betting_service.bet_accepted.0',
+        queue: 'betting_service.bet_accepted.0',
+        queueOptions: {
+            channel: 'betting_service.bet_accepted.0',
+            durable: true,
+        },
+        createQueueIfNotExists: true,
+    })
+    public async betAccepted0(msg: {}) {
+        await  this.mtsBetAcceptedService.processBetAcceptedMessage(msg);
+        return
+    }
+
+    @RabbitSubscribe({
+        exchange: 'betting_service.bet_accepted.1',
+        routingKey: 'betting_service.bet_accepted.1',
+        queue: 'betting_service.bet_accepted.1',
+        queueOptions: {
+            channel: 'betting_service.bet_accepted.1',
+            durable: true,
+        },
+        createQueueIfNotExists: true,
+    })
+    public async betAccepted1(msg: {}) {
+        await  this.mtsBetAcceptedService.processBetAcceptedMessage(msg);
+        return
+    }
+
+    @RabbitSubscribe({
+        exchange: 'betting_service.bet_accepted.2',
+        routingKey: 'betting_service.bet_accepted.2',
+        queue: 'betting_service.bet_accepted.2',
+        queueOptions: {
+            channel: 'betting_service.bet_accepted.2',
+            durable: true,
+        },
+        createQueueIfNotExists: true,
+    })
+    public async betAccepted2(msg: {}) {
+        await  this.mtsBetAcceptedService.processBetAcceptedMessage(msg);
+        return
+    }
+
+
+    @RabbitSubscribe({
+        exchange: 'betting_service.bet_accepted.3',
+        routingKey: 'betting_service.bet_accepted.3',
+        queue: 'betting_service.bet_accepted.3',
+        queueOptions: {
+            channel: 'betting_service.bet_accepted.3',
+            durable: true,
+        },
+        createQueueIfNotExists: true,
+    })
+    public async betAccepted3(msg: {}) {
+        await  this.mtsBetAcceptedService.processBetAcceptedMessage(msg);
+        return
+    }
+
+
+    @RabbitSubscribe({
+        exchange: 'betting_service.bet_accepted.4',
+        routingKey: 'betting_service.bet_accepted.4',
+        queue: 'betting_service.bet_accepted.4',
+        queueOptions: {
+            channel: 'betting_service.bet_accepted.4',
+            durable: true,
+        },
+        createQueueIfNotExists: true,
+    })
+    public async betAccepted4(msg: {}) {
+        await  this.mtsBetAcceptedService.processBetAcceptedMessage(msg);
+        return
+    }
+
+
+    @RabbitSubscribe({
+        exchange: 'betting_service.bet_accepted.5',
+        routingKey: 'betting_service.bet_accepted.5',
+        queue: 'betting_service.bet_accepted.5',
+        queueOptions: {
+            channel: 'betting_service.bet_accepted.5',
+            durable: true,
+        },
+        createQueueIfNotExists: true,
+    })
+    public async betAccepted5(msg: {}) {
+        await  this.mtsBetAcceptedService.processBetAcceptedMessage(msg);
+        return
+    }
+
+
+    @RabbitSubscribe({
         exchange: 'betting_service.bet_rejected',
         routingKey: 'betting_service.bet_rejected',
         queue: 'betting_service.bet_rejected',
