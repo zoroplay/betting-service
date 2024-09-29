@@ -3,7 +3,7 @@ import {JsonLogger, LoggerFactory} from "json-logger-service";
 import {InjectRepository} from "@nestjs/typeorm";
 import {EntityManager, Repository} from "typeorm";
 import {BetSlip} from "../../entity/betslip.entity";
-import {BET_CANCELLED, BET_PENDING} from "../../constants";
+import {BET_CANCELLED, BET_PENDING, BET_WON} from "../../constants";
 import {Bet} from "../../entity/bet.entity";
 import {Cron} from "@nestjs/schedule";
 import {Cronjob} from "../../entity/cronjob.entity";
@@ -83,8 +83,8 @@ export class MtsTimeoutService {
         task.status = 1;
         await this.cronJobRepository.upsert(task, ['status'])
 
-        let queryString = "SELECT b.id,TIMESTAMPDIFF(SECOND,b.created,now()) as difference FROM bet b LEFT JOIN bet_status bs ON b.id=bs.bet_id WHERE bs.idIS NULL AND TIMESTAMPDIFF(SECOND,b.created,now()) > 3 AND b.created BETWEEN date_sub(now(), INTERVAL 3 MINUTE ) AND NOW() "
-        queryString = "SELECT b.id,TIMESTAMPDIFF(SECOND,b.created,now()) as difference FROM bet b LEFT JOIN bet_status bs ON b.id=bs.bet_id WHERE bs.id IS NULL AND TIMESTAMPDIFF(SECOND,b.created,now()) > 10 AND b.created BETWEEN date_sub(now(), INTERVAL 3 MINUTE ) AND NOW()"
+        let queryString = "SELECT b.id,b.won,b.winning_after_tax,b.source,b.stake,b.user_id,b.client_id,b.user_id,TIMESTAMPDIFF(SECOND,b.created,now()) as difference FROM bet b LEFT JOIN bet_status bs ON b.id=bs.bet_id WHERE bs.id IS NULL AND TIMESTAMPDIFF(SECOND,b.created,now()) > 3 AND b.created BETWEEN date_sub(now(), INTERVAL 3 MINUTE ) AND NOW() "
+        queryString = "SELECT b.id,b.won,b.winning_after_tax,b.source,b.stake,b.user_id,b.client_id,b.user_id,TIMESTAMPDIFF(SECOND,b.created,now()) as difference FROM bet b LEFT JOIN bet_status bs ON b.id=bs.bet_id WHERE bs.id IS NULL AND TIMESTAMPDIFF(SECOND,b.created,now()) > 30 AND b.created BETWEEN date_sub(now(), INTERVAL 3 MINUTE ) AND NOW()"
 
         let rows = await this.entityManager.query(queryString)
         for (const row of rows) {
@@ -125,6 +125,23 @@ export class MtsTimeoutService {
             betStatus.description = "Bet Cancelled - MTS Timeout"
             await this.betStatusRepository.save(betStatus)
 
+            // if bet is won, debit winnings
+            if (row.won === BET_WON) {
+                let debitPayload = {
+                    subject: "Cancelled - Retract Cashout",
+                    source: row.source,
+                    amount: ''+row.winning_after_tax,
+                    userId: row.user_id,
+                    username: row.username,
+                    clientId: row.client_id,
+                    description: "Bet betID " + row.betslip_id + " was cancelled by MTS",
+                    wallet: 'sport',
+                    channel: 'Internal'
+                }
+                // debit user account
+                await this.walletService.debit(debitPayload);
+
+            }
             // update bet to cancelled
             await this.betRepository.update(
                 {
