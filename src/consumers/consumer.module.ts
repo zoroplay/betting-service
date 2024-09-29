@@ -22,6 +22,7 @@ import { WalletModule } from 'src/wallet/wallet.module';
 import { BonusModule } from 'src/bonus/bonus.module';
 
 let maxSettlementChannels = 5
+let maxBetAcceptedChannels = 5
 let exchanges = [];
 
 let channels: RabbitMQChannels = {};
@@ -32,6 +33,19 @@ let defChannel : RabbitMQChannelConfig = {
 }
 
 channels['betting_service'] = defChannel
+
+for (let n = 0; n < maxBetAcceptedChannels; n++) {
+
+    let name = 'betting_service.bet_accepted.' + n
+    exchanges.push({
+        name: name,
+        type: 'direct'
+    })
+
+    channels[name] = {
+        prefetchCount: 200,
+    }
+}
 
 for (let n = 0; n < maxSettlementChannels; n++) {
 
