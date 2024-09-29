@@ -143,20 +143,20 @@ export class ConsumerService {
         return
     }
 
-    // @RabbitSubscribe({
-    //     exchange: 'betting_service.bet_accepted',
-    //     routingKey: 'betting_service.bet_accepted',
-    //     queue: 'betting_service.bet_accepted',
-    //     queueOptions: {
-    //         channel: 'betting_service.bet_accepted',
-    //         durable: true,
-    //     },
-    //     createQueueIfNotExists: true,
-    // })
-    // public async betAccepted(msg: {}) {
-    //     await  this.mtsBetAcceptedService.processBetAcceptedMessage(msg);
-    //     return
-    // }
+    @RabbitSubscribe({
+        exchange: 'betting_service.bet_accepted',
+        routingKey: 'betting_service.bet_accepted',
+        queue: 'betting_service.bet_accepted',
+        queueOptions: {
+            channel: 'betting_service.bet_accepted',
+            durable: true,
+        },
+        createQueueIfNotExists: true,
+    })
+    public async betAccepted(msg: {}) {
+        await  this.mtsBetAcceptedService.processBetAcceptedMessage(msg);
+        return
+    }
 
     @RabbitSubscribe({
         exchange: 'betting_service.bet_accepted.0',
@@ -236,20 +236,20 @@ export class ConsumerService {
     }
 
 
-    @RabbitSubscribe({
-        exchange: 'betting_service.bet_accepted.5',
-        routingKey: 'betting_service.bet_accepted.5',
-        queue: 'betting_service.bet_accepted.5',
-        queueOptions: {
-            channel: 'betting_service.bet_accepted.5',
-            durable: true,
-        },
-        createQueueIfNotExists: true,
-    })
-    public async betAccepted5(msg: {}) {
-        await  this.mtsBetAcceptedService.processBetAcceptedMessage(msg);
-        return
-    }
+    // @RabbitSubscribe({
+    //     exchange: 'betting_service.bet_accepted.5',
+    //     routingKey: 'betting_service.bet_accepted.5',
+    //     queue: 'betting_service.bet_accepted.5',
+    //     queueOptions: {
+    //         channel: 'betting_service.bet_accepted.5',
+    //         durable: true,
+    //     },
+    //     createQueueIfNotExists: true,
+    // })
+    // public async betAccepted5(msg: {}) {
+    //     await  this.mtsBetAcceptedService.processBetAcceptedMessage(msg);
+    //     return
+    // }
 
 
     @RabbitSubscribe({
