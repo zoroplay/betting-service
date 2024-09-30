@@ -708,7 +708,7 @@ export class BetsService {
 
     //TO-DO: Validate bet from identity service
     const validationRes = await this.identityService.validateBet(bet);
-    console.log(validationRes)  ;
+    // console.log(validationRes)  ;
     if (!validationRes.success)
       return { status: 400, message: validationRes.message, success: false };
 

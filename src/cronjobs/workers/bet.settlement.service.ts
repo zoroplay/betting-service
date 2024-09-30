@@ -156,14 +156,14 @@ export class BetSettlementService {
             "WHERE bs.status NOT IN (0) AND b.status = "+BET_PENDING+ " AND b.won = "+STATUS_NOT_LOST_OR_WON)
 
         for (let row of rows) {
-            console.log(row.betslip_id);
+            // console.log(row.betslip_id);
             const betId = row.id;
             // find selections
             let total = await this.betslipRepository.count({where: {bet_id: betId}});
             const won = await this.betslipRepository.count({where: {bet_id: betId, won: STATUS_WON}})
             const lost = await this.betslipRepository.count({where: {bet_id: betId, won: STATUS_LOST}});
             const voidGames = await this.betslipRepository.count({where: {bet_id: betId, status: BETSLIP_PROCESSING_VOIDED}});
-            console.log(total, won, lost, voidGames);
+            // console.log(total, won, lost, voidGames);
             total = total - voidGames;
 
             if (lost > 0){
