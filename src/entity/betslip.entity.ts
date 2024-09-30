@@ -131,7 +131,7 @@ export class BetSlip {
     settled_at: string;
 
     @Index()
-    @Column({type:"varchar", length: 20, nullable: true, default: 'betradar' })
+    @Column({type:"varchar", length: 20, nullable: true })
     settlement_type: string;
 
     @Index()

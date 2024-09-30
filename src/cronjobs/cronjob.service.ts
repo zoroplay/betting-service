@@ -74,7 +74,7 @@ export class CronjobService {
     }
 
     
-    @Cron(CronExpression.EVERY_10_MINUTES) // run every 10 minutes
+    @Cron(CronExpression.EVERY_30_SECONDS) // run every 10 minutes
     processUnsettledBets() {
         let vm = this;
         this.betSettlementService.taskProcessUnSettledBet().then(function () {

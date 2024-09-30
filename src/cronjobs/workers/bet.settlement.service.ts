@@ -11,7 +11,7 @@ import {
     BET_VOIDED,
     BET_WON, BETSLIP_PROCESSING_CANCELLED,
     BETSLIP_PROCESSING_COMPLETED,
-    BETSLIP_PROCESSING_SETTLED, BETSLIP_PROCESSING_VOIDED, STATUS_LOST, STATUS_NOT_LOST_OR_WON, STATUS_VOID, STATUS_WON
+    BETSLIP_PROCESSING_SETTLED, BETSLIP_PROCESSING_VOIDED, STATUS_LOST, STATUS_NOT_LOST_OR_WON, STATUS_WON
 } from "../../constants";
 import {Bet} from "../../entity/bet.entity";
 import {Cronjob} from "../../entity/cronjob.entity";
@@ -149,24 +149,23 @@ export class BetSettlementService {
         task.status = 1;
 
         await this.cronJobRepository.upsert(task,['status']);
-
-        const now = dayjs().subtract(2, 'hours').format('YYYY-MM-DD HH:mm:ss');
         // find unsettled bets
         let rows = await this.entityManager.query("SELECT DISTINCT b.betslip_id, b.id, b.bonus_id, b.client_id " +
             "FROM bet b " +
             "INNER JOIN bet_slip bs on b.id = bs.bet_id " +
-            "WHERE b.status IN (0,1) AND b.won = "+STATUS_NOT_LOST_OR_WON)
-
-        let bets = new Map()
+            "WHERE bs.status NOT IN (0) AND b.status = "+BET_PENDING+ " AND b.won = "+STATUS_NOT_LOST_OR_WON)
 
         for (let row of rows) {
-            // console.log(row.betslip_id);
+            console.log(row.betslip_id);
             const betId = row.id;
             // find selections
-            const total = await this.betslipRepository.count({where: {bet_id: betId}});
+            let total = await this.betslipRepository.count({where: {bet_id: betId}});
             const won = await this.betslipRepository.count({where: {bet_id: betId, won: STATUS_WON}})
             const lost = await this.betslipRepository.count({where: {bet_id: betId, won: STATUS_LOST}});
-            // console.log(total, won, lost);
+            const voidGames = await this.betslipRepository.count({where: {bet_id: betId, status: BETSLIP_PROCESSING_VOIDED}});
+            console.log(total, won, lost, voidGames);
+            total = total - voidGames;
+
             if (lost > 0){
                 await this.betRepository.update(
                     {
@@ -371,7 +370,7 @@ export class BetSettlementService {
                     },
                     {
                         odds: b.VoidFactor,
-                        won: STATUS_VOID,
+                        won: STATUS_NOT_LOST_OR_WON,
                         status: BETSLIP_PROCESSING_VOIDED,
                         score: scores.ftScore,
                         ht_score: scores.htScores,
@@ -522,7 +521,7 @@ export class BetSettlementService {
                         clientId: bet.client_id,
                         betId: bet.id,
                         amount: 0,
-                        status: STATUS_WON
+                        status: BET_WON
                     })
                 }
 

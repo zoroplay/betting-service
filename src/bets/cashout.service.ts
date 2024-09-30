@@ -7,7 +7,7 @@ import { Observable } from "rxjs";
 import { Probability, ProbabilityBetSlipSelection, ProcessCashoutRequest, ProcessCashoutResponse } from "src/bets/interfaces/betslip.interface";
 import { OddsProbability } from "src/bets/interfaces/oddsreply.interface";
 import { GetOddsRequest } from "src/bets/interfaces/oddsrequest.interface";
-import { BET_PENDING, BET_WON, STATUS_WON } from "src/constants";
+import { BET_CASHOUT, BET_PENDING, STATUS_LOST, STATUS_WON } from "src/constants";
 import { Bet } from "src/entity/bet.entity";
 import { BetSlip } from "src/entity/betslip.entity";
 import { Cashout } from "src/entity/cashout.entity";
@@ -134,69 +134,102 @@ export class CashoutService {
     async processCashout({betId, amount}: ProcessCashoutRequest): Promise<ProcessCashoutResponse> {
         try {
 
-            return {success: false, message: 'We are unable to process this request at the moment. Please try again later'};
+            // return {success: false, message: 'We are unable to process this request at the moment. Please try again later'};
 
-            // const bet = await this.betRepository.findOne({where: {id: betId}});
+            const bet = await this.betRepository.findOne({where: {id: betId}});
 
-            // if (bet.status !== BET_PENDING) 
-            //     return {success: false, message: 'Cashout no longer available'};
+            if (bet.status !== BET_PENDING) 
+                return {success: false, message: 'Cashout no longer available'};
 
-            // if (bet) {
-            //     // TO-DO:// validate cashout
+            if (bet) {
+                let currentProbability = 1;
+                let totalOdds = 1;
+                let cashOutAmount = 0;
+                // TO-DO:// validate cashout
+                const slips = await this.betSliptRepository.find({where: {bet_id: bet.id}});
+                const lostGames = await this.betSliptRepository.count({where: {bet_id: betId, won: STATUS_LOST}});
+
+                for (const slip of slips) {
+                    if (slip.won === STATUS_LOST) {
+                        currentProbability = 0;
+                        return;
+                     } else if (slip.won !== STATUS_LOST && bet.status === BET_PENDING && (!bet.bonus_id || bet.bonus_id !== 0)) {
+                       // get probability for selection
+                       let selectionProbability = await this.getProbability(
+                         slip.producer_id,
+                         slip.event_prefix,
+                         slip.event_type,
+                         slip.match_id,
+                         slip.market_id,
+                         slip.specifier,
+                         slip.outcome_id,
+                         slip.odds
+                       );
+           
+                       totalOdds = totalOdds * slip.odds;
+                       // if (selectionProbability)
+                       currentProbability = currentProbability * selectionProbability;
+                     }
+                }
+
+                if (currentProbability > 0 && (!bet.bonus_id || bet.bonus_id !== 0) && bet.status === BET_PENDING && lostGames === 0)
+                    cashOutAmount = await this.calculateCashout(currentProbability, bet.probability, bet.stake, totalOdds);
                 
-            //     // update bet status
-            //     await this.betRepository.update(
-            //         {
-            //             id: betId,
-            //         },
-            //         {
-            //             status: BET_WON,
-            //             winning_after_tax: amount,
-            //             won: STATUS_WON
-            //         }
-            //     );
+                if (cashOutAmount !== amount)
+                    return {success: false, balance: cashOutAmount, message: `Cashout valued has changed. New cashout value is ${cashOutAmount}. Confirm to proceed with new value.`};
+                // update bet status
+                await this.betRepository.update(
+                    {
+                        id: betId,
+                    },
+                    {
+                        status: BET_CASHOUT,
+                        winning_after_tax: amount,
+                        won: STATUS_WON
+                    }
+                );
 
-            //     let winning = new Winning();
-            //     winning.bet_id = betId
-            //     winning.user_id = bet.user_id
-            //     winning.client_id = bet.client_id
-            //     winning.currency = bet.currency
-            //     winning.tax_on_winning = amount;
-            //     winning.winning_before_tax = amount
-            //     winning.winning_after_tax = amount
+                let winning = new Winning();
+                winning.bet_id = betId
+                winning.user_id = bet.user_id
+                winning.client_id = bet.client_id
+                winning.currency = bet.currency
+                winning.tax_on_winning = amount;
+                winning.winning_before_tax = amount
+                winning.winning_after_tax = amount
 
-            //     let winner : any
-            //     // wrap in try catch
-            //     // J. create winning
-            //     try {
-            //         winner = await this.winningRepository.save(winning)
-            //     }
-            //     catch (e) {
+                let winner : any
+                // wrap in try catch
+                // J. create winning
+                try {
+                    winner = await this.winningRepository.save(winning)
+                }
+                catch (e) {
 
-            //         this.logger.error("error saving winner "+e.toString())
-            //         return
-            //     }
+                    this.logger.error("error saving winner "+e.toString())
+                    return
+                }
 
-            //     // send amount user
-            //     let winCreditPayload = {
-            //         amount: ''+amount,
-            //         userId: bet.user_id,
-            //         username: bet.username,
-            //         clientId: bet.client_id,
-            //         subject: 'Sport Win (Cashout)',
-            //         description: 'Bet betID ' + bet.betslip_id,
-            //         source: bet.source,
-            //         wallet: 'sport',
-            //         channel: 'Internal',
-            //     };
-            //     // credit user wallet
-            //     const wallet = await this.walletService.credit(winCreditPayload);
+                // send amount user
+                let winCreditPayload = {
+                    amount: ''+amount,
+                    userId: bet.user_id,
+                    username: bet.username,
+                    clientId: bet.client_id,
+                    subject: 'Sport Win (Cashout)',
+                    description: 'Bet betID ' + bet.betslip_id,
+                    source: bet.source,
+                    wallet: 'sport',
+                    channel: 'Internal',
+                };
+                // credit user wallet
+                const wallet = await this.walletService.credit(winCreditPayload);
       
-            //     return {success: true, message: 'Cashout successful', balance: wallet.data.availableBalance};
+                return {success: true, message: 'Cashout successful', balance: wallet.data.availableBalance};
 
-            // } else {
-            //     return {success: false, message: 'Bet not found'};
-            // }
+            } else {
+                return {success: false, message: 'Bet not found'};
+            }
         } catch(e) {
             return {success: false, message: 'Error processing cashout'};
         }

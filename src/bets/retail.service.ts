@@ -6,7 +6,7 @@ import { IdentityService } from "src/identity/identity.service";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Bet } from "src/entity/bet.entity";
 import { BetSlip } from "src/entity/betslip.entity";
-import { BET_CANCELLED, BET_LOST, BET_PENDING, BET_VOIDED, BET_WON, STATUS_LOST, STATUS_NOT_LOST_OR_WON, STATUS_WON } from "src/constants";
+import { BET_CANCELLED, BET_CASHOUT, BET_LOST, BET_PENDING, BET_VOIDED, BET_WON, STATUS_LOST, STATUS_NOT_LOST_OR_WON, STATUS_WON } from "src/constants";
 import { paginateResponse } from "src/commons/helper";
 import { BetHistoryRequest } from "./interfaces/bet.history.request.interface";
 import { GetVirtualBetRequest, GetVirtualBetsRequest } from "src/proto/betting.pb";
@@ -14,6 +14,7 @@ import { VirtualBet } from "src/entity/virtual-bet.entity";
 import { CasinoBetService } from "./casino-bet.service";
 import { VirtualBetService } from "./virtual-bet.service";
 import { BetsService } from "./bets.service";
+import { Winning } from "src/entity/winning.entity";
 var customParseFormat = require('dayjs/plugin/customParseFormat')
 
 dayjs.extend(customParseFormat)
@@ -292,6 +293,11 @@ export class RetailService {
                             bet.statusCode = 1;
                         }
 
+                        if (bet.status == BET_CASHOUT) {
+                            bet.statusDescription = 'Cashout';
+                            bet.statusCode = 1;
+                        }
+
                         if (bet.status == BET_VOIDED) {
                             bet.statusDescription = 'Void';
                             bet.statusCode = 3;
@@ -530,7 +536,7 @@ export class RetailService {
                                 res = await this.virtualBetService.getCommissionReport(from, to, agent.users);
                                 break;
                             default:
-                                res = await this.sportsBetService.getCommissionReport(from, to, agent.users);
+                                res = await this.getCommissionReport(from, to, agent.users);
                                 break;
                         }
                     }
@@ -610,5 +616,23 @@ export class RetailService {
         }
 
     }
+
+    async getCommissionReport (from, to, userIds) {
+        const startDate = dayjs(from, 'DD-MM-YYYY').format('YYYY-MM-DD');
+        const endDate = dayjs(to, 'DD-MM-YYYY').format('YYYY-MM-DD');
+    
+        return await this.betRepository.createQueryBuilder('b')
+                        .addSelect('COUNT(*)', 'totalTickets')
+                        .addSelect('SUM(stake)', 'totalSales')
+                        .addSelect('SUM(w.winning_after_tax)', 'totalWinnings')
+                        .addSelect('SUM(b.commission)', 'totalCommissions')
+                        .leftJoin(Winning, 'w', 'b.id = w.bet_id')
+                        .where('b.user_id IN (:...userIds)', {userIds})
+                        .andWhere('b.created >= :startDate', {startDate})
+                        .andWhere('b.created <= :endDate', {endDate})
+                        .andWhere("status IN (:...status)", {status: [BET_WON, BET_LOST]})
+                        .getRawOne();
+    
+      }
 
 }

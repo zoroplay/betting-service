@@ -328,7 +328,7 @@ export class BetResultingController {
                         'x-access-token': process.env.BETRADAR_API_TOKEN
                     }
                 }).then(res => {
-                    console.log('response', res.data);
+                    // console.log('response', res.data);
                 }).catch(err => console.log('error', err))
             } else {
                 // update settlement status

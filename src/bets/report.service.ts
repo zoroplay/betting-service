@@ -2,7 +2,7 @@ import { HttpStatus, Injectable } from "@nestjs/common";
 import { EntityManager, Repository } from "typeorm";
 
 import * as dayjs from 'dayjs';
-import { BET_CANCELLED, BET_LOST, BET_PENDING, BET_VOIDED, BET_WON, STATUS_LOST, STATUS_NOT_LOST_OR_WON, STATUS_VOID, STATUS_WON} from "src/constants";
+import { BET_CANCELLED, BET_CASHOUT, BET_LOST, BET_PENDING, BET_VOIDED, BET_WON, STATUS_LOST, STATUS_NOT_LOST_OR_WON, STATUS_WON} from "src/constants";
 import { IdentityService } from "src/identity/identity.service";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Bet } from "src/entity/bet.entity";
@@ -457,6 +457,11 @@ export class ReportService {
                     bet.statusCode = 1;
                 }
 
+                if (bet.status == BET_CASHOUT) {
+                    bet.statusDescription = 'Cashout';
+                    bet.statusCode = 1;
+                }
+
                 if (bet.status == BET_VOIDED) {
                     bet.statusDescription = 'Void';
                     bet.statusCode = 3;
@@ -487,7 +492,7 @@ export class ReportService {
                                 slipStatusDesc = 'Won';
                                 slipStatus = 1;
                                 break;
-                            case STATUS_VOID:
+                            default:
                                 slipStatusDesc = 'Void';
                                 slipStatus = 3;
                                 break;

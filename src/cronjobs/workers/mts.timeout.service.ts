@@ -3,7 +3,7 @@ import {JsonLogger, LoggerFactory} from "json-logger-service";
 import {InjectRepository} from "@nestjs/typeorm";
 import {EntityManager, Repository} from "typeorm";
 import {BetSlip} from "../../entity/betslip.entity";
-import {BET_CANCELLED, BET_PENDING, BET_WON} from "../../constants";
+import {BET_CANCELLED, BET_PENDING, BET_WON, STATUS_NOT_LOST_OR_WON} from "../../constants";
 import {Bet} from "../../entity/bet.entity";
 import {Cron} from "@nestjs/schedule";
 import {Cronjob} from "../../entity/cronjob.entity";
@@ -162,7 +162,7 @@ export class MtsTimeoutService {
                 },
                 {
                     status: BET_CANCELLED,
-                    won: BET_PENDING
+                    won: STATUS_NOT_LOST_OR_WON
                 });
 
             let bet = await this.betRepository.findOne({

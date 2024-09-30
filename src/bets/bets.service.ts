@@ -6,15 +6,17 @@ import { BetSlip } from '../entity/betslip.entity';
 import { JsonLogger, LoggerFactory } from 'json-logger-service';
 import {
   BET_CANCELLED,
+  BET_CASHOUT,
   BET_LOST,
   BET_PENDING,
   BET_VOIDED,
   BET_WON,
+  BETSLIP_PROCESSING_CANCELLED,
   BETSLIP_PROCESSING_COMPLETED,
+  BETSLIP_PROCESSING_PENDING,
   BETSLIP_PROCESSING_VOIDED,
   STATUS_LOST,
   STATUS_NOT_LOST_OR_WON,
-  STATUS_VOID,
   STATUS_WON,
 } from '../constants';
 import {
@@ -283,6 +285,11 @@ export class BetsService {
         bet.statusCode = 4;
       }
 
+      if (bet.status == BET_CASHOUT) {
+        bet.statusDescription = 'Cashout';
+        bet.statusCode = 1;
+      }
+
       bet.selections = [];
       let currentProbability = 1;
       let totalOdds = 1;
@@ -313,7 +320,11 @@ export class BetsService {
               break;
           }
 
-          if (slip.won !== STATUS_LOST && bet.status === BET_PENDING && (!bet.bonus_id || bet.bonus_id !== 0)) {
+
+          if (slip.won === STATUS_LOST) {
+             currentProbability = 0;
+            lostGames += 1;
+          } else if (slip.won !== STATUS_LOST && bet.status === BET_PENDING && (!bet.bonus_id || bet.bonus_id !== 0)) {
             // get probability for selection
             let selectionProbability = await this.cashoutService.getProbability(
               slip.producer_id,
@@ -330,10 +341,6 @@ export class BetsService {
 
             // if (selectionProbability)
             currentProbability = currentProbability * selectionProbability;
-          } 
-
-          if (slip.won === STATUS_LOST) {
-            lostGames += 1;
           }
 
           bet.selections.push({
@@ -360,7 +367,7 @@ export class BetsService {
         }
       }
 
-      console.log('current probability', currentProbability, lostGames)
+      // console.log('current probability', currentProbability, lostGames)
 
       if ((!bet.bonus_id || bet.bonus_id !== 0) && bet.status === BET_PENDING && lostGames === 0)
         cashOutAmount = await this.cashoutService.calculateCashout(currentProbability, bet.probability, bet.stake, totalOdds);
@@ -442,6 +449,16 @@ export class BetsService {
         data.statusCode = 3;
       }
 
+      if (bet.status == BET_CANCELLED) {
+        data.statusDescription = 'Cancelled';
+        data.statusCode = 3;
+      }
+
+      if (bet.status == BET_CASHOUT) {
+        data.statusDescription = 'Cashout';
+        data.statusCode = 1;
+      }
+
       if (slips.length > 0) {
         for (const slip of slips) {
           let slipStatusDesc, slipStatus;
@@ -459,7 +476,7 @@ export class BetsService {
               slipStatusDesc = 'Won';
               slipStatus = 1;
               break;
-            case STATUS_VOID:
+            default:
               slipStatus = 'Void';
               slipStatus = 3;
               break;
@@ -948,7 +965,7 @@ export class BetsService {
     selectionId,
   }: UpdateBetRequest): Promise<UpdateBetResponse> {
     try {
-      let updateStatus, betStatus;
+      let wonStatus: number, betStatus: number;
 
       const bet = await this.betRepository.findOne({ where: { id: betId } });
       
@@ -956,7 +973,7 @@ export class BetsService {
       if (entityType === 'bet') {
         switch (status) {
           case 'won':
-            updateStatus = STATUS_WON;
+            wonStatus = STATUS_WON;
             betStatus = BET_WON;
             // to-DO: credit user
             let winCreditPayload = {
@@ -995,7 +1012,7 @@ export class BetsService {
 
             break;
           case 'lost':
-            updateStatus = STATUS_LOST;
+            wonStatus = STATUS_LOST;
             betStatus = BET_LOST;
             // TO-DO: check if ticket was won
 
@@ -1009,7 +1026,7 @@ export class BetsService {
             }
             break;
           case 'void':
-            updateStatus = BET_VOIDED;
+            wonStatus = STATUS_NOT_LOST_OR_WON;
             betStatus = BET_VOIDED;
             // revert the stake
             let voidCreditPayload = {
@@ -1033,12 +1050,44 @@ export class BetsService {
                 status: BET_VOIDED,
               });
             }
-
+            // credit user wallet
             await this.walletService.credit(voidCreditPayload);
+            // update betslips to cancelled
+            await this.betslipRepository.update({bet_id: betId}, {won: STATUS_NOT_LOST_OR_WON, status: BETSLIP_PROCESSING_VOIDED});
 
             break;
+          case 'cancel':
+            wonStatus = STATUS_NOT_LOST_OR_WON;
+            betStatus = BET_CANCELLED;
+            // revert the stake
+            let cancelCreditPayload = {
+              amount: ''+bet.stake,
+              userId: bet.user_id,
+              clientId: bet.client_id,
+              description: 'Bet betID ' + bet.betslip_id + ' was cancelled',
+              subject: 'Bet Cancelled',
+              source: bet.source,
+              wallet: 'sport',
+              channel: 'Internal',
+              username: bet.username,
+            };
+
+            if (bet.bonus_id) {
+              cancelCreditPayload.wallet = 'sport-bonus';
+              await this.bonusService.settleBet({
+                clientId: bet.client_id,
+                betId: bet.id.toString(),
+                amount: 0,
+                status: BET_VOIDED,
+              });
+            }
+            // credit user wallet
+            await this.walletService.credit(cancelCreditPayload);
+            // update betslips to cancelled
+            await this.betslipRepository.update({bet_id: betId}, {won: STATUS_NOT_LOST_OR_WON, status: BETSLIP_PROCESSING_CANCELLED})
+            break;
           default:
-            updateStatus = STATUS_NOT_LOST_OR_WON;
+            wonStatus = STATUS_NOT_LOST_OR_WON;
             betStatus = BET_PENDING;
             break;
         }
@@ -1048,7 +1097,7 @@ export class BetsService {
             id: betId,
           },
           {
-            won: updateStatus,
+            won: wonStatus,
             status: betStatus,
             settled_at: dayjs().format('YYYY-MM-DD HH:mm:ss'),
             settlement_type: 'manual'
@@ -1058,16 +1107,19 @@ export class BetsService {
         const slip = await this.betslipRepository.findOne({where: {id: selectionId}})
         switch (status) {
           case 'won':
-            updateStatus = STATUS_WON;
+            wonStatus = STATUS_WON;
+            betStatus = BETSLIP_PROCESSING_COMPLETED
             break;
           case 'lost':
-            updateStatus = STATUS_LOST;
+            betStatus = BETSLIP_PROCESSING_COMPLETED;
+            wonStatus = STATUS_LOST;
             break;
           case 'void':
-            updateStatus = BET_VOIDED;
+            betStatus = BETSLIP_PROCESSING_COMPLETED;
+            wonStatus = STATUS_NOT_LOST_OR_WON
             // TO-DO: recalcumlate odds
             const {possibleWin, newOdds} = recalculateVoid({bet: bet, odd: slip.odds  });
-            console.log(possibleWin, newOdds)
+            // console.log(possibleWin, newOdds)
             await this.betRepository.update(
               {
                   id: bet.id, // confirm if ID is present
@@ -1079,15 +1131,15 @@ export class BetsService {
                   total_odd: newOdds,
               });
 
-              // console.log('updating selections', updateStatus)
+              // console.log('updating selections', wonStatus)
               await this.betslipRepository.update(
                 {
                   id: selectionId,
                 },
                 {
                   odds: 1,
-                  won: STATUS_VOID,
-                  status: BETSLIP_PROCESSING_VOIDED,
+                  won: betStatus,
+                  status: wonStatus,
                   settled_at: dayjs().format('YYYY-MM-DD HH:mm:ss'),
                   settlement_type: 'manual',
                 },
@@ -1099,7 +1151,8 @@ export class BetsService {
                 message: `${entityType} updated successfully`,
               };
           default:
-            updateStatus = STATUS_NOT_LOST_OR_WON;
+            wonStatus = STATUS_NOT_LOST_OR_WON;
+            betStatus = BETSLIP_PROCESSING_PENDING
             break;
         }
         // update selection status
@@ -1108,8 +1161,8 @@ export class BetsService {
             id: selectionId,
           },
           {
-            won: updateStatus,
-            status: BETSLIP_PROCESSING_COMPLETED,
+            won: wonStatus,
+            status: betStatus,
             settled_at: dayjs().format('YYYY-MM-DD HH:mm:ss'),
             settlement_type: 'manual',
           },
@@ -1275,24 +1328,4 @@ export class BetsService {
 
     return result;
   }
-
-  async getCommissionReport (from, to, userIds) {
-    const startDate = dayjs(from, 'DD-MM-YYYY').format('YYYY-MM-DD');
-    const endDate = dayjs(to, 'DD-MM-YYYY').format('YYYY-MM-DD');
-
-    return await this.betRepository.createQueryBuilder('b')
-                    .addSelect('COUNT(*)', 'totalTickets')
-                    .addSelect('SUM(stake)', 'totalSales')
-                    .addSelect('SUM(w.winning_after_tax)', 'totalWinnings')
-                    .addSelect('SUM(b.commission)', 'totalCommissions')
-                    .leftJoin(Winning, 'w', 'b.id = w.bet_id')
-                    .where('b.user_id IN (:...userIds)', {userIds})
-                    .andWhere('b.created >= :startDate', {startDate})
-                    .andWhere('b.created <= :endDate', {endDate})
-                    .andWhere("status IN (:...status)", {status: [BET_WON, BET_LOST]})
-                    .getRawOne();
-
-}
-
- 
 }
