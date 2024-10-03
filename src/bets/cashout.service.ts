@@ -259,8 +259,8 @@ export class CashoutService {
             let probability = 0;
     
             if (eventType.toLowerCase() === 'match') {
-                probability = await this.getOddsProbability(payload);
-                if (probability === 0)
+                // probability = await this.getOddsProbability(payload);
+                // if (probability === 0)
                     probability = 1/odds;
             } 
             // else probability = await this.getOddsOutrightsProbability(odds).toPromise();
