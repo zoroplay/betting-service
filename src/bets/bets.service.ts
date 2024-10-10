@@ -697,7 +697,7 @@ export class BetsService {
         is_live: selection.type === 'live' ? 1 : 0,
       });
 
-      totalOdds = totalOdds * parseFloat(selection.odds.toFixed(2));
+      totalOdds = totalOdds * odd;
 
       bet.totalOdds = totalOdds;
     }
