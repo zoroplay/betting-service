@@ -363,6 +363,11 @@ export class ReportService {
                     ' AND ',
                 )} `;
 
+                sumQuery += ` AND b.status != ? AND b.status != ? `;
+
+                // console.log(sumQuery)
+                params.push(BET_CANCELLED, BET_VOIDED)
+
                 let resSum = await this.entityManager.query(sumQuery, params);
 
                 if (resSum) {
