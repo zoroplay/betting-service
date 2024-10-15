@@ -21,7 +21,7 @@ import {Bet} from "../entity/bet.entity";
 import { WalletModule } from 'src/wallet/wallet.module';
 import { BonusModule } from 'src/bonus/bonus.module';
 
-let maxSettlementChannels = 5
+let maxSettlementChannels = 10
 let maxBetAcceptedChannels = 5
 let exchanges = [];
 

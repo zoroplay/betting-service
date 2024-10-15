@@ -98,6 +98,82 @@ export class ConsumerService {
     }
 
     @RabbitSubscribe({
+        exchange: 'betting_service.settlement.5',
+        routingKey: 'betting_service.settlement.5',
+        queue: 'betting_service.settlement.5',
+        queueOptions: {
+            channel: 'betting_service.settlement.5',
+            durable: true,
+        },
+        createQueueIfNotExists: true,
+    })
+    public async processSettlement5(msg: {}) {
+        await  this.settlementService.createSettlement(msg);
+        return
+    }
+
+    @RabbitSubscribe({
+        exchange: 'betting_service.settlement.6',
+        routingKey: 'betting_service.settlement.6',
+        queue: 'betting_service.settlement.6',
+        queueOptions: {
+            channel: 'betting_service.settlement.4',
+            durable: true,
+        },
+        createQueueIfNotExists: true,
+    })
+    public async processSettlement6(msg: {}) {
+        await  this.settlementService.createSettlement(msg);
+        return
+    }
+
+    @RabbitSubscribe({
+        exchange: 'betting_service.settlement.7',
+        routingKey: 'betting_service.settlement.7',
+        queue: 'betting_service.settlement.7',
+        queueOptions: {
+            channel: 'betting_service.settlement.7',
+            durable: true,
+        },
+        createQueueIfNotExists: true,
+    })
+    public async processSettlement7(msg: {}) {
+        await  this.settlementService.createSettlement(msg);
+        return
+    }
+
+    @RabbitSubscribe({
+        exchange: 'betting_service.settlement.8',
+        routingKey: 'betting_service.settlement.8',
+        queue: 'betting_service.settlement.8',
+        queueOptions: {
+            channel: 'betting_service.settlement.8',
+            durable: true,
+        },
+        createQueueIfNotExists: true,
+    })
+    public async processSettlement8(msg: {}) {
+        await  this.settlementService.createSettlement(msg);
+        return
+    }
+
+
+    @RabbitSubscribe({
+        exchange: 'betting_service.settlement.9',
+        routingKey: 'betting_service.settlement.9',
+        queue: 'betting_service.settlement.9',
+        queueOptions: {
+            channel: 'betting_service.settlement.9',
+            durable: true,
+        },
+        createQueueIfNotExists: true,
+    })
+    public async processSettlement9(msg: {}) {
+        await  this.settlementService.createSettlement(msg);
+        return
+    }
+
+    @RabbitSubscribe({
         exchange: 'betting_service.settle_bets',
         routingKey: 'betting_service.settle_bets',
         queue: 'betting_service.settle_bets',
