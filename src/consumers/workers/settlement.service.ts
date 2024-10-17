@@ -52,16 +52,16 @@ export class SettlementService {
 }
  */
 
-    async createSettlement(data: any): Promise<number> {
-        // console.log('creating bet settlement');
+    async createSettlement(data: any, source = 'rabbitmq'): Promise<number> {
+        console.log('creating bet settlement from', source, data.match_id);
         
         data = JSON.parse(JSON.stringify(data))
         // console.log(data)
         let matchID = data.match_id
         let markets = data.markets;
-        if (matchID == 53700099) {
-            console.log(data)
-        }
+        // if (matchID == 47659781) {
+        //     console.log(data)
+        // }
         
         if(markets == undefined) {
             console.log("invalid data "+JSON.stringify(data))
@@ -73,13 +73,12 @@ export class SettlementService {
         let eventPrefix = 'sr';
 
         //To-Do: Get Event Scores
-        const scores: any = await this.getMatchInfo(data.event_id);
         let ft_score = '-';
         let ht_score = '-';
 
-        if (scores.success) {
-            ft_score = scores.scores.ft_score;
-            ht_score = scores.scores.ht_score;
+        if (data.ft_score) {
+            ft_score = data.ft_score;
+            // ht_score = data.scores.ht_score;
         }
         let counts = 0
 
@@ -96,7 +95,8 @@ export class SettlementService {
                 let void_factor = outcome.void_factor
                 let dead_heat_factor = outcome.dead_heat_factor
 
-               // this.logger.info("settlement | match_id "+matchID+" | marketID "+marketID+" | specifier "+specifier+" | outcomeID "+outcomeID+" | result "+result)
+                // if (matchID == 47659781)
+                //     this.logger.info("settlement | match_id "+matchID+" | marketID "+marketID+" | specifier "+specifier+" | outcomeID "+outcomeID+" | result "+result)
 
                 if (!await this.betExists(eventPrefix, event_type, matchID, marketID, specifier, outcomeID)) {
 
@@ -116,7 +116,7 @@ export class SettlementService {
                 settlementData.void_factor = void_factor;
                 settlementData.dead_heat_factor = dead_heat_factor;
                 settlementData.ft_score = ft_score;
-                settlementData.ht_score = ht_score;
+                // settlementData.ht_score = ht_score;
 
                 await this.settlementRepository.upsert(settlementData, ['event_id', 'market_id', 'specifier', 'outcome_id'])
 
@@ -302,28 +302,28 @@ export class SettlementService {
 
     }
 
-    async getMatchInfo(matchId) {
-        // console.log(matchId);
-        const url = `https://api.betradar.com/v1/sports/en/sport_events/${matchId}/summary.xml`;
+    // async getMatchInfo(matchId) {
+    //     // console.log(matchId);
+    //     const url = `https://api.betradar.com/v1/sports/en/sport_events/${matchId}/summary.xml`;
         
-        return await axios.get(url, {
-            headers: {
-                'x-access-token': process.env.BETRADAR_API_TOKEN
-            }
-        }).then(res => {
-            const json: any = xml2js(res.data, { compact: true});
-            // console.log(json.match_summary)
-            const periodScore: any = json.match_summary.sport_event_status.period_scores ? 
-                json.match_summary.sport_event_status.period_scores.period_score[0]?._attributes : null;
-            const eventStatus = json.match_summary.sport_event_status;
-            const ft_score = `${eventStatus._attributes.home_score}:${eventStatus._attributes.away_score}`;
-            const ht_score = `${periodScore?.home_score}:${periodScore?.away_score}`;
-            return {success: true, scores: {ft_score, ht_score} };
-        }).catch(err => {
-            console.log('Error, fetching match scores', err)
-            return {success: false, scores: {}}
-        });
+    //     return await axios.get(url, {
+    //         headers: {
+    //             'x-access-token': process.env.BETRADAR_API_TOKEN
+    //         }
+    //     }).then(res => {
+    //         const json: any = xml2js(res.data, { compact: true});
+    //         // console.log(json.match_summary)
+    //         const periodScore: any = json.match_summary.sport_event_status.period_scores ? 
+    //             json.match_summary.sport_event_status.period_scores.period_score[0]?._attributes : null;
+    //         const eventStatus = json.match_summary.sport_event_status;
+    //         const ft_score = `${eventStatus._attributes.home_score}:${eventStatus._attributes.away_score}`;
+    //         const ht_score = `${periodScore?.home_score}:${periodScore?.away_score}`;
+    //         return {success: true, scores: {ft_score, ht_score} };
+    //     }).catch(err => {
+    //         console.log('Error, fetching match scores', err)
+    //         return {success: false, scores: {}}
+    //     });
 
-    }
+    // }
 
 }

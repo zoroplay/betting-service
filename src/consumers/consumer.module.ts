@@ -1,5 +1,5 @@
 import {RabbitMQChannelConfig, RabbitMQModule} from '@golevelup/nestjs-rabbitmq';
-import {Module} from '@nestjs/common';
+import {Module, OnModuleInit} from '@nestjs/common';
 import {ConsumerService} from './consumer.service';
 import {ConsumerController} from "./consumer.controller";
 import {SettlementRollbackService} from "./workers/settlement.rollback.service";
@@ -20,6 +20,9 @@ import {MtsBetAcceptedService} from "./workers/mts.bet.accepted.service";
 import {Bet} from "../entity/bet.entity";
 import { WalletModule } from 'src/wallet/wallet.module';
 import { BonusModule } from 'src/bonus/bonus.module';
+import { MqttClient, connect } from "mqtt";
+import * as fs from "fs";
+import * as dayjs from 'dayjs';
 
 let maxSettlementChannels = 10
 let maxBetAcceptedChannels = 5
@@ -112,5 +115,76 @@ for (const name of outrightQueues) {
     providers: [ConsumerService, SettlementService, BetCancelService,SettlementRollbackService,MtsBetCancelledService,MtsBetAcceptedService, ConsumerController],
     controllers: [ConsumerController],
 })
-export class ConsumerModule {
+export class ConsumerModule implements OnModuleInit {
+    constructor(private readonly settlementService: SettlementService) {}
+
+    onModuleInit() {
+        const settlementService = this.settlementService;
+    
+        const host = process.env.MQTT_HOST;
+        const port = process.env.MQTT_PORT;
+        const clientId = `mqtt_${Math.random().toString(16).slice(3)}`;
+        const connectUrl = `mqtt://${host}:${port}/mqtt`;
+        const client = connect(connectUrl, {
+          clientId,
+          clean: true,
+          connectTimeout: 4000,
+          username: process.env.MQTT_USERNAME,
+          password: process.env.MQTT_PASSWORD,
+          reconnectPeriod: 1000,
+          protocolVersion: 5,
+        });
+        client.on("connect", function () {
+          console.log("Connected to CloudMQTT");
+          // Subscribe to a topic
+          const topic = "betradar/bet_settlement/#";
+          client.subscribe(topic, function (err) {
+            if (!err) {
+              // Publish a message to a topic
+              //client.publish('test', 'Hello mqtt')
+              console.log("subscribed to " + topic);
+            }
+          });
+        });
+        client.on("reconnect", function () {
+          console.log("Reconnecting...");
+        });
+        client.on("disconnect", function (packet) {
+          console.log(packet);
+        });
+        client.on("offline", function () {
+          console.log("MQTT is offline");
+        });
+        client.on("close", function () {
+          console.log("Disconnected from MQTT");
+        });
+        client.on("error", function () {
+          console.log("Error in connecting to CloudMQTT");
+        });
+        // Receive messages
+        client.on("message", function (topic, message) {
+          try {
+            // message is Buffer
+            const object = JSON.parse(message.toString());
+            const topicArr = topic.split("/");
+            // console.log(topic);
+            // if (topicArr[1] !== "fixtures") {
+            //   fs.mkdirSync(`./messages/${topicArr[1]}/${topicArr[2]}`, {
+            //     recursive: true,
+            //   });
+            //   fs.writeFileSync(
+            //     `./messages/${topicArr[1]}/${topicArr[2]}/${
+            //       topicArr[2]
+            //     }-${dayjs().format("YYYY-MM-DD HH-mm")}.json`,
+            //     JSON.stringify(object)
+            //   );
+            // } else {
+            // }
+            settlementService.createSettlement(object, 'mqtt');
+            //client.end()
+          }catch(e) {
+            console.log('error processing message', e.message);
+          }
+        });
+      }
 }
