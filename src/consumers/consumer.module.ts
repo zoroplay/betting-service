@@ -166,20 +166,7 @@ export class ConsumerModule implements OnModuleInit {
           try {
             // message is Buffer
             const object = JSON.parse(message.toString());
-            const topicArr = topic.split("/");
-            // console.log(topic);
-            // if (topicArr[1] !== "fixtures") {
-            //   fs.mkdirSync(`./messages/${topicArr[1]}/${topicArr[2]}`, {
-            //     recursive: true,
-            //   });
-            //   fs.writeFileSync(
-            //     `./messages/${topicArr[1]}/${topicArr[2]}/${
-            //       topicArr[2]
-            //     }-${dayjs().format("YYYY-MM-DD HH-mm")}.json`,
-            //     JSON.stringify(object)
-            //   );
-            // } else {
-            // }
+            
             settlementService.createSettlement(object, 'mqtt');
             //client.end()
           }catch(e) {
