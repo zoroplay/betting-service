@@ -175,7 +175,7 @@ export class CashoutService {
                 if (currentProbability > 0 && (!bet.bonus_id || bet.bonus_id !== 0) && bet.status === BET_PENDING && lostGames === 0)
                     cashOutAmount = await this.calculateCashout(currentProbability, bet.probability, bet.stake, totalOdds);
                 
-                if (cashOutAmount.toFixed(2) !== amount.toFixed())
+                if (cashOutAmount.toFixed(2) !== amount.toFixed(2))
                     return {success: false, balance: cashOutAmount, message: `Cashout valued has changed. New cashout value is ${cashOutAmount}. Confirm to proceed with new value.`};
                 // update bet status
                 await this.betRepository.update(
