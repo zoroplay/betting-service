@@ -47,10 +47,10 @@ export class CronjobService {
         })
     }
 
-    @Cron(new Date(Date.now() + 10 * 1000),{
-    name: 'startUp',
-    timeZone: 'Africa/Lagos',
-    })
+    // @Cron(new Date(Date.now() + 10 * 1000),{
+    // name: 'startUp',
+    // timeZone: 'Africa/Lagos',
+    // })
     async startUp(){
         console.log('start up script')
 
@@ -82,8 +82,8 @@ export class CronjobService {
         })
     }
 
-    @Timeout(10000)
-    // @Cron(CronExpression.EVERY_30_MINUTES) // run every 10 minutes
+    // @Timeout(10000)
+    @Cron(CronExpression.EVERY_30_MINUTES) // run every 10 minutes
     processResendSettlement() {
         let vm = this;
         this.betResultingService.taskRequestSettlement().then(function () {
