@@ -1006,7 +1006,7 @@ export class BetsService {
             winning.tax_on_winning = bet.tax_on_winning
             winning.winning_before_tax = bet.possible_win
             winning.winning_after_tax = bet.winning_after_tax
-            await this.winningRepository.save(winning)
+            await this.winningRepository.upsert(winning, ['bet_id'])
             // credit user wallet
             await this.walletService.credit(winCreditPayload);
 
