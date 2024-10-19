@@ -207,7 +207,9 @@ export class BetResultingController {
                 },
                 {
                     status: BET_WON,
+                    won: STATUS_WON,
                     settled_at: dayjs().format('YYYY-MM-DD HH:mm:ss'),
+                    settlement_type: 'betradar'
                 }
             );
         } catch (e) {

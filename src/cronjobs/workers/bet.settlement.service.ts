@@ -150,20 +150,22 @@ export class BetSettlementService {
 
         await this.cronJobRepository.upsert(task,['status']);
         // find unsettled bets
-        let rows = await this.entityManager.query("SELECT DISTINCT b.betslip_id, b.id, b.bonus_id, b.client_id " +
+        let rows = await this.entityManager.query("SELECT b.betslip_id, b.id, b.bonus_id, b.client_id " +
             "FROM bet b " +
-            "INNER JOIN bet_slip bs on b.id = bs.bet_id " +
-            "WHERE bs.status NOT IN (0) AND b.status = "+BET_PENDING+ " AND b.won = "+STATUS_NOT_LOST_OR_WON)
+            "WHERE (b.status = "+BET_PENDING+ " AND b.won = "+STATUS_NOT_LOST_OR_WON+") OR (b.status = "+BET_PENDING+ " AND b.won = "+STATUS_WON+")")
 
         for (let row of rows) {
-            // console.log(row.betslip_id);
+            if(row.betslip_id === '8W7ZO8W')
+                console.log(row.betslip_id);
             const betId = row.id;
             // find selections
             let total = await this.betslipRepository.count({where: {bet_id: betId}});
             const won = await this.betslipRepository.count({where: {bet_id: betId, won: STATUS_WON}})
             const lost = await this.betslipRepository.count({where: {bet_id: betId, won: STATUS_LOST}});
             const voidGames = await this.betslipRepository.count({where: {bet_id: betId, status: BETSLIP_PROCESSING_VOIDED}});
+
             // console.log(total, won, lost, voidGames);
+
             total = total - voidGames;
 
             if (lost > 0){
@@ -494,7 +496,7 @@ export class BetSettlementService {
         // bet won
         if (bet.Lost == 0 && bet.Pending == 0 && bet.TotalGames == bet.Won) {
 
-            processing_status = BET_PENDING
+            processing_status = BET_WON
 
             if (bet.Voided > 0 && bet.Voided == bet.TotalGames) {
 
@@ -633,6 +635,9 @@ export class BetSettlementService {
             return
         }
 
+        // check if winning exist
+        const isWon = await this.winningRepository.findOne({where: {bet_id: betID}});
+
         let winning = new Winning();
         winning.bet_id = betID
         winning.user_id = profileID
@@ -660,37 +665,39 @@ export class BetSettlementService {
         }
 
         try {
-            let creditPayload = {
-                amount: ''+`${winning_after_tax}`,
-                userId: profileID,
-                username: row.username,
-                clientId: row.client_id,
-                subject:  'Sport Win',
-                description: "Bet betID " + row.betslip_id ,
-                source: row.source,
-                wallet: 'sport',
-                channel: 'Internal'
-            }
-
-            if(row.bonus_id) {
-                creditPayload.wallet = 'sport-bonus';
-
-                const bonusData = await this.bonusService.settleBet({
+            if (!isWon) { // if ticket has not been updated as won, credit user
+                let creditPayload = {
+                    amount: ''+`${winning_after_tax}`,
+                    userId: profileID,
+                    username: row.username,
                     clientId: row.client_id,
-                    betId: betID.toString(),
-                    amount: winning_after_tax,
-                    status: BET_WON
-                })
-                // remove stake amount from winning
-                const amount = winning_after_tax - row.stake;
-                creditPayload.amount = '' + amount
+                    subject:  'Sport Win',
+                    description: "Bet betID " + row.betslip_id ,
+                    source: row.source,
+                    wallet: 'sport',
+                    channel: 'Internal'
+                }
 
-                // set credit amount to amount returned from bonus
-                if (bonusData.success) creditPayload.amount = bonusData.data.amount;
+                if(row.bonus_id) {
+                    creditPayload.wallet = 'sport-bonus';
+
+                    const bonusData = await this.bonusService.settleBet({
+                        clientId: row.client_id,
+                        betId: betID.toString(),
+                        amount: winning_after_tax,
+                        status: BET_WON
+                    })
+                    // remove stake amount from winning
+                    const amount = winning_after_tax - row.stake;
+                    creditPayload.amount = '' + amount
+
+                    // set credit amount to amount returned from bonus
+                    if (bonusData.success) creditPayload.amount = bonusData.data.amount;
+                }
+
+                // credit user wallet
+                await this.walletService.credit(creditPayload);
             }
-
-
-            await this.walletService.credit(creditPayload);
         } catch (e) {
             console.log('Error processing winning', e.message);
         }
