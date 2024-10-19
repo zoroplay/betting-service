@@ -82,8 +82,8 @@ export class CronjobService {
         })
     }
 
-    // @Timeout(10000)
-    @Cron(CronExpression.EVERY_30_MINUTES) // run every 10 minutes
+    @Timeout(10000)
+    // @Cron(CronExpression.EVERY_30_MINUTES) // run every 10 minutes
     processResendSettlement() {
         let vm = this;
         this.betResultingService.taskRequestSettlement().then(function () {
