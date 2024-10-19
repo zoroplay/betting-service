@@ -134,7 +134,7 @@ export class CashoutService {
     async processCashout({betId, amount}: ProcessCashoutRequest): Promise<ProcessCashoutResponse> {
         try {
 
-            // return {success: false, message: 'We are unable to process this request at the moment. Please try again later'};
+            return {success: false, message: 'We are unable to process this request at the moment. Please try again later'};
 
             const bet = await this.betRepository.findOne({where: {id: betId}});
 
