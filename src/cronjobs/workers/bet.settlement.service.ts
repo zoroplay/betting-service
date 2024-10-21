@@ -124,79 +124,83 @@ export class BetSettlementService {
 
     async taskProcessUnSettledBet() {
         console.log('task for processing unsettled bet')
-
-        const taskName = 'unsettled.bet'
-
-        // check if similar job is running
-        // get client settings
-        var cronJob = await this.cronJobRepository.findOne({
-            where: {
-                name: taskName,
-                status: 1,
-            }
-        });
-
-        if(cronJob !== null && cronJob.id > 0 ) {
-
-            this.logger.info('another '+taskName+' job is already running');
-            return
-        }
-
-        // update status to running
+        const taskName = 'unsettled.bet';
         // create settlement
         const task = new Cronjob();
         task.name = taskName;
         task.status = 1;
+        try {
+            // check if similar job is running
+            // get client settings
+            var cronJob = await this.cronJobRepository.findOne({
+                where: {
+                    name: taskName,
+                    status: 1,
+                }
+            });
 
-        await this.cronJobRepository.upsert(task,['status']);
-        // find unsettled bets
-        let rows = await this.entityManager.query("SELECT b.betslip_id, b.id, b.bonus_id, b.client_id " +
-            "FROM bet b " +
-            "WHERE (b.status = "+BET_PENDING+ " AND b.won = "+STATUS_NOT_LOST_OR_WON+") OR (b.status = "+BET_PENDING+ " AND b.won = "+STATUS_WON+")")
+            if(cronJob !== null && cronJob.id > 0 ) {
 
-        for (let row of rows) {
-            if(row.betslip_id === '8W7ZO8W')
-                console.log(row.betslip_id);
-            const betId = row.id;
-            // find selections
-            let total = await this.betslipRepository.count({where: {bet_id: betId}});
-            const won = await this.betslipRepository.count({where: {bet_id: betId, won: STATUS_WON}})
-            const lost = await this.betslipRepository.count({where: {bet_id: betId, won: STATUS_LOST}});
-            const voidGames = await this.betslipRepository.count({where: {bet_id: betId, status: BETSLIP_PROCESSING_VOIDED}});
+                this.logger.info('another '+taskName+' job is already running');
+                return
+            }
 
-            // console.log(total, won, lost, voidGames);
+            await this.cronJobRepository.upsert(task,['status']);
+            // find unsettled bets
+            let rows = await this.entityManager.query("SELECT b.betslip_id, b.id, b.bonus_id, b.client_id " +
+                "FROM bet b " +
+                "WHERE (b.status = "+BET_PENDING+ " AND b.won = "+STATUS_NOT_LOST_OR_WON+") OR (b.status = "+BET_PENDING+ " AND b.won = "+STATUS_WON+")")
 
-            total = total - voidGames;
+            // console.log('found '+ rows.length + ' bets');
 
-            if (lost > 0){
-                await this.betRepository.update(
-                    {
-                        id: row.id,
-                    },
-                    {
-                        won: STATUS_LOST,
-                        status: BET_LOST,
-                        settled_at: dayjs().format('YYYY-MM-DD HH:mm:ss'),
-                    });
-    
-                if (row.bonus_id) {
-                    await this.bonusService.settleBet({
-                        clientId: row.client_id,
-                        betId: row.id,
-                        amount: 0,
-                        status: BET_LOST
-                    })
+
+            for (let row of rows) {
+                    // console.log(row.betslip_id);
+                const betId = row.id;
+                // find selections
+                let total = await this.betslipRepository.count({where: {bet_id: betId}});
+                const won = await this.betslipRepository.count({where: {bet_id: betId, won: STATUS_WON}})
+                const lost = await this.betslipRepository.count({where: {bet_id: betId, won: STATUS_LOST}});
+                const voidGames = await this.betslipRepository.count({where: {bet_id: betId, status: BETSLIP_PROCESSING_VOIDED}});
+
+                // console.log(total, won, lost, voidGames);
+
+                total = total - voidGames;
+
+                if (lost > 0){
+                    await this.betRepository.update(
+                        {
+                            id: row.id,
+                        },
+                        {
+                            won: STATUS_LOST,
+                            status: BET_LOST,
+                            settled_at: dayjs().format('YYYY-MM-DD HH:mm:ss'),
+                        });
+        
+                    if (row.bonus_id) {
+                        await this.bonusService.settleBet({
+                            clientId: row.client_id,
+                            betId: row.id,
+                            amount: 0,
+                            status: BET_LOST
+                        })
+                    }
+                }
+
+                if (won === total) {
+                    this.closeBet(row.id);
                 }
             }
 
-            if (won === total) {
-                this.closeBet(row.id);
-            }
+            task.name = taskName;
+            task.status = 0;
+            await this.cronJobRepository.upsert(task,['status']);
+        } catch (e) {
+            task.name = taskName;
+            task.status = 0;
+            await this.cronJobRepository.upsert(task,['status'])
         }
-
-        task.name = taskName;
-        task.status = 0;
-        await this.cronJobRepository.upsert(task,['status'])
     }
 
     async createBetSettlement(settlement: Settlement): Promise<number> {
