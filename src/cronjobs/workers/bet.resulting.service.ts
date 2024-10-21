@@ -288,6 +288,10 @@ export class BetResultingController {
                             .groupBy('match_id')
                             .getMany();
         
+                                    
+        console.log('number of pending games', matches.length);
+
+
         // for (const bet of bets) {
         //     const betStatus = await this.betStatusRepository.find({where: {bet_id: bet.id}});
         //     if (!betStatus) {
