@@ -15,17 +15,14 @@ export class IdentityService {
     }
 
     public async validateBet(param: PlaceBetRequest) {
-      // console.log(param)
       return await firstValueFrom(this.svc.validateBet(param));
     }
 
     public async getAgentUser(param: GetAgentUsersRequest) {
-      // console.log(param)
       return await firstValueFrom(this.svc.listAgentUsers(param));
     }
 
     public async getCommissionProfileUsers(param: GetCommissionsRequest) {
-      // console.log(param)
       return await firstValueFrom(this.svc.getCommissionProfileUsers(param));
     }
     

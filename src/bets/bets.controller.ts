@@ -59,7 +59,6 @@ export class BetsController {
 
   @GrpcMethod('BettingService', 'PlaceCasinoBet')
   PlaceCasinoBet(data: PlaceCasinoBetRequest): Promise<PlaceCasinoBetResponse> {
-    console.log('PlaceCasinoBet');
     return this.casinoService.placeCasinoBet(data);
   }
   @GrpcMethod('BettingService', 'PlaceBet')
@@ -107,7 +106,6 @@ export class BetsController {
 
   @GrpcMethod('BettingService', 'GetCoupon')
   getBooking(data: FindBetRequest): Promise<CommonResponseObj> {
-    console.log('GetCoupon')
     return this.betsService.findSingle(data);
   }
 
@@ -118,7 +116,6 @@ export class BetsController {
 
   @GrpcMethod('BettingService', 'FindBet')
   FindBet(data: FindBetRequest): Promise<CommonResponseObj> {
-    console.log('FindBet')
     return this.betsService.findCoupon(data);
   }
 
@@ -139,7 +136,6 @@ export class BetsController {
 
   @GrpcMethod('BettingService', 'CashoutRequest')
   CashoutRequest(data: ProcessCashoutRequest): Promise<ProcessCashoutResponse> {
-    console.log('cashout request')
     return this.cashoutService.processCashout(data);
   }
 

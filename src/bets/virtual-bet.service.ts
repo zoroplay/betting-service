@@ -64,7 +64,6 @@ export class VirtualBetService {
 
     async getVirtualTicket(data: GetVirtualBetRequest): Promise<GetVirtualBetResponse> {
         try {
-            console.log(data);
             let success = false, gameId = false, transactionId = false;
             let betData;
 
@@ -206,7 +205,6 @@ export class VirtualBetService {
                 data: response
             }
         } catch(e) {
-            console.log(e.message);
             return {
                 success: false,
                 message: 'Unable to fetch betlist, something went wrong',
@@ -231,7 +229,6 @@ export class VirtualBetService {
                         .andWhere("status IN (:...status)", {status: [1, 2]})
                         .getRawOne();
         } catch (e) {
-            console.log('virtual service: ' + e.message)
             return {
                 totalTickets: 0,
                 totalSales: 0,

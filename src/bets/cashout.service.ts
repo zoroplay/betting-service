@@ -102,22 +102,18 @@ export class CashoutService {
     }
     
     async calculateCashout(currentProbability: number, probabilityAtTicketTime: number, stake: number, odds: number) {
-        // console.log('current Probability', currentProbability)
-        // console.log('Probability at ticket time', probabilityAtTicketTime)
-        
         // cashout value without margin
         try {
             const cashoutValueNoMargin = stake * odds * currentProbability;
             // calculate ticket value
             const ticketValueFactor = currentProbability / probabilityAtTicketTime;
-            // console.log('ticket value factor', ticketValueFactor)
+
             const ladder = await this.cashoutLadderRepo.createQueryBuilder('ladder')
                                     .where('ladder_type = :type', {type: 'low_reduction'})
                                     .andWhere('ticket_value <= :value', {value: ticketValueFactor})
                                     .getOne();
             if(ladder) {
                 const reductionFactor = ladder.deduction_factor;
-                // console.log('reduction factor', reductionFactor)
 
                 // const cashout = cashoutValueNoMargin / reductionFactor;
                 const cashout = (stake * currentProbability * odds) / reductionFactor;
@@ -126,7 +122,6 @@ export class CashoutService {
                 return 0
             }
         } catch (e) {
-            console.log('cashout calculation failed', e.message);
             return 0;
         }
     }
@@ -134,7 +129,7 @@ export class CashoutService {
     async processCashout({betId, amount}: ProcessCashoutRequest): Promise<ProcessCashoutResponse> {
         try {
 
-            return {success: false, message: 'We are unable to process this request at the moment. Please try again later'};
+            // return {success: false, message: 'We are unable to process this request at the moment. Please try again later'};
 
             const bet = await this.betRepository.findOne({where: {id: betId}});
 
@@ -265,9 +260,7 @@ export class CashoutService {
             } 
             // else probability = await this.getOddsOutrightsProbability(odds).toPromise();
             else probability = 0;
-    
-            // console.log('probability outcome', oddStatus);
-    
+        
             // if oddStatus is undefined or there no probability we use a probability of 1
             return probability;
         } catch (e) {
@@ -337,9 +330,7 @@ export class CashoutService {
     
         // return this.oddsService.GetProbability(data);
     async getOddsProbability(data: GetOddsRequest) {
-        // console.log(data);
         const matchId = `${data.eventPrefix}:${data.eventType}:${data.eventID}`
-        // console.log(matchId);
         let url = `https://api.betradar.com/v1/probabilities/${matchId}/${data.marketID}`;
 
         if(data.specifier) {
@@ -369,7 +360,6 @@ export class CashoutService {
             return probability;
             
         }).catch(err => {
-            console.log('Error, fetching probability', err.message);
             return 0
         });
 

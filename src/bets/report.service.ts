@@ -138,7 +138,6 @@ export class ReportService {
                 params.push(userIds);
             }
 
-            // console.log(sql);
 
             let resSum = await this.entityManager.query(sql, params)
 
@@ -184,7 +183,6 @@ export class ReportService {
                     LEFT JOIN winning w ON w.bet_id = b.id WHERE b.client_id = ? AND DATE(b.created) BETWEEN ? AND ? AND b.user_id = ?`;
 
                 let bets  = await this.entityManager.query(betsQuery, [BET_PENDING, BET_WON, BET_LOST, clientId, from, to, userId]);
-                // console.log(bets.getSql())
                 // get all virtual bets
                 const vBetQuery = `SELECT IFNULL(SUM(CASE WHEN virtual_bets.status = 0 THEN 1 ELSE 0 END), 0) as running_bets,
                     IFNULL(SUM(CASE WHEN virtual_bets.status IN (1, 2) THEN 1 ELSE 0 END), 0) as settled_bets,
@@ -225,7 +223,6 @@ export class ReportService {
             }
 
         } catch (e) {
-            console.log(e.message);
             return {
                 success: false, 
                 status: HttpStatus.INTERNAL_SERVER_ERROR, 
@@ -263,7 +260,6 @@ export class ReportService {
     }
 
     async ticketsReport(data: GetTicketsRequest) {
-        // console.log(data)
         try {
             switch (data.ticketType) {
                 case 'virtual':
@@ -357,7 +353,6 @@ export class ReportService {
                     total = result.total;
                 }
 
-                // console.log('total | ' + total);
 
                 let sumQuery = `SELECT SUM(stake) as total_stake, SUM(w.winning_after_tax) as winnings FROM bet b LEFT JOIN winning w ON w.bet_id = b.id WHERE is_booked = 0 AND b.client_id = ? AND ${where.join(
                     ' AND ',
@@ -365,7 +360,6 @@ export class ReportService {
 
                 sumQuery += ` AND b.status != ? AND b.status != ? `;
 
-                // console.log(sumQuery)
                 params.push(BET_CANCELLED, BET_VOIDED)
 
                 let resSum = await this.entityManager.query(sumQuery, params);
@@ -614,7 +608,6 @@ export class ReportService {
                 status: HttpStatus.OK
             }
         } catch(e) {
-            console.log(e.message);
             return {
                 success: false,
                 message: 'Unable to fetch betlist, something went wrong',
@@ -662,7 +655,6 @@ export class ReportService {
                 status: HttpStatus.OK
             }
         } catch(e) {
-            console.log(e.message);
             return {
                 success: false,
                 message: 'Unable to fetch betlist, something went wrong',

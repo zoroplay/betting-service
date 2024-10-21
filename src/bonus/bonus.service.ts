@@ -19,12 +19,10 @@ export class BonusService {
     }
 
     public async placeBet(data: UserBet) {
-        // console.log('Place Bonus bet', data);
         return await firstValueFrom(this.svc.placeBonusBet(data));
     }
 
     public async settleBet(data: SettleBetRequest) {
-        // console.log('Place Bonus bet', data);
         return await firstValueFrom(this.svc.settleBet(data));
     }
 }

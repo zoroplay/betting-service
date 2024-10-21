@@ -172,7 +172,6 @@ export class BetsService {
         total = result.total;
       }
 
-      console.log('total | ' + total);
 
       let sumQuery = `SELECT SUM(stake) as total_stake FROM bet b WHERE is_booked = 0 AND client_id = ? AND ${where.join(
         ' AND ',
@@ -367,7 +366,6 @@ export class BetsService {
         }
       }
 
-      // console.log('current probability', currentProbability, lostGames)
 
       if ((!bet.bonus_id || bet.bonus_id !== 0) && bet.status === BET_PENDING && lostGames === 0)
         cashOutAmount = await this.cashoutService.calculateCashout(currentProbability, bet.probability, bet.stake, totalOdds);
@@ -462,7 +460,6 @@ export class BetsService {
       if (slips.length > 0) {
         for (const slip of slips) {
           let slipStatusDesc, slipStatus;
-          // console.log('slip status', slip.won)
           switch (slip.won) {
             case STATUS_NOT_LOST_OR_WON:
               slipStatusDesc = 'Pending';
@@ -528,7 +525,6 @@ export class BetsService {
   }
 
   async placeBet(bet): Promise<PlaceBetResponse> {
-    // console.log(bet.useBonus);
 
     if (bet.clientId == 0)
       return { status: 400, message: 'missing client id', success: false };
@@ -708,7 +704,6 @@ export class BetsService {
 
     //TO-DO: Validate bet from identity service
     const validationRes = await this.identityService.validateBet(bet);
-    // console.log(validationRes)  ;
     if (!validationRes.success)
       return { status: 400, message: validationRes.message, success: false };
 
@@ -722,7 +717,6 @@ export class BetsService {
     if (bet.useBonus) {
       //check if bonus is till valid
       const bonusRes = await this.bonusService.validateSelection(bet);
-      // console.log(bonusRes);
       if (bonusRes.success) {
         bonusId = bonusRes.id;
       } else {
@@ -751,7 +745,6 @@ export class BetsService {
     //     taxOnWinning = clientSettings.tax_on_winning * (possibleWin - stake);
     //     payout = possibleWin - taxOnWinning;
     // }
-    // console.log(payout, validationData.max_winning)
     if (payout > parseFloat(validationData.max_winning)) {
       payout = validationData.max_winning;
     }
@@ -815,7 +808,6 @@ export class BetsService {
           selection.event_prefix = 'sr';
         }
 
-        // console.log(JSON.stringify(selection));
 
         let betSlipData = new BetSlip();
         betSlipData.bet_id = betResult.id;
@@ -1119,7 +1111,7 @@ export class BetsService {
             wonStatus = STATUS_NOT_LOST_OR_WON
             // TO-DO: recalcumlate odds
             const {possibleWin, newOdds} = recalculateVoid({bet: bet, odd: slip.odds  });
-            // console.log(possibleWin, newOdds)
+
             await this.betRepository.update(
               {
                   id: bet.id, // confirm if ID is present
@@ -1131,7 +1123,6 @@ export class BetsService {
                   total_odd: newOdds,
               });
 
-              // console.log('updating selections', wonStatus)
               await this.betslipRepository.update(
                 {
                   id: selectionId,
@@ -1175,7 +1166,6 @@ export class BetsService {
         message: `${entityType} updated successfully`,
       };
     } catch (e) {
-      console.log('error', e.message);
       return {
         status: 500,
         success: false,
@@ -1189,7 +1179,6 @@ export class BetsService {
     clientId,
   }: FindBetRequest): Promise<CommonResponseObj> {
     try {
-      // console.log(betslipId, clientId)
       const booking = await this.betRepository.findOne({
         where: { betslip_id: betslipId, client_id: clientId },
       });

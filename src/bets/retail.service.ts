@@ -63,7 +63,6 @@ export class RetailService {
             LEFT JOIN winning w ON w.bet_id = b.id WHERE b.client_id = ? AND DATE(b.created) BETWEEN ? AND ? AND b.user_id IN (?)`;
 
             bets  = await this.entityManager.query(betsQuery, [BET_PENDING, BET_WON, BET_LOST, clientId, from, to, userIds]);
-            // console.log(bets.getSql())
             // get all virtual bets
             const vBetQuery = `SELECT IFNULL(SUM(CASE WHEN virtual_bets.status = 0 THEN 1 ELSE 0 END), 0) as running_bets,
                     IFNULL(SUM(CASE WHEN virtual_bets.status IN (1, 2) THEN 1 ELSE 0 END), 0) as settled_bets,
@@ -277,7 +276,6 @@ export class RetailService {
                             pendingGames = await this.entityManager.query(pendingGamesQry, [bet.id, BET_PENDING]);
 
                         } catch (e) {
-                            console.log(' error retrieving bet slips ' + e.toString());
                             continue;
                         }
 
@@ -426,7 +424,6 @@ export class RetailService {
                 data: respData
             }
         } catch (e) {
-            console.log(e.message);
             return {
                 success: false,
                 message: 'Unable to fetch betlist, something went wrong',
@@ -478,7 +475,6 @@ export class RetailService {
                 data: response
             }
         } catch(e) {
-            console.log(e.message);
             return {
                 success: false,
                 message: 'Unable to fetch betlist, something went wrong',
@@ -512,7 +508,6 @@ export class RetailService {
                 provider
             });
 
-            // console.log(profiles);
             const data = {
                 current_week: {
                     total_weeks: 0,
@@ -530,7 +525,6 @@ export class RetailService {
             if (profiles.success && profiles.data) {
                 for (const agent of profiles.data) {
                     let res;
-                    // console.log(agent.users)
                     if (agent.users.length) {
                         switch (provider) {
                             case 'casino':
@@ -571,7 +565,6 @@ export class RetailService {
                 data
             };
         } catch (e) {
-            console.log(e.message);
             return {
                 success: false, 
                 message: 'Error while fetching commission', 
@@ -598,7 +591,6 @@ export class RetailService {
                 const bets  = await this.entityManager.query(betsQuery, [BET_PENDING, BET_WON, BET_LOST, startDate, endDate, userIds]);
                 data = bets[0];
             } else if (product === 'virtual') {
-                // console.log(bets.getSql())
                 // get all virtual bets
                 const vBetQuery = `SELECT IFNULL(SUM(CASE WHEN virtual_bets.status = 0 THEN 1 ELSE 0 END), 0) as running_bets,
                         IFNULL(SUM(CASE WHEN virtual_bets.status IN (1, 2) THEN 1 ELSE 0 END), 0) as settled_bets,
@@ -611,7 +603,6 @@ export class RetailService {
 
             return {success: true, message: 'Data retreived', data};
         } catch (e) {
-            console.log(e.message);
             return {
                 success: false, 
                 message: 'Something went wrong',

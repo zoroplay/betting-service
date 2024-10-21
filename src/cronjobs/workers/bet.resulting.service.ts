@@ -61,7 +61,6 @@ export class BetResultingController {
     }
 
     async taskProcessBetResulting() {
-        // console.log('task processing bet')
 
         const taskName = 'bet.resulting'
 
@@ -77,7 +76,6 @@ export class BetResultingController {
             });
 
             if (cronJob !== null && cronJob.id > 0) {
-                // console.log('stopping cron job')
                 //this.logger.info('another ' + taskName + ' job is already running');
                 return
             }
@@ -111,7 +109,7 @@ export class BetResultingController {
             this.logger.error("error retrieving bet_closure "+e.toString())
             return
         }
-        // console.log ('rows', rows);
+
         for (const row of rows) {
 
             let id = row.bet_id;
@@ -131,7 +129,6 @@ export class BetResultingController {
         task.status = 0;
 
         try {
-            // console.log('second upsert ', task)
             await this.cronJobRepository.upsert(task, ['status'])
         }
         catch (e) {
@@ -143,8 +140,6 @@ export class BetResultingController {
     }
 
     async taskFixInvalidBetStatus() {
-        // console.log('task fix for invalid')
-
         try {
 
             await this.entityManager.query("insert ignore into bet_closure (bet_id,created) select id, now() from bet where won = 1 and status = 0 and id not in (select bet_id from winning) ");            
@@ -157,7 +152,6 @@ export class BetResultingController {
     }
     
     async taskInsertBetWithoutBetStatus() {
-        // console.log('task fix for invalid')
 
         try {
 
@@ -172,7 +166,6 @@ export class BetResultingController {
 
 
     async closeBet(betID: number): Promise<number> {
-        // console.log('close bet')
 
         let rows : any
 
@@ -293,8 +286,6 @@ export class BetResultingController {
                             .groupBy('match_id')
                             .getMany();
         
-        console.log('number of pending games', matches.length);
-
         // for (const bet of bets) {
         //     const betStatus = await this.betStatusRepository.find({where: {bet_id: bet.id}});
         //     if (!betStatus) {
@@ -315,7 +306,6 @@ export class BetResultingController {
         // .groupBy('match_id')
         // .getMany();
 
-        // console.log('number of pending settlements', matches.length);
 
         let requestId = 1001;
         for (const match of matches) {

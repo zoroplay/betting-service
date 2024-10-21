@@ -20,9 +20,7 @@ import {MtsBetAcceptedService} from "./workers/mts.bet.accepted.service";
 import {Bet} from "../entity/bet.entity";
 import { WalletModule } from 'src/wallet/wallet.module';
 import { BonusModule } from 'src/bonus/bonus.module';
-import { MqttClient, connect } from "mqtt";
-import * as fs from "fs";
-import * as dayjs from 'dayjs';
+import { connect } from "mqtt";
 
 let maxSettlementChannels = 10
 let maxBetAcceptedChannels = 5
@@ -164,6 +162,7 @@ export class ConsumerModule implements OnModuleInit {
         // Receive messages
         client.on("message", function (topic, message) {
           try {
+
             // message is Buffer
             const object = JSON.parse(message.toString());
             

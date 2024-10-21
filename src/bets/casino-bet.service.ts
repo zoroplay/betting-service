@@ -63,7 +63,6 @@ export class CasinoBetService {
         },
       };
     } catch (e) {
-      console.log(e.message);
       return {
         success: false,
         status: HttpStatus.INTERNAL_SERVER_ERROR,
@@ -96,7 +95,6 @@ export class CasinoBetService {
         },
       };
     } catch (e) {
-      console.log(e.message);
       return {
         success: false,
         status: HttpStatus.INTERNAL_SERVER_ERROR,
@@ -150,7 +148,6 @@ export class CasinoBetService {
         },
       };
     } catch (e) {
-      console.log(e.message);
       return {
         success: false,
         status: HttpStatus.INTERNAL_SERVER_ERROR,
@@ -164,14 +161,12 @@ export class CasinoBetService {
     data: SettleCasinoBetRequest,
   ): Promise<PlaceCasinoBetResponse> {
     try {
-      // console.log(data);
       const { winnings, transactionId } = data;
 
       const bet = await this.casinoBetRepo.find({
         where: {transaction_id: transactionId}
       });
 
-      // console.log(bet)
 
       if (!bet.length) {// return error if bet not found
         return {
@@ -204,8 +199,6 @@ export class CasinoBetService {
         status = 2;
       }
 
-      console.log('status is', status);
-
       for (const singleBet of bet) {
         // update bet status
         await this.casinoBetRepo.update(
@@ -236,7 +229,6 @@ export class CasinoBetService {
         },
       };
     } catch (e) {
-      console.log('settlement error', e.message);
       return {
         success: false,
         status: HttpStatus.INTERNAL_SERVER_ERROR,

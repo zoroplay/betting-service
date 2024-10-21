@@ -60,8 +60,6 @@ export class BetSettlementService {
     }
 
     async taskProcessBetSettlement() {
-        console.log('task for processing bet settlement')
-
         const taskName = 'bet.settlement'
 
         // check if similar job is running
@@ -123,7 +121,6 @@ export class BetSettlementService {
 
 
     async taskProcessUnSettledBet() {
-        console.log('task for processing unsettled bet')
         const taskName = 'unsettled.bet';
         // create settlement
         const task = new Cronjob();
@@ -151,19 +148,14 @@ export class BetSettlementService {
                 "FROM bet b " +
                 "WHERE (b.status = "+BET_PENDING+ " AND b.won = "+STATUS_NOT_LOST_OR_WON+") OR (b.status = "+BET_PENDING+ " AND b.won = "+STATUS_WON+")")
 
-            // console.log('found '+ rows.length + ' bets');
-
 
             for (let row of rows) {
-                    // console.log(row.betslip_id);
                 const betId = row.id;
                 // find selections
                 let total = await this.betslipRepository.count({where: {bet_id: betId}});
                 const won = await this.betslipRepository.count({where: {bet_id: betId, won: STATUS_WON}})
                 const lost = await this.betslipRepository.count({where: {bet_id: betId, won: STATUS_LOST}});
                 const voidGames = await this.betslipRepository.count({where: {bet_id: betId, status: BETSLIP_PROCESSING_VOIDED}});
-
-                // console.log(total, won, lost, voidGames);
 
                 total = total - voidGames;
 
@@ -197,6 +189,7 @@ export class BetSettlementService {
             task.status = 0;
             await this.cronJobRepository.upsert(task,['status']);
         } catch (e) {
+            console.log('Error processing unsettled task', e.message);
             task.name = taskName;
             task.status = 0;
             await this.cronJobRepository.upsert(task,['status'])
@@ -240,8 +233,6 @@ export class BetSettlementService {
 
         let queryString = "SELECT id,bet_id,status, won, void_factor, dead_heat_factor,odds FROM bet_slip " +
             "WHERE bet_id IN (" + betIds.join(',') + ")"
-
-       // console.log(queryString)
 
         let betSlips = await this.entityManager.query(queryString);
 
@@ -330,7 +321,6 @@ export class BetSettlementService {
 
             let result = await this.resultBet(bet, clientSettings, {ftScore: settlement.ft_score, htScore: settlement.ht_score})
 
-            //console.log(bet.id+" | "+JSON.stringify(result,undefined,2))
 
             if (result.Won) {
 
@@ -354,10 +344,6 @@ export class BetSettlementService {
     }
 
     async resultBet(bet: any, setting: Setting, scores: any): Promise<any> {
-        console.log('starting  result bet')
-
-    //    console.log(JSON.stringify(bet,undefined,2))
-
         let processing_status = BET_PENDING
         let hasVoidedSlip = false
 
@@ -409,8 +395,6 @@ export class BetSettlementService {
                     possibleWin = setting.maximum_winning
                 }
 
-                // console.log(possibleWin, netWin, withHoldingTax, newOdds)
-
                 // update bet with new odds and new winning amount
                 await this.betRepository.update(
                     {
@@ -424,8 +408,6 @@ export class BetSettlementService {
                     });
 
             } else {
-
-                // console.log('lets update bet slip ID '+b.ID)
 
                 await this.betslipRepository.update(
                     {
@@ -495,8 +477,6 @@ export class BetSettlementService {
         }
 
         // lets start resulting here
-        // console.log(bet.id)
-
         // bet won
         if (bet.Lost == 0 && bet.Pending == 0 && bet.TotalGames == bet.Won) {
 
@@ -507,8 +487,6 @@ export class BetSettlementService {
                 processing_status = BET_VOIDED
 
             }
-
-            // console.log('lets update bet ID '+bet.id)
 
             //UPDATE bet SET won = ?, status = ?, lost_games = ?, won_games = ?, resulted_bets = ?, processing_status = ?  WHERE id = ?
             await this.betRepository.update(
@@ -551,7 +529,6 @@ export class BetSettlementService {
                 processing_status = BET_VOIDED
             }
 
-            // console.log('lets update bet ID '+bet.id)
             //UPDATE bet SET won = ?, status = ?, lost_games = ?, won_games = ?, resulted_bets = ?, processing_status = ?  WHERE id = ?
             await this.betRepository.update(
                 {
@@ -594,8 +571,6 @@ export class BetSettlementService {
     }
 
     async closeBet(betID: number): Promise<number> {
-        // console.log('close bet')
-
         let rows : any
 
         try {
