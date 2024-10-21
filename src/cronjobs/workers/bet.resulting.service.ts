@@ -277,12 +277,14 @@ export class BetResultingController {
     }
 
     async taskRequestSettlement() {
-        const date = dayjs().subtract(2, 'hours').format('YYYY-MM-DD HH:mm:ss');
+        const start = dayjs().subtract(3, 'days').format('YYYY-MM-DD HH:mm:ss');
+        const end = dayjs().subtract(2, 'hours').format('YYYY-MM-DD HH:mm:ss');
             
         const matches = await this.betslipRepository.createQueryBuilder('b')
                             .where('won = :won', {won: STATUS_NOT_LOST_OR_WON})
                             .andWhere('status = :status', {status: BETSLIP_PROCESSING_PENDING})
-                            .andWhere('DATE(event_date) <= :date', {date})
+                            .andWhere('event_date >= :start', {start})
+                            .andWhere('event_date <= :end', {end})
                             .groupBy('match_id')
                             .getMany();
         
