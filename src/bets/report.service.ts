@@ -138,7 +138,7 @@ export class ReportService {
                 params.push(userIds);
             }
 
-            console.log(sql);
+            // console.log(sql);
 
             let resSum = await this.entityManager.query(sql, params)
 
